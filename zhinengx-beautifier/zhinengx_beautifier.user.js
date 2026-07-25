@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      7.3.1
+// @version      7.3.2
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslght
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -252,17 +252,17 @@
                 -webkit-backdrop-filter: none !important;
             }
 
-            /* 做题底栏动态美化 (仅在 html.znx-doing-questions 模式下生效，绝不误伤主页或突破口弹窗) */
+            /* 做题底栏动态美化 (做对淡雅柔和绿 rgba 0.20 / 做错透亮红) */
             html.znx-doing-questions .jumbotron:has(#FootcontentYes),
             html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes),
             html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentYes),
             html.znx-doing-questions .jumbotron[data-znx-result="correct"],
             html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="correct"] {
-                background: rgba(34, 197, 94, 0.42) !important;
+                background: rgba(34, 197, 94, 0.20) !important;
                 backdrop-filter: blur(16px) !important;
                 -webkit-backdrop-filter: blur(16px) !important;
-                border-top: 2px solid rgba(34, 197, 94, 0.7) !important;
-                box-shadow: 0 -4px 25px rgba(34, 197, 94, 0.35), inset 0 0 15px rgba(34, 197, 94, 0.2) !important;
+                border-top: 1px solid rgba(34, 197, 94, 0.4) !important;
+                box-shadow: 0 -4px 15px rgba(34, 197, 94, 0.15), inset 0 0 10px rgba(34, 197, 94, 0.1) !important;
                 transition: all 0.3s ease !important;
             }
             html.znx-doing-questions .jumbotron:has(#FootcontentYes) div,
@@ -859,11 +859,11 @@
 
             if (isCorrect) {
                 targetJumbotron.setAttribute('data-znx-result', 'correct');
-                targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.45)', 'important');
+                targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.20)', 'important');
                 targetJumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
                 targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
-                targetJumbotron.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.7)', 'important');
-                targetJumbotron.style.setProperty('box-shadow', '0 -4px 25px rgba(34, 197, 94, 0.35)', 'important');
+                targetJumbotron.style.setProperty('border-top', '1px solid rgba(34, 197, 94, 0.4)', 'important');
+                targetJumbotron.style.setProperty('box-shadow', '0 -4px 15px rgba(34, 197, 94, 0.15)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else if (isWrong) {
                 targetJumbotron.setAttribute('data-znx-result', 'wrong');
