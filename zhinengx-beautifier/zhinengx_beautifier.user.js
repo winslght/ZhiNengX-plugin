@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      7.4.0
+// @version      7.4.1
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslght
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -67,6 +67,12 @@
         for (const k in params) {
             root.style.setProperty(`--znx-${k}`, params[k].val);
         }
+        
+        // 关键修复：每次滑动时，实时更新 --znx-g-correct-bg、--znx-g-wrong-bg 和 --znx-g-blur
+        root.style.setProperty('--znx-g-correct-bg', `rgba(34, 197, 94, ${params.G_opacity.val})`);
+        root.style.setProperty('--znx-g-wrong-bg', `rgba(239, 68, 68, ${params.G_opacity.val})`);
+        root.style.setProperty('--znx-g-blur', `${params.G_blur.val}px`);
+
         root.classList.toggle('znx-dark-mode', isDark);
         
         const overlay = document.getElementById('znx-anime-overlay');
