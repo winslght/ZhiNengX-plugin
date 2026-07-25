@@ -1,44 +1,60 @@
-# <img src="icon.png" width="36" height="36" align="center"> 知能行 UI 视觉美化与考研助手 (ZhiNengX Enhancer)
+# <img src="icon.png" width="36" height="36" align="center"> 知能行考研开源插件合集 (ZhiNengX Plugins)
 
-![Version](https://img.shields.io/badge/Version-v7.2-brightgreen?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v11.0%20%7C%20v7.2-brightgreen?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-winslght-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=for-the-badge)
+![Target](https://img.shields.io/badge/Target-%E6%95%B0%E5%AD%A6%E4%B8%80%20%7C%20%E6%95%B0%E5%AD%A6%E4%BA%8C%20%7C%20%E6%95%B0%E5%AD%A6%E4%B8%89-red?style=for-the-badge)
 
-专为 **知能行考研数学 (bestzixue.com / zhinengxing.com)** 打造的 UI 美化与学习增强油猴脚本。
+专为 **知能行考研数学 (bestzixue.com / zhinengxing.com)** 打造的开源增强油猴插件工具包。
 
-通过实时可调的全局毛玻璃（Glassmorphism）、暗色模式自适应、Live2D 看板娘以及考研倒计时悬浮窗，提升知能行页面的视觉质感与刷题体验。
-
----
-
-## 📦 快速安装 (One-Click Install)
-
-1. 在浏览器中安装 [Tampermonkey (油猴)](https://www.tampermonkey.net/) 插件。
-2. 点击下方链接，油猴插件将自动弹出安装界面：
-
-👉 **[🚀 点击一键安装 / 自动更新脚本](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx_beautifier.user.js)** 👈
-
-*(备用 CDN 安装链接: [cdn.jsdelivr.net](https://cdn.jsdelivr.net/gh/winslght/ZhiNengX-plugin@main/zhinengx_beautifier.user.js))*
+包含 **数据分析与诊断报告导出插件**（全自动支持数一、数二、数三）与 **UI 视觉美化与考研助手插件**。考研党可根据需求独立安装或配合使用！
 
 ---
 
-## 🛠️ 核心功能
+## 📦 插件一键安装 (One-Click Install)
 
-- ⚙️ **界面参数调节面板**：集成于主导航栏，提供 6 组毛玻璃透明度与模糊度调节滑块，支持配置本地保存。
-- 🌙 **Dark Reader 模式智能自适应**：自动联动 Dark Reader 插件，开启深色模式时切换为暗色毛玻璃并降低背景亮度（默认 0.60），保障夜间用眼舒适。
-- 💃 **Live2D 互动看板娘**：提供悬浮看板娘挂件，支持侧边栏智能悬停显示与交互功能。
-- 📅 **考研倒计时与时间管理**：实时计算 2027 考研倒计时天数，包含今日/本周/本月剩余比例进度条及公历日期显示。
-- 🛡️ **原生样式保真**：采用 JSS 动态类名识别，保障原生三段式进度条（`height: 16px`）与图表样式不产生变形。
-- ⚡ **性能与平板设备优化**：针对桌面端与 iPad / 安卓平板进行性能调优，采用 `requestIdleCallback` 节流与 GPU 硬件加速。
+在浏览器安装 [Tampermonkey (油猴)](https://www.tampermonkey.net/) 插件后，点击下方相应按钮即可自动安装：
+
+### 1. 📊 知能行通用诊断报告与数据大屏导出器 (`v11.0`)
+自动适应**数学一、数学二、数学三**考纲。一键提取全量做题数据，导出纯净 Markdown 诊断报告与 ECharts 可视化全景数据大屏。
+
+👉 **[🚀 点击一键安装【数据分析导出插件】](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-exporter/zhinengx_exporter.user.js)**
+
+---
+
+### 2. 🎨 知能行 UI 视觉美化与考研助手 (`v7.2`)
+提供全局毛玻璃（Glassmorphism）、Dark Reader 深色模式自适应、Live2D 看板娘及 27 考研倒计时悬浮窗。
+
+👉 **[🚀 点击一键安装【UI 视觉美化插件】](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-beautifier/zhinengx_beautifier.user.js)**
+
+---
+
+## 🛠️ 插件功能概览
+
+### 📊 数据分析与诊断报告导出器 (Exporter)
+- 🎯 **自动识别数一/数二/数三**：根据用户账户自动切换考纲过滤规则，完美匹配对应科目。
+- 📝 **纯净 Markdown 报告导出**：一键导出包含考纲能力分布、L1~L5 五级熟练度矩阵、重计算题做对率及错误归因报告。
+- 📈 **ECharts 全景数据大屏**：嵌入原生选项卡，可视化生成三维能力雷达图与近期做题趋势图。
+
+### 🎨 UI 视觉美化与考研助手 (Beautifier)
+- ⚙️ **界面参数调节面板**：支持 6 组毛玻璃透明度与模糊度调节，实时本地保存配置。
+- 🌙 **Dark Reader 深色模式自适应**：智能感应深色模式切换，配备 0.60 背景遮光防晃眼机制。
+- 📅 **考研倒计时与时间管理**：2027 考研倒计时、今日/本周/本月剩余比例进度条及公历日期显示。
 
 ---
 
 ## 📂 项目结构
 
 ```text
-├── zhinengx_beautifier.user.js    # 脚本主文件 (v7.2)
-├── README.md                      # 说明文档
-└── LICENSE                        # MIT 开源许可证
+ZhiNengX-plugin/
+├── README.md                           # 仓库主说明文档
+├── LICENSE                             # MIT 开源许可证
+├── icon.png                            # 2D 简约图标
+├── zhinengx-exporter/                  # 📊 数据分析与导出插件
+│   └── zhinengx_exporter.user.js       # (通用版: 支持数一/数二/数三)
+└── zhinengx-beautifier/                # 🎨 UI 视觉美化与考研助手
+    └── zhinengx_beautifier.user.js     # (v7.2)
 ```
 
 ---
