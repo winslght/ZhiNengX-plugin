@@ -774,32 +774,56 @@
     }
 
     // ==========================================
-    // 10. 底栏做对/做错状态感应器 (精准匹配“答案正确”/“继续”与“答案错误”/“再试一次”)
+    // 10. 底栏做对/做错状态感应器 (精准根据做题按钮反查底栏节点，全页语义识别)
     // ==========================================
     function setupJumbotronFeedbackObserver() {
         const updateStatus = () => {
-            const jumbotron = document.querySelector('.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"]');
+            // 精确找到做题核心动作按钮 (继续 / 提交答案 / 再试一次 / 查看题解)
+            const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
+            const actionBtn = buttons.find(b => {
+                const t = (b.innerText || b.textContent || '').trim();
+                return t.includes('提交答案') || t.includes('继续') || t.includes('再试一次') || t.includes('查看题解');
+            });
+
+            // 包含动作按钮的底栏容器
+            let jumbotron = actionBtn ? (
+                actionBtn.closest('.jumbotron') || 
+                actionBtn.closest('div[class*="jumbotron"]') || 
+                actionBtn.closest('div[class*="_3o6JR"]') || 
+                actionBtn.closest('div[class*="_1ktiDhx"]') ||
+                actionBtn.parentElement?.parentElement
+            ) : null;
+
+            // 备用兜底逻辑：查找所有带相关类名的最底下一个容器
+            if (!jumbotron) {
+                const allBars = Array.from(document.querySelectorAll('.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"]'));
+                jumbotron = allBars[allBars.length - 1];
+            }
+
             if (!jumbotron) return;
 
-            const text = jumbotron.innerText || jumbotron.textContent || '';
-            const isCorrect = text.includes('答案正确') || text.includes('继续');
-            const isWrong = text.includes('答案错误') || text.includes('再试一次');
+            // 识别做对/做错信号 (全局文本语义判断)
+            const fullPageText = document.body.innerText || '';
+            const isCorrect = fullPageText.includes('答案正确') || fullPageText.includes('继续');
+            const isWrong = !isCorrect && (fullPageText.includes('答案错误') || fullPageText.includes('再试一次'));
 
             const children = jumbotron.querySelectorAll('div');
 
             if (isCorrect) {
                 jumbotron.setAttribute('data-znx-result', 'correct');
-                jumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.35)', 'important');
+                jumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.45)', 'important');
                 jumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
                 jumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
-                jumbotron.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.6)', 'important');
+                jumbotron.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.7)', 'important');
+                jumbotron.style.setProperty('box-shadow', '0 -4px 25px rgba(34, 197, 94, 0.3)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else if (isWrong) {
                 jumbotron.setAttribute('data-znx-result', 'wrong');
-                jumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.35)', 'important');
+                jumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.45)', 'important');
                 jumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
                 jumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
-                jumbotron.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.6)', 'important');
+                jumbotron.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.7)', 'important');
+                jumbotron.style.setProperty('box-shadow', '0 -4px 25px rgba(239, 68, 68, 0.3)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else {
                 jumbotron.removeAttribute('data-znx-result');
@@ -807,6 +831,7 @@
                 jumbotron.style.removeProperty('backdrop-filter');
                 jumbotron.style.removeProperty('-webkit-backdrop-filter');
                 jumbotron.style.removeProperty('border-top');
+                jumbotron.style.removeProperty('box-shadow');
                 children.forEach(c => c.style.removeProperty('background'));
             }
         };
