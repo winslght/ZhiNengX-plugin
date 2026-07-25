@@ -1,10 +1,9 @@
 // ==UserScript==
-// @name         知能行 UI 视觉美化与考研助手
+// @name         知能行美化专家
 // @namespace    http://tampermonkey.net/
 // @version      7.3
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
+// @description  为知能行考研数学添加动漫壁纸和全局毛玻璃（Glassmorphism）效果，并提供实时可调参数控制面板
 // @author       winslght
-// @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
 // @match        *://*.bestzixue.com/*
 // @match        *://*.zhinengxing.com/*
 // @grant        none
@@ -810,18 +809,41 @@
     // 10. 做题提交底栏反馈感应器 (做对绿色水波纹毛玻璃 / 做错红色水波纹毛玻璃)
     // ==========================================
     function setupSubmitBarFeedbackObserver() {
-        const correctPatterns = ['回答正确', '做对了', '掌握得不错', '厉害了', '太棒了', '不错！', '恭喜', '完全会做', '太简单'];
-        const wrongPatterns = ['回答错误', '做错了', '答案不正确', '未掌握', '重新理解', '查看解析', '我做错了'];
+        // 新增了 "答案正确", "答案错误" 匹配用户提供的实际 DOM 文本
+        const correctPatterns = ['回答正确', '做对了', '掌握得不错', '厉害了', '太棒了', '不错！', '恭喜', '完全会做', '太简单', '答案正确'];
+        const wrongPatterns = ['回答错误', '做错了', '答案不正确', '未掌握', '重新理解', '查看解析', '我做错了', '答案错误'];
 
         let lastState = 'none'; // 防止重复设置
 
         const updateSubmitBarStatus = () => {
-            // 直接定位做题界面已知的底栏 / 工具栏 DOM 元素 (Webpack 哈希类名)
-            const bars = document.querySelectorAll('div[class*="_3WnwfR"], div[class*="_3r5idY"]');
-            if (bars.length === 0) {
+            // 找到包含 "提交答案", "继续", "查看题解", "下一题" 的按钮
+            const buttons = Array.from(document.querySelectorAll('button, .MuiButtonBase-root, .btn'));
+            const actionBtn = buttons.find(b => {
+                const text = (b.innerText || b.textContent || '').trim();
+                return text.includes('提交答案') || text.includes('下一题') || text.includes('继续') || text.includes('查看题解');
+            });
+
+            if (!actionBtn) {
                 lastState = 'none';
                 return;
             }
+
+            // 核心修复：根据用户提供的 DOM，底栏是包含 container 和 row 的 jumbotron
+            let container = actionBtn.closest('.jumbotron') || actionBtn.closest('div[class*="jumbotron"]');
+            
+            // 如果没找到 jumbotron，向上寻找宽度超过屏幕 80% 的块级元素，这通常是固定的全宽底栏
+            if (!container) {
+                let curr = actionBtn.parentElement;
+                while (curr && curr !== document.body && curr.id !== 'root') {
+                    if (curr.offsetWidth > window.innerWidth * 0.8) {
+                        container = curr;
+                        break;
+                    }
+                    curr = curr.parentElement;
+                }
+            }
+
+            if (!container) return;
 
             // 获取做题区域的文本内容来判断答题结果
             const pageText = document.body.innerText || '';
@@ -836,26 +858,24 @@
             if (newState === lastState) return;
             lastState = newState;
 
-            console.log(`[ZhiNengX] 底栏反馈: ${newState}, 找到 ${bars.length} 个工具栏元素`);
+            console.log(`[ZhiNengX] 底栏反馈: ${newState}, 找到容器:`, container);
 
-            bars.forEach(bar => {
-                if (newState === 'correct') {
-                    bar.setAttribute('data-znx-feedback', 'correct');
-                    bar.style.setProperty('animation', 'znx-ripple-correct 1.4s ease-in-out infinite alternate', 'important');
-                    bar.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.9)', 'important');
-                    bar.style.setProperty('background', 'rgba(34, 197, 94, 0.35)', 'important');
-                } else if (newState === 'wrong') {
-                    bar.setAttribute('data-znx-feedback', 'wrong');
-                    bar.style.setProperty('animation', 'znx-ripple-wrong 1.4s ease-in-out infinite alternate', 'important');
-                    bar.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.9)', 'important');
-                    bar.style.setProperty('background', 'rgba(239, 68, 68, 0.35)', 'important');
-                } else {
-                    bar.removeAttribute('data-znx-feedback');
-                    bar.style.removeProperty('animation');
-                    bar.style.removeProperty('border-top');
-                    bar.style.removeProperty('background');
-                }
-            });
+            if (newState === 'correct') {
+                container.setAttribute('data-znx-feedback', 'correct');
+                container.style.setProperty('animation', 'znx-ripple-correct 1.4s ease-in-out infinite alternate', 'important');
+                container.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.9)', 'important');
+                container.style.setProperty('background', 'rgba(34, 197, 94, 0.35)', 'important');
+            } else if (newState === 'wrong') {
+                container.setAttribute('data-znx-feedback', 'wrong');
+                container.style.setProperty('animation', 'znx-ripple-wrong 1.4s ease-in-out infinite alternate', 'important');
+                container.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.9)', 'important');
+                container.style.setProperty('background', 'rgba(239, 68, 68, 0.35)', 'important');
+            } else {
+                container.removeAttribute('data-znx-feedback');
+                container.style.removeProperty('animation');
+                container.style.removeProperty('border-top');
+                container.style.removeProperty('background');
+            }
         };
 
         const observer = new MutationObserver(updateSubmitBarStatus);
