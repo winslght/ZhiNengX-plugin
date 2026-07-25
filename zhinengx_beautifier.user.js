@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         知能行美化专家
+// @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
 // @version      7.2
-// @description  为知能行考研数学添加动漫壁纸和全局毛玻璃（Glassmorphism）效果，并提供实时可调参数控制面板
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslight
 // @match        *://*.bestzixue.com/*
 // @match        *://*.zhinengxing.com/*
@@ -12,7 +12,7 @@
 (function() {
     'use strict';
 
-    console.log('【知能行美化专家 4.1】正在启动...');
+    console.log('[ZhiNengX Enhancer] 知能行视觉美化与助手已启动');
 
     // ==========================================
     // 0. 可调参数
@@ -456,7 +456,7 @@
 
         let html = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px;">
-                <h3 style="margin:0; font-size: 16px; color: #fff;">🎛️ 毛玻璃调参面板 v4.1</h3>
+                <h3 style="margin:0; font-size: 16px; color: #fff;">⚙️ 界面参数调节面板</h3>
                 <button id="znx-tuner-close" style="background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔽 收起</button>
             </div>
         `;
