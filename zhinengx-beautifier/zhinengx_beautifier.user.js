@@ -309,6 +309,9 @@
             // 【安全避坑】绝不处理看板娘及 Live2D 挂件，防止 WebGL 上下文失效导致看板娘消失！
             if (el.closest('[id*="waifu"], [id*="live2d"], [id*="landlord"], [class*="waifu"], [class*="live2d"]')) return;
 
+            // 【做题底栏避坑】不处理做题底栏及其内部子元素，避免子元素白色玻璃背景遮挡外层做对/做错颜色的呈现！
+            if (el.closest('.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"]')) return;
+
             const targetClasses = Array.from(el.classList).filter(c => c.startsWith('jss') || c.startsWith('_'));
             if (targetClasses.length === 0) return;
             
@@ -782,24 +785,29 @@
             const isCorrect = text.includes('答案正确') || text.includes('继续');
             const isWrong = text.includes('答案错误') || text.includes('再试一次');
 
+            const children = jumbotron.querySelectorAll('div');
+
             if (isCorrect) {
                 jumbotron.setAttribute('data-znx-result', 'correct');
-                jumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.32)', 'important');
+                jumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.35)', 'important');
                 jumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
                 jumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
                 jumbotron.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.6)', 'important');
+                children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else if (isWrong) {
                 jumbotron.setAttribute('data-znx-result', 'wrong');
-                jumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.32)', 'important');
+                jumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.35)', 'important');
                 jumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
                 jumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
                 jumbotron.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.6)', 'important');
+                children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else {
                 jumbotron.removeAttribute('data-znx-result');
                 jumbotron.style.removeProperty('background');
                 jumbotron.style.removeProperty('backdrop-filter');
                 jumbotron.style.removeProperty('-webkit-backdrop-filter');
                 jumbotron.style.removeProperty('border-top');
+                children.forEach(c => c.style.removeProperty('background'));
             }
         };
 
