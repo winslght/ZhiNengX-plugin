@@ -1,9 +1,10 @@
 // ==UserScript==
-// @name         知能行美化专家
+// @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
 // @version      7.3
-// @description  为知能行考研数学添加动漫壁纸和全局毛玻璃（Glassmorphism）效果，并提供实时可调参数控制面板
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslght
+// @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
 // @match        *://*.bestzixue.com/*
 // @match        *://*.zhinengxing.com/*
 // @grant        none
@@ -12,7 +13,7 @@
 (function() {
     'use strict';
 
-    console.log('【知能行美化专家 4.1】正在启动...');
+    console.log('[ZhiNengX Enhancer] 知能行视觉美化与助手已启动');
 
     // ==========================================
     // 0. 可调参数
@@ -251,51 +252,21 @@
                 -webkit-backdrop-filter: none !important;
             }
 
-            /* ==========================================
-               做题底栏：做对绿色水波纹毛玻璃 / 做错红色水波纹毛玻璃 (淡雅柔和版)
-               ========================================== */
-            @keyframes znx-ripple-correct {
-                0% {
-                    background-color: rgba(34, 197, 94, 0.08) !important;
-                    box-shadow: inset 0 0 10px rgba(34, 197, 94, 0.1) !important;
-                    backdrop-filter: blur(12px) saturate(120%) !important;
-                    -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
-                }
-                100% {
-                    background-color: rgba(34, 197, 94, 0.18) !important;
-                    box-shadow: inset 0 0 20px rgba(34, 197, 94, 0.2) !important;
-                    backdrop-filter: blur(16px) saturate(140%) !important;
-                    -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
-                }
+            /* 做题底栏动态美化 (采用纯 CSS 智能感应：做对淡绿 / 做错淡红，安全优雅零侧效应) */
+            .jumbotron:has(#FootcontentYes),
+            div[class*="jumbotron"]:has(#FootcontentYes) {
+                background: rgba(34, 197, 94, 0.12) !important;
+                border-top: 1px solid rgba(34, 197, 94, 0.35) !important;
+                box-shadow: inset 0 1px 15px rgba(34, 197, 94, 0.12) !important;
+                transition: all 0.4s ease !important;
             }
 
-            @keyframes znx-ripple-wrong {
-                0% {
-                    background-color: rgba(239, 68, 68, 0.08) !important;
-                    box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.1) !important;
-                    backdrop-filter: blur(12px) saturate(120%) !important;
-                    -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
-                }
-                100% {
-                    background-color: rgba(239, 68, 68, 0.18) !important;
-                    box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.2) !important;
-                    backdrop-filter: blur(16px) saturate(140%) !important;
-                    -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
-                }
-            }
-
-            html body #root div[data-znx-feedback="correct"],
-            div[data-znx-feedback="correct"] {
-                animation: znx-ripple-correct 1.6s ease-in-out infinite alternate !important;
-                border-top: 1px solid rgba(34, 197, 94, 0.3) !important;
-                transition: all 0.5s ease !important;
-            }
-
-            html body #root div[data-znx-feedback="wrong"],
-            div[data-znx-feedback="wrong"] {
-                animation: znx-ripple-wrong 1.6s ease-in-out infinite alternate !important;
-                border-top: 1px solid rgba(239, 68, 68, 0.3) !important;
-                transition: all 0.5s ease !important;
+            .jumbotron:has(#FootcontentNo),
+            div[class*="jumbotron"]:has(#FootcontentNo) {
+                background: rgba(239, 68, 68, 0.12) !important;
+                border-top: 1px solid rgba(239, 68, 68, 0.35) !important;
+                box-shadow: inset 0 1px 15px rgba(239, 68, 68, 0.12) !important;
+                transition: all 0.4s ease !important;
             }
         `;
     }
@@ -503,7 +474,7 @@
 
         let html = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px;">
-                <h3 style="margin:0; font-size: 16px; color: #fff;">🎛️ 毛玻璃调参面板 v4.1</h3>
+                <h3 style="margin:0; font-size: 16px; color: #fff;">⚙️ 界面参数调节面板</h3>
                 <button id="znx-tuner-close" style="background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;">🔽 收起</button>
             </div>
         `;
@@ -794,84 +765,6 @@
     }
 
     // ==========================================
-    // 10. 做题提交底栏反馈感应器 (做对绿色水波纹毛玻璃 / 做错红色水波纹毛玻璃)
-    // ==========================================
-    function setupSubmitBarFeedbackObserver() {
-        // 新增了 "答案正确", "答案错误" 匹配用户提供的实际 DOM 文本
-        const correctPatterns = ['回答正确', '做对了', '掌握得不错', '厉害了', '太棒了', '不错！', '恭喜', '完全会做', '太简单', '答案正确'];
-        const wrongPatterns = ['回答错误', '做错了', '答案不正确', '未掌握', '重新理解', '查看解析', '我做错了', '答案错误'];
-
-        let lastState = 'none'; // 防止重复设置
-
-        const updateSubmitBarStatus = () => {
-            // 找到包含 "提交答案", "继续", "查看题解", "下一题" 的按钮
-            const buttons = Array.from(document.querySelectorAll('button, .MuiButtonBase-root, .btn'));
-            const actionBtn = buttons.find(b => {
-                const text = (b.innerText || b.textContent || '').trim();
-                return text.includes('提交答案') || text.includes('下一题') || text.includes('继续') || text.includes('查看题解');
-            });
-
-            if (!actionBtn) {
-                lastState = 'none';
-                return;
-            }
-
-            // 核心修复：根据用户提供的 DOM，底栏是包含 container 和 row 的 jumbotron
-            let container = actionBtn.closest('.jumbotron') || actionBtn.closest('div[class*="jumbotron"]');
-            
-            // 如果没找到 jumbotron，向上寻找宽度超过屏幕 80% 但高度小于 250px 的块级元素（避免选中整个页面的背景）
-            if (!container) {
-                let curr = actionBtn.parentElement;
-                while (curr && curr !== document.body && curr.id !== 'root') {
-                    if (curr.offsetWidth > window.innerWidth * 0.8 && curr.offsetHeight > 40 && curr.offsetHeight < 250) {
-                        container = curr;
-                        break;
-                    }
-                    curr = curr.parentElement;
-                }
-            }
-
-            if (!container) return;
-
-            // 获取做题区域的文本内容来判断答题结果
-            const pageText = document.body.innerText || '';
-            const isCorrect = correctPatterns.some(kw => pageText.includes(kw));
-            const isWrong = !isCorrect && wrongPatterns.some(kw => pageText.includes(kw));
-
-            let newState = 'none';
-            if (isCorrect) newState = 'correct';
-            else if (isWrong) newState = 'wrong';
-
-            // 状态无变化则不重复操作
-            if (newState === lastState) return;
-            lastState = newState;
-
-            console.log(`[ZhiNengX] 底栏反馈: ${newState}, 找到容器:`, container);
-
-            if (newState === 'correct') {
-                container.setAttribute('data-znx-feedback', 'correct');
-                container.style.setProperty('animation', 'znx-ripple-correct 1.6s ease-in-out infinite alternate', 'important');
-                container.style.setProperty('border-top', '1px solid rgba(34, 197, 94, 0.4)', 'important');
-                container.style.setProperty('background-color', 'rgba(34, 197, 94, 0.1)', 'important');
-            } else if (newState === 'wrong') {
-                container.setAttribute('data-znx-feedback', 'wrong');
-                container.style.setProperty('animation', 'znx-ripple-wrong 1.6s ease-in-out infinite alternate', 'important');
-                container.style.setProperty('border-top', '1px solid rgba(239, 68, 68, 0.4)', 'important');
-                container.style.setProperty('background-color', 'rgba(239, 68, 68, 0.1)', 'important');
-            } else {
-                container.removeAttribute('data-znx-feedback');
-                container.style.removeProperty('animation');
-                container.style.removeProperty('border-top');
-                container.style.removeProperty('background-color');
-            }
-        };
-
-        const observer = new MutationObserver(updateSubmitBarStatus);
-        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-        updateSubmitBarStatus();
-    }
-
-    // ==========================================
     // 启动流程
     // ==========================================
     function init() {
@@ -882,7 +775,6 @@
         injectLive2D();
         autoClickNextButton();
         setupQuestionModeObserver();
-        setupSubmitBarFeedbackObserver();
     }
 
     if (document.readyState === 'loading') {
