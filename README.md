@@ -1,7 +1,7 @@
 # <img src="icon.png" width="36" height="36" align="center"> 知能行 UI 视觉美化与考研助手 (ZhiNengX Enhancer)
 
 ![Version](https://img.shields.io/badge/Version-v7.2-brightgreen?style=for-the-badge)
-![Author](https://img.shields.io/badge/Author-winslight-blue?style=for-the-badge)
+![Author](https://img.shields.io/badge/Author-winslght-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=for-the-badge)
 
@@ -47,10 +47,10 @@
 
 本项目遵循 **[MIT License](LICENSE)** 开源协议。
 
-* **作者 (Author)**: **[winslight](https://github.com/winslight)**
-* **许可说明**: 任何个人或组织在 Fork、修改或衍生本项目时，须在代码文件及文档中保留原作者 `winslight` 的署名与版权声明。
+* **作者 (Author)**: **[winslght](https://github.com/winslght)**
+* **许可说明**: 任何个人或组织在 Fork、修改或衍生本项目时，须在代码文件及文档中保留原作者 `winslght` 的署名与版权声明。
 
 ```text
-Copyright (c) 2026 winslight
+Copyright (c) 2026 winslght
 Licensed under the MIT License.
 ```
