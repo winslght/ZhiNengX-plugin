@@ -252,20 +252,20 @@
                 -webkit-backdrop-filter: none !important;
             }
 
-            /* 做题底栏动态美化 (采用纯 CSS 智能感应：做对淡绿 / 做错淡红，安全优雅零侧效应) */
-            .jumbotron:has(#FootcontentYes),
-            div[class*="jumbotron"]:has(#FootcontentYes) {
-                background: rgba(34, 197, 94, 0.12) !important;
-                border-top: 1px solid rgba(34, 197, 94, 0.35) !important;
-                box-shadow: inset 0 1px 15px rgba(34, 197, 94, 0.12) !important;
+            /* 做题底栏动态美化 (做对淡绿 / 做错淡红，调高不透明度至 0.22 更加清晰典雅) */
+            .jumbotron[data-znx-result="correct"],
+            div[class*="jumbotron"][data-znx-result="correct"] {
+                background-color: rgba(34, 197, 94, 0.22) !important;
+                border-top: 1px solid rgba(34, 197, 94, 0.5) !important;
+                box-shadow: inset 0 1px 20px rgba(34, 197, 94, 0.18) !important;
                 transition: all 0.4s ease !important;
             }
 
-            .jumbotron:has(#FootcontentNo),
-            div[class*="jumbotron"]:has(#FootcontentNo) {
-                background: rgba(239, 68, 68, 0.12) !important;
-                border-top: 1px solid rgba(239, 68, 68, 0.35) !important;
-                box-shadow: inset 0 1px 15px rgba(239, 68, 68, 0.12) !important;
+            .jumbotron[data-znx-result="wrong"],
+            div[class*="jumbotron"][data-znx-result="wrong"] {
+                background-color: rgba(239, 68, 68, 0.22) !important;
+                border-top: 1px solid rgba(239, 68, 68, 0.5) !important;
+                box-shadow: inset 0 1px 20px rgba(239, 68, 68, 0.18) !important;
                 transition: all 0.4s ease !important;
             }
         `;
@@ -765,6 +765,29 @@
     }
 
     // ==========================================
+    // 10. 底栏做对/做错状态感应器 (精准匹配“答案正确”/“继续”与“答案错误”/“再试一次”)
+    // ==========================================
+    function setupJumbotronFeedbackObserver() {
+        const updateStatus = () => {
+            const jumbotron = document.querySelector('.jumbotron, div[class*="jumbotron"]');
+            if (!jumbotron) return;
+
+            const text = jumbotron.innerText || jumbotron.textContent || '';
+            if (text.includes('答案正确') || text.includes('继续')) {
+                jumbotron.setAttribute('data-znx-result', 'correct');
+            } else if (text.includes('答案错误') || text.includes('再试一次')) {
+                jumbotron.setAttribute('data-znx-result', 'wrong');
+            } else {
+                jumbotron.removeAttribute('data-znx-result');
+            }
+        };
+
+        const observer = new MutationObserver(updateStatus);
+        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+        updateStatus();
+    }
+
+    // ==========================================
     // 启动流程
     // ==========================================
     function init() {
@@ -775,6 +798,7 @@
         injectLive2D();
         autoClickNextButton();
         setupQuestionModeObserver();
+        setupJumbotronFeedbackObserver();
     }
 
     if (document.readyState === 'loading') {
