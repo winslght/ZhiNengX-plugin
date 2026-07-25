@@ -1,6 +1,6 @@
 # <img src="icon.png" width="36" height="36" align="center"> 知能行考研开源插件合集 (ZhiNengX Plugins)
 
-![Version](https://img.shields.io/badge/Version-v11.0%20%7C%20v7.2-brightgreen?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v11.0%20%7C%20v7.3-brightgreen?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-winslght-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=for-the-badge)
@@ -23,8 +23,8 @@
 
 ---
 
-### 2. 🎨 知能行 UI 视觉美化与考研助手 (`v7.2`)
-提供全局毛玻璃（Glassmorphism）、Dark Reader 深色模式自适应、Live2D 看板娘及 27 考研倒计时悬浮窗。
+### 2. 🎨 知能行 UI 视觉美化与考研助手 (`v7.3`)
+提供全局毛玻璃（Glassmorphism）、**做对/做错动态绿色与红色水波纹毛玻璃底栏**、Dark Reader 深色模式自适应、Live2D 看板娘及 27 考研倒计时悬浮窗。
 
 👉 **[🚀 点击一键安装【UI 视觉美化插件】](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-beautifier/zhinengx_beautifier.user.js)**
 
@@ -38,6 +38,7 @@
 - 📈 **ECharts 全景数据大屏**：嵌入原生选项卡，可视化生成三维能力雷达图与近期做题趋势图。
 
 ### 🎨 UI 视觉美化与考研助手 (Beautifier)
+- 🌊 **做对/做错动态水波纹毛玻璃**：提交答案时，底栏感应答题反馈——做对了切入**翡翠绿水波纹毛玻璃**，做错了切入**红宝石水波纹毛玻璃**。
 - ⚙️ **界面参数调节面板**：支持 6 组毛玻璃透明度与模糊度调节，实时本地保存配置。
 - 🌙 **Dark Reader 深色模式自适应**：智能感应深色模式切换，配备 0.60 背景遮光防晃眼机制。
 - 📅 **考研倒计时与时间管理**：2027 考研倒计时、今日/本周/本月剩余比例进度条及公历日期显示。
@@ -54,7 +55,7 @@ ZhiNengX-plugin/
 ├── zhinengx-exporter/                  # 📊 数据分析与导出插件
 │   └── zhinengx_exporter.user.js       # (通用版: 支持数一/数二/数三)
 └── zhinengx-beautifier/                # 🎨 UI 视觉美化与考研助手
-    └── zhinengx_beautifier.user.js     # (v7.2)
+    └── zhinengx_beautifier.user.js     # (v7.3 动态水波纹毛玻璃版)
 ```
 
 ---
