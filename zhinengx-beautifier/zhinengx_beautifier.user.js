@@ -252,12 +252,12 @@
                 -webkit-backdrop-filter: none !important;
             }
 
-            /* 做题底栏动态美化 (采用原生 CSS :has(#FootcontentYes) 与 :has(#FootcontentNo)，穿透透明化所有内部子 div) */
-            .jumbotron:has(#FootcontentYes),
-            div[class*="_3o6JR"]:has(#FootcontentYes),
-            div[class*="jumbotron"]:has(#FootcontentYes),
-            .jumbotron[data-znx-result="correct"],
-            div[class*="_3o6JR"][data-znx-result="correct"] {
+            /* 做题底栏动态美化 (仅在 html.znx-doing-questions 模式下生效，绝不误伤主页或突破口弹窗) */
+            html.znx-doing-questions .jumbotron:has(#FootcontentYes),
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes),
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentYes),
+            html.znx-doing-questions .jumbotron[data-znx-result="correct"],
+            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="correct"] {
                 background: rgba(34, 197, 94, 0.42) !important;
                 backdrop-filter: blur(16px) !important;
                 -webkit-backdrop-filter: blur(16px) !important;
@@ -265,23 +265,23 @@
                 box-shadow: 0 -4px 25px rgba(34, 197, 94, 0.35), inset 0 0 15px rgba(34, 197, 94, 0.2) !important;
                 transition: all 0.3s ease !important;
             }
-            .jumbotron:has(#FootcontentYes) div,
-            div[class*="_3o6JR"]:has(#FootcontentYes) div,
-            div[class*="jumbotron"]:has(#FootcontentYes) div,
-            .jumbotron[data-znx-result="correct"] div,
-            div[class*="_3o6JR"][data-znx-result="correct"] div {
+            html.znx-doing-questions .jumbotron:has(#FootcontentYes) div,
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes) div,
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentYes) div,
+            html.znx-doing-questions .jumbotron[data-znx-result="correct"] div,
+            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="correct"] div {
                 background: transparent !important;
                 box-shadow: none !important;
             }
 
-            .jumbotron:has(#FootcontentNo),
-            .jumbotron:has(#FootcontentWrong),
-            div[class*="_3o6JR"]:has(#FootcontentNo),
-            div[class*="_3o6JR"]:has(#FootcontentWrong),
-            div[class*="jumbotron"]:has(#FootcontentNo),
-            div[class*="jumbotron"]:has(#FootcontentWrong),
-            .jumbotron[data-znx-result="wrong"],
-            div[class*="_3o6JR"][data-znx-result="wrong"] {
+            html.znx-doing-questions .jumbotron:has(#FootcontentNo),
+            html.znx-doing-questions .jumbotron:has(#FootcontentWrong),
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentNo),
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentWrong),
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentNo),
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentWrong),
+            html.znx-doing-questions .jumbotron[data-znx-result="wrong"],
+            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="wrong"] {
                 background: rgba(239, 68, 68, 0.42) !important;
                 backdrop-filter: blur(16px) !important;
                 -webkit-backdrop-filter: blur(16px) !important;
@@ -289,14 +289,14 @@
                 box-shadow: 0 -4px 25px rgba(239, 68, 68, 0.35), inset 0 0 15px rgba(239, 68, 68, 0.2) !important;
                 transition: all 0.3s ease !important;
             }
-            .jumbotron:has(#FootcontentNo) div,
-            .jumbotron:has(#FootcontentWrong) div,
-            div[class*="_3o6JR"]:has(#FootcontentNo) div,
-            div[class*="_3o6JR"]:has(#FootcontentWrong) div,
-            div[class*="jumbotron"]:has(#FootcontentNo) div,
-            div[class*="jumbotron"]:has(#FootcontentWrong) div,
-            .jumbotron[data-znx-result="wrong"] div,
-            div[class*="_3o6JR"][data-znx-result="wrong"] div {
+            html.znx-doing-questions .jumbotron:has(#FootcontentNo) div,
+            html.znx-doing-questions .jumbotron:has(#FootcontentWrong) div,
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentNo) div,
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentWrong) div,
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentNo) div,
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentWrong) div,
+            html.znx-doing-questions .jumbotron[data-znx-result="wrong"] div,
+            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="wrong"] div {
                 background: transparent !important;
                 box-shadow: none !important;
             }
@@ -706,9 +706,8 @@
     }
 
     const successKeywords = [
-        '我的答案正确', '提交答案', '完全会做', '太简单', '掌握了', '消灭',
-        '做对了', '答对', '正确', '已掌握', '满分',
-        '下一题', '继续', '完成', '显示答案'
+        '我的答案正确', '完全会做', '太简单', '掌握了', '消灭',
+        '做对了', '答对', '已掌握', '满分', '下一个突破口'
     ];
 
     document.addEventListener('click', (e) => {
@@ -718,9 +717,20 @@
         const btn = e.target.closest('button') || e.target.closest('.MuiButtonBase-root') || e.target.closest('.btn');
         if (!btn) return;
         try { playPopSound(); } catch(err) {}
+
         const text = (btn.innerText || btn.textContent || '').trim();
-        const isSuccess = successKeywords.some(kw => text.includes(kw));
-        if (isSuccess && window.confetti) {
+        const pageText = document.body.innerText || '';
+
+        // 【坚决禁止做错撒花】如果页面处于“答案错误”或按钮是“再试一次”，绝对不撒花！
+        if (pageText.includes('答案错误') || pageText.includes('再试一次') || text.includes('再试一次')) {
+            return;
+        }
+
+        // 仅在做对时（包含明确做对关键词，或在“答案正确”状态下点击“继续”/“下一题”）才触发撒花
+        const isSuccessBtn = successKeywords.some(kw => text.includes(kw)) ||
+            ((text === '继续' || text.includes('下一题')) && (pageText.includes('答案正确') || !!document.getElementById('FootcontentYes')));
+
+        if (isSuccessBtn && window.confetti) {
             try { playSuccessSound(); } catch(err) {}
             const rect = btn.getBoundingClientRect();
             window.confetti({
@@ -804,6 +814,24 @@
     // ==========================================
     function setupJumbotronFeedbackObserver() {
         const updateStatus = () => {
+            // 【误伤防护】只有处于实际做题状态 (html.znx-doing-questions)，才允许底栏变色！主页/突破口绝对清空变色！
+            const isDoing = document.documentElement.classList.contains('znx-doing-questions');
+            const jumbotron = document.querySelector('.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"]');
+
+            if (!isDoing || !jumbotron) {
+                if (jumbotron) {
+                    jumbotron.removeAttribute('data-znx-result');
+                    jumbotron.style.removeProperty('background');
+                    jumbotron.style.removeProperty('backdrop-filter');
+                    jumbotron.style.removeProperty('-webkit-backdrop-filter');
+                    jumbotron.style.removeProperty('border-top');
+                    jumbotron.style.removeProperty('box-shadow');
+                    const children = jumbotron.querySelectorAll('div');
+                    children.forEach(c => c.style.removeProperty('background'));
+                }
+                return;
+            }
+
             // 精确找到做题核心动作按钮 (继续 / 提交答案 / 再试一次 / 查看题解)
             const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
             const actionBtn = buttons.find(b => {
@@ -812,52 +840,46 @@
             });
 
             // 包含动作按钮的底栏容器
-            let jumbotron = actionBtn ? (
+            let targetJumbotron = actionBtn ? (
                 actionBtn.closest('.jumbotron') || 
                 actionBtn.closest('div[class*="jumbotron"]') || 
                 actionBtn.closest('div[class*="_3o6JR"]') || 
                 actionBtn.closest('div[class*="_1ktiDhx"]') ||
                 actionBtn.parentElement?.parentElement
-            ) : null;
+            ) : jumbotron;
 
-            // 备用兜底逻辑：查找所有带相关类名的最底下一个容器
-            if (!jumbotron) {
-                const allBars = Array.from(document.querySelectorAll('.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"]'));
-                jumbotron = allBars[allBars.length - 1];
-            }
+            if (!targetJumbotron) return;
 
-            if (!jumbotron) return;
-
-            // 识别做对/做错信号 (全局文本语义判断)
+            // 识别做对/做错信号 (避开主页“继续训练”)
             const fullPageText = document.body.innerText || '';
-            const isCorrect = fullPageText.includes('答案正确') || fullPageText.includes('继续');
+            const isCorrect = fullPageText.includes('答案正确') || (fullPageText.includes('继续') && !fullPageText.includes('继续训练'));
             const isWrong = !isCorrect && (fullPageText.includes('答案错误') || fullPageText.includes('再试一次'));
 
-            const children = jumbotron.querySelectorAll('div');
+            const children = targetJumbotron.querySelectorAll('div');
 
             if (isCorrect) {
-                jumbotron.setAttribute('data-znx-result', 'correct');
-                jumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.45)', 'important');
-                jumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
-                jumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
-                jumbotron.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.7)', 'important');
-                jumbotron.style.setProperty('box-shadow', '0 -4px 25px rgba(34, 197, 94, 0.3)', 'important');
+                targetJumbotron.setAttribute('data-znx-result', 'correct');
+                targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.45)', 'important');
+                targetJumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
+                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
+                targetJumbotron.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.7)', 'important');
+                targetJumbotron.style.setProperty('box-shadow', '0 -4px 25px rgba(34, 197, 94, 0.35)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else if (isWrong) {
-                jumbotron.setAttribute('data-znx-result', 'wrong');
-                jumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.45)', 'important');
-                jumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
-                jumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
-                jumbotron.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.7)', 'important');
-                jumbotron.style.setProperty('box-shadow', '0 -4px 25px rgba(239, 68, 68, 0.3)', 'important');
+                targetJumbotron.setAttribute('data-znx-result', 'wrong');
+                targetJumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.45)', 'important');
+                targetJumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
+                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
+                targetJumbotron.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.7)', 'important');
+                targetJumbotron.style.setProperty('box-shadow', '0 -4px 25px rgba(239, 68, 68, 0.35)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else {
-                jumbotron.removeAttribute('data-znx-result');
-                jumbotron.style.removeProperty('background');
-                jumbotron.style.removeProperty('backdrop-filter');
-                jumbotron.style.removeProperty('-webkit-backdrop-filter');
-                jumbotron.style.removeProperty('border-top');
-                jumbotron.style.removeProperty('box-shadow');
+                targetJumbotron.removeAttribute('data-znx-result');
+                targetJumbotron.style.removeProperty('background');
+                targetJumbotron.style.removeProperty('backdrop-filter');
+                targetJumbotron.style.removeProperty('-webkit-backdrop-filter');
+                targetJumbotron.style.removeProperty('border-top');
+                targetJumbotron.style.removeProperty('box-shadow');
                 children.forEach(c => c.style.removeProperty('background'));
             }
         };
