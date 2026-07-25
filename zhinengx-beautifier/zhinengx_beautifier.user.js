@@ -810,50 +810,52 @@
     // 10. 做题提交底栏反馈感应器 (做对绿色水波纹毛玻璃 / 做错红色水波纹毛玻璃)
     // ==========================================
     function setupSubmitBarFeedbackObserver() {
-        const correctKeywords = ['回答正确', '做对了', '太棒了', '全对', '已掌握', '掌握得不错', '厉害了', '不错！', '恭喜'];
-        const wrongKeywords = ['回答错误', '做错了', '粗心', '错误', '未掌握', '解析', '做不对', '重新理解'];
+        const correctPatterns = ['回答正确', '做对了', '掌握得不错', '厉害了', '太棒了', '不错！', '恭喜', '完全会做', '太简单'];
+        const wrongPatterns = ['回答错误', '做错了', '答案不正确', '未掌握', '重新理解', '查看解析', '我做错了'];
+
+        let lastState = 'none'; // 防止重复设置
 
         const updateSubmitBarStatus = () => {
-            // 找到包含 "提交答案" 或 "提示" 的按钮
-            const buttons = Array.from(document.querySelectorAll('button, .MuiButtonBase-root, .btn'));
-            const submitBtn = buttons.find(b => {
-                const text = (b.innerText || b.textContent || '').trim();
-                return text.includes('提交答案') || text.includes('提示') || text.includes('下一题') || text.includes('继续') || text.includes('查看解析') || text.includes('显示答案');
-            });
+            // 直接定位做题界面已知的底栏 / 工具栏 DOM 元素 (Webpack 哈希类名)
+            const bars = document.querySelectorAll('div[class*="_3WnwfR"], div[class*="_3r5idY"]');
+            if (bars.length === 0) {
+                lastState = 'none';
+                return;
+            }
 
-            if (!submitBtn) return;
+            // 获取做题区域的文本内容来判断答题结果
+            const pageText = document.body.innerText || '';
+            const isCorrect = correctPatterns.some(kw => pageText.includes(kw));
+            const isWrong = !isCorrect && wrongPatterns.some(kw => pageText.includes(kw));
 
-            // 寻找包含绿按钮和灰提示按钮的底栏容器
-            let container = submitBtn.parentElement;
-            while (container && container !== document.body && container.id !== 'root') {
-                const btnCount = container.querySelectorAll('button, .MuiButtonBase-root, .btn').length;
-                if (btnCount >= 1 && container.offsetWidth > 200) {
-                    break;
+            let newState = 'none';
+            if (isCorrect) newState = 'correct';
+            else if (isWrong) newState = 'wrong';
+
+            // 状态无变化则不重复操作
+            if (newState === lastState) return;
+            lastState = newState;
+
+            console.log(`[ZhiNengX] 底栏反馈: ${newState}, 找到 ${bars.length} 个工具栏元素`);
+
+            bars.forEach(bar => {
+                if (newState === 'correct') {
+                    bar.setAttribute('data-znx-feedback', 'correct');
+                    bar.style.setProperty('animation', 'znx-ripple-correct 1.4s ease-in-out infinite alternate', 'important');
+                    bar.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.9)', 'important');
+                    bar.style.setProperty('background', 'rgba(34, 197, 94, 0.35)', 'important');
+                } else if (newState === 'wrong') {
+                    bar.setAttribute('data-znx-feedback', 'wrong');
+                    bar.style.setProperty('animation', 'znx-ripple-wrong 1.4s ease-in-out infinite alternate', 'important');
+                    bar.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.9)', 'important');
+                    bar.style.setProperty('background', 'rgba(239, 68, 68, 0.35)', 'important');
+                } else {
+                    bar.removeAttribute('data-znx-feedback');
+                    bar.style.removeProperty('animation');
+                    bar.style.removeProperty('border-top');
+                    bar.style.removeProperty('background');
                 }
-                container = container.parentElement;
-            }
-
-            if (!container) return;
-
-            // 获取整页及答题区文字
-            const fullText = document.body.innerText || '';
-            const isCorrect = correctKeywords.some(kw => fullText.includes(kw));
-            const isWrong = !isCorrect && wrongKeywords.some(kw => fullText.includes(kw));
-
-            // 直接为 DOM 节点应用最高优先级 (important) 样式变幻
-            if (isCorrect) {
-                container.setAttribute('data-znx-feedback', 'correct');
-                container.style.setProperty('animation', 'znx-ripple-correct 1.4s ease-in-out infinite alternate', 'important');
-                container.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.9)', 'important');
-            } else if (isWrong) {
-                container.setAttribute('data-znx-feedback', 'wrong');
-                container.style.setProperty('animation', 'znx-ripple-wrong 1.4s ease-in-out infinite alternate', 'important');
-                container.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.9)', 'important');
-            } else {
-                container.removeAttribute('data-znx-feedback');
-                container.style.removeProperty('animation');
-                container.style.removeProperty('border-top');
-            }
+            });
         };
 
         const observer = new MutationObserver(updateSubmitBarStatus);
