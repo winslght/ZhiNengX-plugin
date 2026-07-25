@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      7.3.2
+// @version      7.3.3
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslght
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -252,17 +252,17 @@
                 -webkit-backdrop-filter: none !important;
             }
 
-            /* 做题底栏动态美化 (做对淡雅柔和绿 rgba 0.20 / 做错透亮红) */
+            /* 做题底栏动态美化 (保持色调，提高不透明度至 0.65 + 24px 高效模糊，保障文字极致可读) */
             html.znx-doing-questions .jumbotron:has(#FootcontentYes),
             html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes),
             html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentYes),
             html.znx-doing-questions .jumbotron[data-znx-result="correct"],
             html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="correct"] {
-                background: rgba(34, 197, 94, 0.20) !important;
-                backdrop-filter: blur(16px) !important;
-                -webkit-backdrop-filter: blur(16px) !important;
-                border-top: 1px solid rgba(34, 197, 94, 0.4) !important;
-                box-shadow: 0 -4px 15px rgba(34, 197, 94, 0.15), inset 0 0 10px rgba(34, 197, 94, 0.1) !important;
+                background: rgba(34, 197, 94, 0.65) !important;
+                backdrop-filter: blur(24px) saturate(140%) !important;
+                -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+                border-top: 1.5px solid rgba(34, 197, 94, 0.8) !important;
+                box-shadow: 0 -4px 20px rgba(34, 197, 94, 0.25), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
                 transition: all 0.3s ease !important;
             }
             html.znx-doing-questions .jumbotron:has(#FootcontentYes) div,
@@ -282,11 +282,11 @@
             html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentWrong),
             html.znx-doing-questions .jumbotron[data-znx-result="wrong"],
             html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="wrong"] {
-                background: rgba(239, 68, 68, 0.42) !important;
-                backdrop-filter: blur(16px) !important;
-                -webkit-backdrop-filter: blur(16px) !important;
-                border-top: 2px solid rgba(239, 68, 68, 0.7) !important;
-                box-shadow: 0 -4px 25px rgba(239, 68, 68, 0.35), inset 0 0 15px rgba(239, 68, 68, 0.2) !important;
+                background: rgba(239, 68, 68, 0.65) !important;
+                backdrop-filter: blur(24px) saturate(140%) !important;
+                -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+                border-top: 1.5px solid rgba(239, 68, 68, 0.8) !important;
+                box-shadow: 0 -4px 20px rgba(239, 68, 68, 0.25), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
                 transition: all 0.3s ease !important;
             }
             html.znx-doing-questions .jumbotron:has(#FootcontentNo) div,
@@ -859,19 +859,19 @@
 
             if (isCorrect) {
                 targetJumbotron.setAttribute('data-znx-result', 'correct');
-                targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.20)', 'important');
-                targetJumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
-                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
-                targetJumbotron.style.setProperty('border-top', '1px solid rgba(34, 197, 94, 0.4)', 'important');
-                targetJumbotron.style.setProperty('box-shadow', '0 -4px 15px rgba(34, 197, 94, 0.15)', 'important');
+                targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.65)', 'important');
+                targetJumbotron.style.setProperty('backdrop-filter', 'blur(24px)', 'important');
+                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(24px)', 'important');
+                targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(34, 197, 94, 0.8)', 'important');
+                targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(34, 197, 94, 0.25)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else if (isWrong) {
                 targetJumbotron.setAttribute('data-znx-result', 'wrong');
-                targetJumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.45)', 'important');
-                targetJumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
-                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
-                targetJumbotron.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.7)', 'important');
-                targetJumbotron.style.setProperty('box-shadow', '0 -4px 25px rgba(239, 68, 68, 0.35)', 'important');
+                targetJumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.65)', 'important');
+                targetJumbotron.style.setProperty('backdrop-filter', 'blur(24px)', 'important');
+                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(24px)', 'important');
+                targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(239, 68, 68, 0.8)', 'important');
+                targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(239, 68, 68, 0.25)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else {
                 targetJumbotron.removeAttribute('data-znx-result');
