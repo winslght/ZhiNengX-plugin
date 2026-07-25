@@ -252,27 +252,53 @@
                 -webkit-backdrop-filter: none !important;
             }
 
-            /* 做题底栏动态美化 (做对淡绿 / 做错淡红，玻璃半透明遮罩) */
+            /* 做题底栏动态美化 (采用原生 CSS :has(#FootcontentYes) 与 :has(#FootcontentNo)，穿透透明化所有内部子 div) */
+            .jumbotron:has(#FootcontentYes),
+            div[class*="_3o6JR"]:has(#FootcontentYes),
+            div[class*="jumbotron"]:has(#FootcontentYes),
             .jumbotron[data-znx-result="correct"],
-            div[class*="jumbotron"][data-znx-result="correct"],
             div[class*="_3o6JR"][data-znx-result="correct"] {
-                background: rgba(34, 197, 94, 0.32) !important;
+                background: rgba(34, 197, 94, 0.42) !important;
                 backdrop-filter: blur(16px) !important;
                 -webkit-backdrop-filter: blur(16px) !important;
-                border-top: 2px solid rgba(34, 197, 94, 0.6) !important;
-                box-shadow: inset 0 1px 20px rgba(34, 197, 94, 0.25) !important;
+                border-top: 2px solid rgba(34, 197, 94, 0.7) !important;
+                box-shadow: 0 -4px 25px rgba(34, 197, 94, 0.35), inset 0 0 15px rgba(34, 197, 94, 0.2) !important;
                 transition: all 0.3s ease !important;
             }
+            .jumbotron:has(#FootcontentYes) div,
+            div[class*="_3o6JR"]:has(#FootcontentYes) div,
+            div[class*="jumbotron"]:has(#FootcontentYes) div,
+            .jumbotron[data-znx-result="correct"] div,
+            div[class*="_3o6JR"][data-znx-result="correct"] div {
+                background: transparent !important;
+                box-shadow: none !important;
+            }
 
+            .jumbotron:has(#FootcontentNo),
+            .jumbotron:has(#FootcontentWrong),
+            div[class*="_3o6JR"]:has(#FootcontentNo),
+            div[class*="_3o6JR"]:has(#FootcontentWrong),
+            div[class*="jumbotron"]:has(#FootcontentNo),
+            div[class*="jumbotron"]:has(#FootcontentWrong),
             .jumbotron[data-znx-result="wrong"],
-            div[class*="jumbotron"][data-znx-result="wrong"],
             div[class*="_3o6JR"][data-znx-result="wrong"] {
-                background: rgba(239, 68, 68, 0.32) !important;
+                background: rgba(239, 68, 68, 0.42) !important;
                 backdrop-filter: blur(16px) !important;
                 -webkit-backdrop-filter: blur(16px) !important;
-                border-top: 2px solid rgba(239, 68, 68, 0.6) !important;
-                box-shadow: inset 0 1px 20px rgba(239, 68, 68, 0.25) !important;
+                border-top: 2px solid rgba(239, 68, 68, 0.7) !important;
+                box-shadow: 0 -4px 25px rgba(239, 68, 68, 0.35), inset 0 0 15px rgba(239, 68, 68, 0.2) !important;
                 transition: all 0.3s ease !important;
+            }
+            .jumbotron:has(#FootcontentNo) div,
+            .jumbotron:has(#FootcontentWrong) div,
+            div[class*="_3o6JR"]:has(#FootcontentNo) div,
+            div[class*="_3o6JR"]:has(#FootcontentWrong) div,
+            div[class*="jumbotron"]:has(#FootcontentNo) div,
+            div[class*="jumbotron"]:has(#FootcontentWrong) div,
+            .jumbotron[data-znx-result="wrong"] div,
+            div[class*="_3o6JR"][data-znx-result="wrong"] div {
+                background: transparent !important;
+                box-shadow: none !important;
             }
         `;
     }
