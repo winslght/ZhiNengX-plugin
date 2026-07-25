@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.0.1
+// @version      8.0.2
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslght
+// @license      MIT
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
 // @match        *://*.bestzixue.com/*
 // @match        *://*.zhinengxing.com/*

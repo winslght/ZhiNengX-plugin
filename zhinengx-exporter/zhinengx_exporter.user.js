@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         知能行考研数学 - 通用诊断报告与数据大屏导出器
 // @namespace    http://tampermonkey.net/
-// @version      11.0
+// @version      11.0.1
 // @description  自动识别数学一、数学二、数学三，一键导出纯净 Markdown 诊断报告与 ECharts 可视化数据大屏
 // @author       winslght
+// @license      MIT
 // @match        https://*.bestzixue.com/*
 // @match        https://*.zhinengxing.com/*
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
