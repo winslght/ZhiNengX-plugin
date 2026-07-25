@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      7.3.3
+// @version      7.4.0
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslght
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -31,6 +31,8 @@
         E_blur:      { val: 5,    min: 0, max: 50,  step: 1,    label: 'E.做题面板(Bootstrap) 模糊' },
         F_opacity:   { val: 0.85, min: 0, max: 1,   step: 0.05, label: 'F.做题页顶栏 不透明度' },
         F_blur:      { val: 15,   min: 0, max: 50,  step: 1,    label: 'F.做题页顶栏 模糊' },
+        G_opacity:   { val: 0.35, min: 0, max: 1,   step: 0.05, label: 'G.反馈底栏(做对/做错) 不透明度' },
+        G_blur:      { val: 16,   min: 0, max: 50,  step: 1,    label: 'G.反馈底栏(做对/做错) 模糊度' },
         Dark_glass:  { val: 2,    min: 0, max: 2,   step: 1,    label: '🌙 深色模式 (2自动 1强开 0强关)' },
         Dark_dim:    { val: 0.60, min: 0, max: 0.98,step: 0.05, label: '🌙 壁纸暗化遮光度' },
     };
@@ -48,15 +50,12 @@
     let styleEl;
 
     // ==========================================
-    // 1. 生成全局 CSS (使用 CSS 变量，确保实时调节时不闪烁)
+    // 1. 生成全局 CSS
     // ==========================================
-    // 判断深色模式状态 (2: 自动感应 Dark Reader 插件，1: 强制深色，0: 强制浅色)
     function isDarkModeActive() {
         const mode = params.Dark_glass.val;
         if (mode === 1) return true;
         if (mode === 0) return false;
-        
-        // 自动联动 Dark Reader 插件检测
         return document.documentElement.hasAttribute('data-darkreader-scheme') || 
                document.documentElement.classList.contains('darkreader') ||
                !!document.querySelector('meta[name="darkreader-theme"]');
@@ -64,25 +63,21 @@
 
     function updateCSSVariables() {
         const root = document.documentElement;
+        const isDark = isDarkModeActive();
         for (const k in params) {
             root.style.setProperty(`--znx-${k}`, params[k].val);
         }
+        root.classList.toggle('znx-dark-mode', isDark);
         
-        const darkActive = isDarkModeActive();
-        root.classList.toggle('znx-dark-mode', darkActive);
-        
-        // 遮光罩与深色模式完美联动：
-        // 开启 Dark Reader/深色模式时，使用滑块设定的 0.60 舒适遮光度；
-        // 关闭 Dark Reader/深色模式时，自动归零遮光罩，还原亮色壁纸原生亮度！
         const overlay = document.getElementById('znx-anime-overlay');
         if (overlay) {
-            overlay.style.opacity = darkActive ? params.Dark_dim.val : '0';
+            overlay.style.opacity = isDark ? params.Dark_dim.val : '0';
         }
     }
 
     function generateBaseCSS() {
+        const isDark = isDarkModeActive();
         return `
-            /* 定义毛玻璃核心变量，使用 var(--znx-...) 绑定实时滑动值 */
             :root {
                 --znx-glass-rgb: 255, 255, 255;
                 --znx-tab-text: #444;
@@ -101,11 +96,13 @@
                 --znx-e-bg: rgba(var(--znx-glass-rgb), var(--znx-E_opacity));
                 --znx-e-blur: blur(calc(var(--znx-E_blur) * 1px));
                 
-                --znx-f-bg: rgba(var(--znx-glass-rgb), var(--znx-F_opacity));
-                --znx-f-blur: blur(calc(var(--znx-F_blur) * 1px)) saturate(160%);
+                --znx-f-bg: ${isDark ? `rgba(20, 20, 35, ${params.F_opacity.val})` : `rgba(255, 255, 255, ${params.F_opacity.val})`};
+                --znx-f-blur: ${params.F_blur.val}px;
+                --znx-g-correct-bg: rgba(34, 197, 94, ${params.G_opacity.val});
+                --znx-g-wrong-bg: rgba(239, 68, 68, ${params.G_opacity.val});
+                --znx-g-blur: ${params.G_blur.val}px;
             }
 
-            /* 自动感应 Dark Reader 插件或开启深色模式，切换为黑曜石深色毛玻璃及高亮字体 */
             html[data-darkreader-scheme],
             html.znx-dark-mode {
                 --znx-glass-rgb: 20, 22, 28;
@@ -252,18 +249,18 @@
                 -webkit-backdrop-filter: none !important;
             }
 
-            /* 做题底栏动态美化 (保持色调，提高不透明度至 0.65 + 24px 高效模糊，保障文字极致可读) */
+            /* 做题底栏动态美化 (调参面板联动：使用 --znx-g-correct-bg 与 --znx-g-blur 变量) */
             html.znx-doing-questions .jumbotron:has(#FootcontentYes),
             html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes),
             html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentYes),
             html.znx-doing-questions .jumbotron[data-znx-result="correct"],
             html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="correct"] {
-                background: rgba(34, 197, 94, 0.65) !important;
-                backdrop-filter: blur(24px) saturate(140%) !important;
-                -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+                background: var(--znx-g-correct-bg) !important;
+                backdrop-filter: blur(var(--znx-g-blur)) saturate(140%) !important;
+                -webkit-backdrop-filter: blur(var(--znx-g-blur)) saturate(140%) !important;
                 border-top: 1.5px solid rgba(34, 197, 94, 0.8) !important;
                 box-shadow: 0 -4px 20px rgba(34, 197, 94, 0.25), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
-                transition: all 0.3s ease !important;
+                transition: background 0.2s ease !important;
             }
             html.znx-doing-questions .jumbotron:has(#FootcontentYes) div,
             html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes) div,
@@ -282,12 +279,12 @@
             html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentWrong),
             html.znx-doing-questions .jumbotron[data-znx-result="wrong"],
             html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="wrong"] {
-                background: rgba(239, 68, 68, 0.65) !important;
-                backdrop-filter: blur(24px) saturate(140%) !important;
-                -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
+                background: var(--znx-g-wrong-bg) !important;
+                backdrop-filter: blur(var(--znx-g-blur)) saturate(140%) !important;
+                -webkit-backdrop-filter: blur(var(--znx-g-blur)) saturate(140%) !important;
                 border-top: 1.5px solid rgba(239, 68, 68, 0.8) !important;
                 box-shadow: 0 -4px 20px rgba(239, 68, 68, 0.25), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
-                transition: all 0.3s ease !important;
+                transition: background 0.2s ease !important;
             }
             html.znx-doing-questions .jumbotron:has(#FootcontentNo) div,
             html.znx-doing-questions .jumbotron:has(#FootcontentWrong) div,
@@ -859,17 +856,17 @@
 
             if (isCorrect) {
                 targetJumbotron.setAttribute('data-znx-result', 'correct');
-                targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.65)', 'important');
-                targetJumbotron.style.setProperty('backdrop-filter', 'blur(24px)', 'important');
-                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(24px)', 'important');
+                targetJumbotron.style.setProperty('background', 'var(--znx-g-correct-bg)', 'important');
+                targetJumbotron.style.setProperty('backdrop-filter', 'blur(var(--znx-g-blur))', 'important');
+                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(var(--znx-g-blur))', 'important');
                 targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(34, 197, 94, 0.8)', 'important');
                 targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(34, 197, 94, 0.25)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else if (isWrong) {
                 targetJumbotron.setAttribute('data-znx-result', 'wrong');
-                targetJumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.65)', 'important');
-                targetJumbotron.style.setProperty('backdrop-filter', 'blur(24px)', 'important');
-                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(24px)', 'important');
+                targetJumbotron.style.setProperty('background', 'var(--znx-g-wrong-bg)', 'important');
+                targetJumbotron.style.setProperty('backdrop-filter', 'blur(var(--znx-g-blur))', 'important');
+                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(var(--znx-g-blur))', 'important');
                 targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(239, 68, 68, 0.8)', 'important');
                 targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(239, 68, 68, 0.25)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
