@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.0.2
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
+// @version      8.1.0
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslght
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -459,29 +459,33 @@
     }
 
     // ==========================================
-    // 8. 自动答题辅助 (自动点击下一题/继续)
+    // 8. 回车快捷键辅助 (填完答案按回车直接触发：提交答案 / 继续 / 下一步)
     // ==========================================
-    function autoClickNextButton() {
-        const keywords = ['掌握得不错', '做对了', '厉害了', '继续努力', '太棒了', '不错！', '下一个突破口'];
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach(mutation => {
-                mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === 1) {
-                        const buttons = node.querySelectorAll ? node.querySelectorAll('button, .btn, .MuiButtonBase-root') : [];
-                        const elementItself = (node.tagName === 'BUTTON' || node.classList?.contains('btn') || node.classList?.contains('MuiButtonBase-root')) ? [node] : [];
-                        [...buttons, ...elementItself].forEach(button => {
-                            if (button.dataset.znxAutoclicked) return;
-                            const text = (button.innerText || button.textContent || '').trim();
-                            if (text && keywords.some(kw => text.includes(kw))) {
-                                button.dataset.znxAutoclicked = 'true';
-                                setTimeout(() => { if (document.body.contains(button)) { button.click(); console.log('✅ [知能行小助手] 自动点击:', text); } }, 800);
-                            }
-                        });
-                    }
-                });
-            });
+    function setupEnterKeySubmitHandler() {
+        document.addEventListener('keydown', (e) => {
+            // 输入法输入选词时不触发 (防止中文输入法敲回车误触发)
+            if (e.isComposing || e.keyCode === 229) return;
+
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
+                const actionKeywords = ['提交答案', '继续', '下一步', '再试一次', '查看题解'];
+
+                let targetBtn = null;
+                for (const kw of actionKeywords) {
+                    targetBtn = buttons.find(b => {
+                        const t = (b.innerText || b.textContent || '').trim();
+                        return t.includes(kw) && !t.includes('继续训练');
+                    });
+                    if (targetBtn) break;
+                }
+
+                if (targetBtn && document.body.contains(targetBtn)) {
+                    e.preventDefault();
+                    targetBtn.click();
+                    console.log('⚡ [知能行小助手] 回车按键触发点击:', targetBtn.innerText.trim());
+                }
+            }
         });
-        observer.observe(document.body, { childList: true, subtree: true });
     }
 
     // ==========================================
@@ -581,7 +585,7 @@
         injectTimeManager();
         loadConfettiScript();
         injectLive2D();
-        autoClickNextButton();
+        setupEnterKeySubmitHandler();
         setupQuestionModeObserver();
         setupJumbotronFeedbackObserver();
     }
