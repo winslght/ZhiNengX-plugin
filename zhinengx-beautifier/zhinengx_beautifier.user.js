@@ -252,21 +252,27 @@
                 -webkit-backdrop-filter: none !important;
             }
 
-            /* 做题底栏动态美化 (做对淡绿 / 做错淡红，调高不透明度至 0.22 更加清晰典雅) */
+            /* 做题底栏动态美化 (做对淡绿 / 做错淡红，玻璃半透明遮罩) */
             .jumbotron[data-znx-result="correct"],
-            div[class*="jumbotron"][data-znx-result="correct"] {
-                background-color: rgba(34, 197, 94, 0.22) !important;
-                border-top: 1px solid rgba(34, 197, 94, 0.5) !important;
-                box-shadow: inset 0 1px 20px rgba(34, 197, 94, 0.18) !important;
-                transition: all 0.4s ease !important;
+            div[class*="jumbotron"][data-znx-result="correct"],
+            div[class*="_3o6JR"][data-znx-result="correct"] {
+                background: rgba(34, 197, 94, 0.32) !important;
+                backdrop-filter: blur(16px) !important;
+                -webkit-backdrop-filter: blur(16px) !important;
+                border-top: 2px solid rgba(34, 197, 94, 0.6) !important;
+                box-shadow: inset 0 1px 20px rgba(34, 197, 94, 0.25) !important;
+                transition: all 0.3s ease !important;
             }
 
             .jumbotron[data-znx-result="wrong"],
-            div[class*="jumbotron"][data-znx-result="wrong"] {
-                background-color: rgba(239, 68, 68, 0.22) !important;
-                border-top: 1px solid rgba(239, 68, 68, 0.5) !important;
-                box-shadow: inset 0 1px 20px rgba(239, 68, 68, 0.18) !important;
-                transition: all 0.4s ease !important;
+            div[class*="jumbotron"][data-znx-result="wrong"],
+            div[class*="_3o6JR"][data-znx-result="wrong"] {
+                background: rgba(239, 68, 68, 0.32) !important;
+                backdrop-filter: blur(16px) !important;
+                -webkit-backdrop-filter: blur(16px) !important;
+                border-top: 2px solid rgba(239, 68, 68, 0.6) !important;
+                box-shadow: inset 0 1px 20px rgba(239, 68, 68, 0.25) !important;
+                transition: all 0.3s ease !important;
             }
         `;
     }
@@ -769,16 +775,31 @@
     // ==========================================
     function setupJumbotronFeedbackObserver() {
         const updateStatus = () => {
-            const jumbotron = document.querySelector('.jumbotron, div[class*="jumbotron"]');
+            const jumbotron = document.querySelector('.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"]');
             if (!jumbotron) return;
 
             const text = jumbotron.innerText || jumbotron.textContent || '';
-            if (text.includes('答案正确') || text.includes('继续')) {
+            const isCorrect = text.includes('答案正确') || text.includes('继续');
+            const isWrong = text.includes('答案错误') || text.includes('再试一次');
+
+            if (isCorrect) {
                 jumbotron.setAttribute('data-znx-result', 'correct');
-            } else if (text.includes('答案错误') || text.includes('再试一次')) {
+                jumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.32)', 'important');
+                jumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
+                jumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
+                jumbotron.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.6)', 'important');
+            } else if (isWrong) {
                 jumbotron.setAttribute('data-znx-result', 'wrong');
+                jumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.32)', 'important');
+                jumbotron.style.setProperty('backdrop-filter', 'blur(16px)', 'important');
+                jumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(16px)', 'important');
+                jumbotron.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.6)', 'important');
             } else {
                 jumbotron.removeAttribute('data-znx-result');
+                jumbotron.style.removeProperty('background');
+                jumbotron.style.removeProperty('backdrop-filter');
+                jumbotron.style.removeProperty('-webkit-backdrop-filter');
+                jumbotron.style.removeProperty('border-top');
             }
         };
 
