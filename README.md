@@ -1,4 +1,4 @@
-# 知能行 UI 美化与考研助手 (ZhiNengX Enhancer)
+# 知能行 UI 视觉美化与考研助手 (ZhiNengX Enhancer)
 
 ![Version](https://img.shields.io/badge/Version-v7.2-brightgreen?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-winslight-blue?style=for-the-badge)
@@ -11,6 +11,17 @@
 
 ---
 
+## 📦 快速安装 (One-Click Install)
+
+1. 在浏览器中安装 [Tampermonkey (油猴)](https://www.tampermonkey.net/) 插件。
+2. 点击下方链接，油猴插件将自动弹出安装界面：
+
+👉 **[🚀 点击一键安装 / 自动更新脚本](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx_beautifier.user.js)** 👈
+
+*(备用 CDN 安装链接: [cdn.jsdelivr.net](https://cdn.jsdelivr.net/gh/winslght/ZhiNengX-plugin@main/zhinengx_beautifier.user.js))*
+
+---
+
 ## 🛠️ 核心功能
 
 - ⚙️ **界面参数调节面板**：集成于主导航栏，提供 6 组毛玻璃透明度与模糊度调节滑块，支持配置本地保存。
@@ -19,14 +30,6 @@
 - 📅 **考研倒计时与时间管理**：实时计算 2027 考研倒计时天数，包含今日/本周/本月剩余比例进度条及公历日期显示。
 - 🛡️ **原生样式保真**：采用 JSS 动态类名识别，保障原生三段式进度条（`height: 16px`）与图表样式不产生变形。
 - ⚡ **性能与平板设备优化**：针对桌面端与 iPad / 安卓平板进行性能调优，采用 `requestIdleCallback` 节流与 GPU 硬件加速。
-
----
-
-## 📦 安装说明
-
-1. 在浏览器中安装 [Tampermonkey (油猴)](https://www.tampermonkey.net/) 或 [Violentmonkey (暴力猴)] 扩展。
-2. 打开并登录 [知能行考研数学](https://www.bestzixue.com/)。
-3. 将仓库中的 `zhinengx_beautifier.user.js` 代码添加至 Tampermonkey 并保存启用。
 
 ---
 
