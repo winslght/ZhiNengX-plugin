@@ -252,62 +252,50 @@
             }
 
             /* ==========================================
-               做题底栏：做对绿色水波纹毛玻璃 / 做错红色水波纹毛玻璃
+               做题底栏：做对绿色水波纹毛玻璃 / 做错红色水波纹毛玻璃 (淡雅柔和版)
                ========================================== */
             @keyframes znx-ripple-correct {
                 0% {
-                    background: rgba(34, 197, 94, 0.35) !important;
-                    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6), inset 0 0 25px rgba(34, 197, 94, 0.5) !important;
-                    backdrop-filter: blur(16px) saturate(200%) !important;
-                    -webkit-backdrop-filter: blur(16px) saturate(200%) !important;
-                }
-                50% {
-                    background: rgba(34, 197, 94, 0.6) !important;
-                    box-shadow: 0 0 0 15px rgba(34, 197, 94, 0), inset 0 0 45px rgba(34, 197, 94, 0.7) !important;
-                    backdrop-filter: blur(22px) saturate(250%) !important;
-                    -webkit-backdrop-filter: blur(22px) saturate(250%) !important;
+                    background-color: rgba(34, 197, 94, 0.08) !important;
+                    box-shadow: inset 0 0 10px rgba(34, 197, 94, 0.1) !important;
+                    backdrop-filter: blur(12px) saturate(120%) !important;
+                    -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
                 }
                 100% {
-                    background: rgba(34, 197, 94, 0.4) !important;
-                    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0), inset 0 0 30px rgba(34, 197, 94, 0.5) !important;
-                    backdrop-filter: blur(18px) saturate(210%) !important;
-                    -webkit-backdrop-filter: blur(18px) saturate(210%) !important;
+                    background-color: rgba(34, 197, 94, 0.18) !important;
+                    box-shadow: inset 0 0 20px rgba(34, 197, 94, 0.2) !important;
+                    backdrop-filter: blur(16px) saturate(140%) !important;
+                    -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
                 }
             }
 
             @keyframes znx-ripple-wrong {
                 0% {
-                    background: rgba(239, 68, 68, 0.35) !important;
-                    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6), inset 0 0 25px rgba(239, 68, 68, 0.5) !important;
-                    backdrop-filter: blur(16px) saturate(200%) !important;
-                    -webkit-backdrop-filter: blur(16px) saturate(200%) !important;
-                }
-                50% {
-                    background: rgba(239, 68, 68, 0.6) !important;
-                    box-shadow: 0 0 0 15px rgba(239, 68, 68, 0), inset 0 0 45px rgba(239, 68, 68, 0.7) !important;
-                    backdrop-filter: blur(22px) saturate(250%) !important;
-                    -webkit-backdrop-filter: blur(22px) saturate(250%) !important;
+                    background-color: rgba(239, 68, 68, 0.08) !important;
+                    box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.1) !important;
+                    backdrop-filter: blur(12px) saturate(120%) !important;
+                    -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
                 }
                 100% {
-                    background: rgba(239, 68, 68, 0.4) !important;
-                    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), inset 0 0 30px rgba(239, 68, 68, 0.5) !important;
-                    backdrop-filter: blur(18px) saturate(210%) !important;
-                    -webkit-backdrop-filter: blur(18px) saturate(210%) !important;
+                    background-color: rgba(239, 68, 68, 0.18) !important;
+                    box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.2) !important;
+                    backdrop-filter: blur(16px) saturate(140%) !important;
+                    -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
                 }
             }
 
             html body #root div[data-znx-feedback="correct"],
             div[data-znx-feedback="correct"] {
-                animation: znx-ripple-correct 1.4s ease-in-out infinite alternate !important;
-                border-top: 2px solid rgba(34, 197, 94, 0.9) !important;
-                transition: all 0.3s ease !important;
+                animation: znx-ripple-correct 1.6s ease-in-out infinite alternate !important;
+                border-top: 1px solid rgba(34, 197, 94, 0.3) !important;
+                transition: all 0.5s ease !important;
             }
 
             html body #root div[data-znx-feedback="wrong"],
             div[data-znx-feedback="wrong"] {
-                animation: znx-ripple-wrong 1.4s ease-in-out infinite alternate !important;
-                border-top: 2px solid rgba(239, 68, 68, 0.9) !important;
-                transition: all 0.3s ease !important;
+                animation: znx-ripple-wrong 1.6s ease-in-out infinite alternate !important;
+                border-top: 1px solid rgba(239, 68, 68, 0.3) !important;
+                transition: all 0.5s ease !important;
             }
         `;
     }
@@ -831,11 +819,11 @@
             // 核心修复：根据用户提供的 DOM，底栏是包含 container 和 row 的 jumbotron
             let container = actionBtn.closest('.jumbotron') || actionBtn.closest('div[class*="jumbotron"]');
             
-            // 如果没找到 jumbotron，向上寻找宽度超过屏幕 80% 的块级元素，这通常是固定的全宽底栏
+            // 如果没找到 jumbotron，向上寻找宽度超过屏幕 80% 但高度小于 250px 的块级元素（避免选中整个页面的背景）
             if (!container) {
                 let curr = actionBtn.parentElement;
                 while (curr && curr !== document.body && curr.id !== 'root') {
-                    if (curr.offsetWidth > window.innerWidth * 0.8) {
+                    if (curr.offsetWidth > window.innerWidth * 0.8 && curr.offsetHeight > 40 && curr.offsetHeight < 250) {
                         container = curr;
                         break;
                     }
@@ -862,19 +850,19 @@
 
             if (newState === 'correct') {
                 container.setAttribute('data-znx-feedback', 'correct');
-                container.style.setProperty('animation', 'znx-ripple-correct 1.4s ease-in-out infinite alternate', 'important');
-                container.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.9)', 'important');
-                container.style.setProperty('background', 'rgba(34, 197, 94, 0.35)', 'important');
+                container.style.setProperty('animation', 'znx-ripple-correct 1.6s ease-in-out infinite alternate', 'important');
+                container.style.setProperty('border-top', '1px solid rgba(34, 197, 94, 0.4)', 'important');
+                container.style.setProperty('background-color', 'rgba(34, 197, 94, 0.1)', 'important');
             } else if (newState === 'wrong') {
                 container.setAttribute('data-znx-feedback', 'wrong');
-                container.style.setProperty('animation', 'znx-ripple-wrong 1.4s ease-in-out infinite alternate', 'important');
-                container.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.9)', 'important');
-                container.style.setProperty('background', 'rgba(239, 68, 68, 0.35)', 'important');
+                container.style.setProperty('animation', 'znx-ripple-wrong 1.6s ease-in-out infinite alternate', 'important');
+                container.style.setProperty('border-top', '1px solid rgba(239, 68, 68, 0.4)', 'important');
+                container.style.setProperty('background-color', 'rgba(239, 68, 68, 0.1)', 'important');
             } else {
                 container.removeAttribute('data-znx-feedback');
                 container.style.removeProperty('animation');
                 container.style.removeProperty('border-top');
-                container.style.removeProperty('background');
+                container.style.removeProperty('background-color');
             }
         };
 
