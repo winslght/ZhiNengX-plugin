@@ -257,20 +257,20 @@
                ========================================== */
             @keyframes znx-ripple-correct {
                 0% {
-                    background-color: rgba(34, 197, 94, 0.3) !important;
-                    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5), inset 0 0 25px rgba(34, 197, 94, 0.4) !important;
+                    background: rgba(34, 197, 94, 0.35) !important;
+                    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6), inset 0 0 25px rgba(34, 197, 94, 0.5) !important;
                     backdrop-filter: blur(16px) saturate(200%) !important;
                     -webkit-backdrop-filter: blur(16px) saturate(200%) !important;
                 }
                 50% {
-                    background-color: rgba(34, 197, 94, 0.5) !important;
-                    box-shadow: 0 0 0 12px rgba(34, 197, 94, 0), inset 0 0 40px rgba(34, 197, 94, 0.6) !important;
-                    backdrop-filter: blur(22px) saturate(240%) !important;
-                    -webkit-backdrop-filter: blur(22px) saturate(240%) !important;
+                    background: rgba(34, 197, 94, 0.6) !important;
+                    box-shadow: 0 0 0 15px rgba(34, 197, 94, 0), inset 0 0 45px rgba(34, 197, 94, 0.7) !important;
+                    backdrop-filter: blur(22px) saturate(250%) !important;
+                    -webkit-backdrop-filter: blur(22px) saturate(250%) !important;
                 }
                 100% {
-                    background-color: rgba(34, 197, 94, 0.35) !important;
-                    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0), inset 0 0 30px rgba(34, 197, 94, 0.45) !important;
+                    background: rgba(34, 197, 94, 0.4) !important;
+                    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0), inset 0 0 30px rgba(34, 197, 94, 0.5) !important;
                     backdrop-filter: blur(18px) saturate(210%) !important;
                     -webkit-backdrop-filter: blur(18px) saturate(210%) !important;
                 }
@@ -278,34 +278,36 @@
 
             @keyframes znx-ripple-wrong {
                 0% {
-                    background-color: rgba(239, 68, 68, 0.3) !important;
-                    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5), inset 0 0 25px rgba(239, 68, 68, 0.4) !important;
+                    background: rgba(239, 68, 68, 0.35) !important;
+                    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6), inset 0 0 25px rgba(239, 68, 68, 0.5) !important;
                     backdrop-filter: blur(16px) saturate(200%) !important;
                     -webkit-backdrop-filter: blur(16px) saturate(200%) !important;
                 }
                 50% {
-                    background-color: rgba(239, 68, 68, 0.5) !important;
-                    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0), inset 0 0 40px rgba(239, 68, 68, 0.6) !important;
-                    backdrop-filter: blur(22px) saturate(240%) !important;
-                    -webkit-backdrop-filter: blur(22px) saturate(240%) !important;
+                    background: rgba(239, 68, 68, 0.6) !important;
+                    box-shadow: 0 0 0 15px rgba(239, 68, 68, 0), inset 0 0 45px rgba(239, 68, 68, 0.7) !important;
+                    backdrop-filter: blur(22px) saturate(250%) !important;
+                    -webkit-backdrop-filter: blur(22px) saturate(250%) !important;
                 }
                 100% {
-                    background-color: rgba(239, 68, 68, 0.35) !important;
-                    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), inset 0 0 30px rgba(239, 68, 68, 0.45) !important;
+                    background: rgba(239, 68, 68, 0.4) !important;
+                    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), inset 0 0 30px rgba(239, 68, 68, 0.5) !important;
                     backdrop-filter: blur(18px) saturate(210%) !important;
                     -webkit-backdrop-filter: blur(18px) saturate(210%) !important;
                 }
             }
 
-            .znx-submit-bar-correct {
+            html body #root div[data-znx-feedback="correct"],
+            div[data-znx-feedback="correct"] {
                 animation: znx-ripple-correct 1.4s ease-in-out infinite alternate !important;
-                border-top: 2px solid rgba(34, 197, 94, 0.8) !important;
+                border-top: 2px solid rgba(34, 197, 94, 0.9) !important;
                 transition: all 0.3s ease !important;
             }
 
-            .znx-submit-bar-wrong {
+            html body #root div[data-znx-feedback="wrong"],
+            div[data-znx-feedback="wrong"] {
                 animation: znx-ripple-wrong 1.4s ease-in-out infinite alternate !important;
-                border-top: 2px solid rgba(239, 68, 68, 0.8) !important;
+                border-top: 2px solid rgba(239, 68, 68, 0.9) !important;
                 transition: all 0.3s ease !important;
             }
         `;
@@ -808,49 +810,49 @@
     // 10. 做题提交底栏反馈感应器 (做对绿色水波纹毛玻璃 / 做错红色水波纹毛玻璃)
     // ==========================================
     function setupSubmitBarFeedbackObserver() {
-        const correctKeywords = ['回答正确', '做对了', '太棒了', '全对', '已掌握', '掌握得不错', '厉害了', '不错！'];
-        const wrongKeywords = ['回答错误', '做错了', '粗心', '错误', '未掌握', '解析', '做不对'];
+        const correctKeywords = ['回答正确', '做对了', '太棒了', '全对', '已掌握', '掌握得不错', '厉害了', '不错！', '恭喜'];
+        const wrongKeywords = ['回答错误', '做错了', '粗心', '错误', '未掌握', '解析', '做不对', '重新理解'];
 
         const updateSubmitBarStatus = () => {
-            // 找到包含做题按钮的底栏
+            // 找到包含 "提交答案" 或 "提示" 的按钮
             const buttons = Array.from(document.querySelectorAll('button, .MuiButtonBase-root, .btn'));
             const submitBtn = buttons.find(b => {
                 const text = (b.innerText || b.textContent || '').trim();
-                return text.includes('提交答案') || text.includes('下一题') || text.includes('继续') || text.includes('回答正确') || text.includes('回答错误') || text.includes('查看解析') || text.includes('显示答案');
+                return text.includes('提交答案') || text.includes('提示') || text.includes('下一题') || text.includes('继续') || text.includes('查看解析') || text.includes('显示答案');
             });
 
             if (!submitBtn) return;
 
-            // 获取底栏容器 (向上向上寻找最外层固定底栏 div)
-            let container = submitBtn.closest('div[class*="_3WnwfR"]') || 
-                            submitBtn.closest('div[class*="_3r5idY"]') || 
-                            submitBtn.parentElement;
-            
-            // 向上追溯到包含全宽度的最外层行动底栏 div
-            while (container && container.parentElement && container.parentElement !== document.body && container.parentElement.id !== 'root' && container.offsetHeight < 180) {
-                if (container.parentElement.querySelectorAll('button').length <= 5) {
-                    container = container.parentElement;
-                } else {
+            // 寻找包含绿按钮和灰提示按钮的底栏容器
+            let container = submitBtn.parentElement;
+            while (container && container !== document.body && container.id !== 'root') {
+                const btnCount = container.querySelectorAll('button, .MuiButtonBase-root, .btn').length;
+                if (btnCount >= 1 && container.offsetWidth > 200) {
                     break;
                 }
+                container = container.parentElement;
             }
 
             if (!container) return;
 
-            // 检查整页或做题区域内的反馈状态
+            // 获取整页及答题区文字
             const fullText = document.body.innerText || '';
             const isCorrect = correctKeywords.some(kw => fullText.includes(kw));
             const isWrong = !isCorrect && wrongKeywords.some(kw => fullText.includes(kw));
 
-            // 清理旧状态并动态施加绿色/红色毛玻璃与水波纹
+            // 直接为 DOM 节点应用最高优先级 (important) 样式变幻
             if (isCorrect) {
-                container.classList.remove('znx-submit-bar-wrong');
-                container.classList.add('znx-submit-bar-correct');
+                container.setAttribute('data-znx-feedback', 'correct');
+                container.style.setProperty('animation', 'znx-ripple-correct 1.4s ease-in-out infinite alternate', 'important');
+                container.style.setProperty('border-top', '2px solid rgba(34, 197, 94, 0.9)', 'important');
             } else if (isWrong) {
-                container.classList.remove('znx-submit-bar-correct');
-                container.classList.add('znx-submit-bar-wrong');
+                container.setAttribute('data-znx-feedback', 'wrong');
+                container.style.setProperty('animation', 'znx-ripple-wrong 1.4s ease-in-out infinite alternate', 'important');
+                container.style.setProperty('border-top', '2px solid rgba(239, 68, 68, 0.9)', 'important');
             } else {
-                container.classList.remove('znx-submit-bar-correct', 'znx-submit-bar-wrong');
+                container.removeAttribute('data-znx-feedback');
+                container.style.removeProperty('animation');
+                container.style.removeProperty('border-top');
             }
         };
 
