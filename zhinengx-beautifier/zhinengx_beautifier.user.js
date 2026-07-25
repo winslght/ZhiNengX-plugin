@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.0.0
+// @version      8.0.1
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslght
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -421,7 +421,8 @@
         const text = (btn.innerText || btn.textContent || '').trim();
         const pageText = document.body.innerText || '';
 
-        if (pageText.includes('答案错误') || pageText.includes('再试一次') || text.includes('再试一次')) return;
+        // 【坚决禁止做错/超时撒花】如果页面处于“答案错误”、“超时”、“做不出来”或按钮是“再试一次”，绝对不撒花！
+        if (pageText.includes('答案错误') || pageText.includes('再试一次') || pageText.includes('超时') || pageText.includes('做不出来') || text.includes('再试一次')) return;
 
         const isSuccessBtn = successKeywords.some(kw => text.includes(kw)) ||
             ((text === '继续' || text.includes('下一题')) && (pageText.includes('答案正确') || !!document.getElementById('FootcontentYes')));
@@ -525,8 +526,23 @@
             if (!targetJumbotron) return;
 
             const fullPageText = document.body.innerText || '';
-            const isCorrect = fullPageText.includes('答案正确') || (fullPageText.includes('继续') && !fullPageText.includes('继续训练'));
-            const isWrong = !isCorrect && (fullPageText.includes('答案错误') || fullPageText.includes('再试一次'));
+
+            // 1. 最高优先级：判定做错 / 超时 / 放弃场景（防止“超时，点击继续”被误识别为做对继续）
+            const isWrong = fullPageText.includes('答案错误') ||
+                            fullPageText.includes('再试一次') ||
+                            fullPageText.includes('超时') ||
+                            fullPageText.includes('做不出来') ||
+                            fullPageText.includes('换个简单') ||
+                            !!document.getElementById('FootcontentNo') ||
+                            !!document.getElementById('FootcontentWrong');
+
+            // 2. 只有在【非做错且非超时】的前提下，才识别为做对
+            const isCorrect = !isWrong && (
+                fullPageText.includes('答案正确') ||
+                !!document.getElementById('FootcontentYes') ||
+                (fullPageText.includes('继续') && !fullPageText.includes('继续训练') && !fullPageText.includes('点击继续'))
+            );
+
             const children = targetJumbotron.querySelectorAll('div');
 
             if (isCorrect) {

@@ -1,6 +1,6 @@
 # <img src="icon.png" width="36" height="36" align="center"> 知能行考研开源插件合集 (ZhiNengX Plugins)
 
-![Version](https://img.shields.io/badge/Version-v11.0%20%7C%20v8.0.0%20Stable-brightgreen?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v11.0%20%7C%20v8.0.1%20Stable-brightgreen?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-winslght-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=for-the-badge)
@@ -23,8 +23,8 @@
 
 ---
 
-### 2. 🎨 知能行 UI 视觉美化与考研助手 (`v8.0.0 Stable`)
-首个稳定发行版！全局毛玻璃（Glassmorphism）、做对/做错动态绿色与红色毛玻璃底栏、Dark Reader 深色模式自适应、Live2D 看板娘及 27 考研倒计时悬浮窗。所有视觉参数经精心调校后硬编码，代码精简 46%。
+### 2. 🎨 知能行 UI 视觉美化与考研助手 (`v8.0.1 Stable`)
+稳定发行版！全局毛玻璃（Glassmorphism）、做对/做错/超时动态毛玻璃底栏防护、Dark Reader 深色模式自适应、Live2D 看板娘及 27 考研倒计时悬浮窗。
 
 👉 **[🚀 点击一键安装【UI 视觉美化插件】](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-beautifier/zhinengx_beautifier.user.js)**
 
