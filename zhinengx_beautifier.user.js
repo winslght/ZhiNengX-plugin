@@ -4,6 +4,7 @@
 // @version      7.2
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslight
+// @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
 // @match        *://*.bestzixue.com/*
 // @match        *://*.zhinengxing.com/*
 // @grant        none

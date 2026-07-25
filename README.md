@@ -1,4 +1,4 @@
-# 知能行 UI 视觉美化与考研助手 (ZhiNengX Enhancer)
+# <img src="icon.png" width="36" height="36" align="center"> 知能行 UI 视觉美化与考研助手 (ZhiNengX Enhancer)
 
 ![Version](https://img.shields.io/badge/Version-v7.2-brightgreen?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-winslight-blue?style=for-the-badge)
