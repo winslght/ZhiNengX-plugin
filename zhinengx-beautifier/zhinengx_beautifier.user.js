@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.4.1
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、左侧抽屉平移动画专注白噪音播放器 (高清真实音频：柔雨/海浪/咖啡馆/森林)、回车快捷提交/下一步、fghrsh 海量 Live2D 看板娘/换装/考研金句陪伴、Dark Reader 深色自适应与倒计时
+// @version      8.5.0
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、左侧抽屉平移网易云音乐考研播放器 (预置沉浸自习/雨声轻音乐/Lofi歌单+自定义歌单ID)、回车快捷提交/下一步、fghrsh 海量 Live2D 看板娘/换装/考研金句陪伴、Dark Reader 深色自适应与倒计时
 // @author       winslght
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -706,105 +706,68 @@
     }
 
     // ==========================================
-    // 11. 专注白噪音播放器 (方案二：高清真实音频 + 左侧抽屉平移动画)
+    // 11. 网易云考研音乐播放器 (支持预置考研歌单/自定义歌单与左侧抽屉平移动画)
     // ==========================================
-    class ZNXRealAudioEngine {
-        constructor() {
-            this.audioMap = {
-                rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy.ogg',
-                wave: 'https://actions.google.com/sounds/v1/weather/ocean_waves.ogg',
-                cafe: 'https://actions.google.com/sounds/v1/environments/coffee_shop.ogg',
-                forest: 'https://actions.google.com/sounds/v1/environments/outdoor_summer_day.ogg'
-            };
-            this.currentAudio = null;
-            this.currentType = 'rain';
-            this.volume = 0.5;
-            this.isPlaying = false;
-        }
+    function injectNetEasePlayer() {
+        if (document.getElementById('znx-netease-player')) return;
 
-        setVolume(val) {
-            this.volume = val;
-            if (this.currentAudio) {
-                this.currentAudio.volume = val;
-            }
-        }
+        const PRESET_PLAYLISTS = [
+            { name: '🎹 考研沉浸自习', id: '2424911252' },
+            { name: '🌧️ 雨声与轻音乐', id: '26467411' },
+            { name: '☕ Lo-Fi 轻松复习', id: '2829883282' },
+            { name: '🎻 史诗纯音乐打气', id: '4790176' }
+        ];
 
-        play(type) {
-            if (type && type !== this.currentType) {
-                this.stopCurrent();
-                this.currentType = type;
-            }
-
-            if (!this.currentAudio) {
-                this.currentAudio = new Audio(this.audioMap[this.currentType]);
-                this.currentAudio.loop = true;
-                this.currentAudio.volume = this.volume;
-            }
-
-            this.currentAudio.play().catch(e => console.log('Audio play failed:', e));
-            this.isPlaying = true;
-        }
-
-        stopCurrent() {
-            if (this.currentAudio) {
-                this.currentAudio.pause();
-                this.currentAudio.currentTime = 0;
-                this.currentAudio = null;
-            }
-            this.isPlaying = false;
-        }
-    }
-
-    function injectAmbientSoundPlayer() {
-        if (document.getElementById('znx-sound-player')) return;
-
-        const audioEngine = new ZNXRealAudioEngine();
+        const savedPlaylistId = localStorage.getItem('znx_netease_playlist_id') || PRESET_PLAYLISTS[0].id;
 
         const container = document.createElement('div');
-        container.id = 'znx-sound-player';
-        container.className = 'znx-sound-collapsed';
+        container.id = 'znx-netease-player';
+        container.className = 'znx-netease-collapsed';
 
         const style = document.createElement('style');
         style.textContent = `
-            #znx-sound-player {
+            #znx-netease-player {
                 position: fixed;
                 left: 0;
                 top: 50%;
-                width: 220px;
+                width: 340px;
+                height: 510px;
                 z-index: 999998;
                 background: rgba(255, 255, 255, 0.45);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
                 border: 1px solid rgba(255, 255, 255, 0.3);
                 border-left: none;
                 border-radius: 0 16px 16px 0;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
                 color: #2c3e50;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
                 user-select: none;
-                padding: 14px;
+                padding: 12px;
                 box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
             }
-            html.dark #znx-sound-player, [data-darkreader-scheme="dark"] #znx-sound-player {
-                background: rgba(30, 41, 59, 0.65) !important;
+            html.dark #znx-netease-player, [data-darkreader-scheme="dark"] #znx-netease-player {
+                background: rgba(30, 41, 59, 0.75) !important;
                 border: 1px solid rgba(255, 255, 255, 0.12) !important;
                 border-left: none !important;
                 color: #f1f5f9 !important;
             }
-            #znx-sound-player.znx-sound-collapsed {
-                transform: translateY(-50%) translateX(-220px);
+            #znx-netease-player.znx-netease-collapsed {
+                transform: translateY(-50%) translateX(-340px);
             }
-            #znx-sound-player.znx-sound-expanded {
+            #znx-netease-player.znx-netease-expanded {
                 transform: translateY(-50%) translateX(0);
             }
-            .znx-sound-tab {
+            .znx-netease-tab {
                 position: absolute;
                 right: -36px;
                 top: 50%;
                 transform: translateY(-50%);
                 width: 36px;
-                height: 110px;
+                height: 120px;
                 background: rgba(255, 255, 255, 0.45);
                 backdrop-filter: blur(12px);
                 -webkit-backdrop-filter: blur(12px);
@@ -823,26 +786,26 @@
                 letter-spacing: 2px;
                 box-shadow: 4px 0 16px rgba(0, 0, 0, 0.08);
             }
-            html.dark .znx-sound-tab, [data-darkreader-scheme="dark"] .znx-sound-tab {
-                background: rgba(30, 41, 59, 0.65) !important;
+            html.dark .znx-netease-tab, [data-darkreader-scheme="dark"] .znx-netease-tab {
+                background: rgba(30, 41, 59, 0.75) !important;
                 border: 1px solid rgba(255, 255, 255, 0.12) !important;
                 border-left: none !important;
                 color: #f1f5f9 !important;
             }
-            .znx-sound-header {
+            .znx-netease-header {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
                 font-size: 14px;
                 font-weight: bold;
-                margin-bottom: 12px;
+                margin-bottom: 8px;
                 padding-bottom: 6px;
                 border-bottom: 1px solid rgba(0,0,0,0.06);
             }
-            html.dark .znx-sound-header {
+            html.dark .znx-netease-header {
                 border-bottom-color: rgba(255,255,255,0.1);
             }
-            .znx-sound-close-btn {
+            .znx-netease-close-btn {
                 cursor: pointer;
                 font-size: 12px;
                 opacity: 0.7;
@@ -850,138 +813,107 @@
                 border-radius: 6px;
                 background: rgba(0,0,0,0.05);
             }
-            .znx-sound-close-btn:hover {
+            .znx-netease-close-btn:hover {
                 opacity: 1;
                 background: rgba(0,0,0,0.1);
             }
-            .znx-sound-types {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
+            .znx-netease-toolbar {
+                display: flex;
                 gap: 6px;
-                margin-bottom: 12px;
+                margin-bottom: 8px;
             }
-            .znx-sound-pill {
-                text-align: center;
-                padding: 6px 0;
+            .znx-netease-select {
+                flex: 1;
+                padding: 4px 8px;
                 font-size: 12px;
                 border-radius: 8px;
+                border: 1px solid rgba(0,0,0,0.1);
+                background: rgba(255,255,255,0.6);
+                color: #2c3e50;
+                outline: none;
                 cursor: pointer;
-                background: rgba(0,0,0,0.05);
-                border: 1px solid transparent;
-                transition: all 0.2s;
             }
-            html.dark .znx-sound-pill {
-                background: rgba(255,255,255,0.08);
+            html.dark .znx-netease-select {
+                background: rgba(15, 23, 42, 0.6);
+                color: #f1f5f9;
+                border-color: rgba(255,255,255,0.15);
             }
-            .znx-sound-pill.active {
-                background: rgba(59, 130, 246, 0.2);
-                border-color: rgba(59, 130, 246, 0.5);
-                color: #2563eb;
-                font-weight: bold;
-            }
-            html.dark .znx-sound-pill.active {
-                color: #60a5fa;
-            }
-            .znx-sound-controls {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            .znx-sound-play-btn {
+            .znx-netease-iframe-box {
                 flex: 1;
-                padding: 6px 0;
-                text-align: center;
-                background: #3b82f6;
-                color: white;
-                font-size: 13px;
-                font-weight: bold;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: all 0.2s;
-                box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+                width: 100%;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             }
-            .znx-sound-play-btn:hover {
-                background: #2563eb;
-            }
-            .znx-sound-vol-slider {
-                width: 65px;
-                cursor: pointer;
+            .znx-netease-iframe-box iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
             }
         `;
         document.head.appendChild(style);
 
         container.innerHTML = `
-            <div class="znx-sound-tab">
+            <div class="znx-netease-tab">
                 <span class="znx-sound-icon">🎵</span>
-                <span>白噪音</span>
+                <span>网易云</span>
                 <span style="font-size:10px;">▶</span>
             </div>
-            <div class="znx-sound-full-content">
-                <div class="znx-sound-header">
-                    <span>🎵 专注白噪音</span>
-                    <span class="znx-sound-close-btn">◀ 收起</span>
+            <div class="znx-netease-full-content" style="display:flex; flex-direction:column; height:100%;">
+                <div class="znx-netease-header">
+                    <span>🎵 网易云考研音乐</span>
+                    <span class="znx-netease-close-btn">◀ 收起</span>
                 </div>
-                <div class="znx-sound-types">
-                    <div class="znx-sound-pill active" data-type="rain">🌧️ 柔雨</div>
-                    <div class="znx-sound-pill" data-type="wave">🌊 海浪</div>
-                    <div class="znx-sound-pill" data-type="cafe">☕ 咖啡馆</div>
-                    <div class="znx-sound-pill" data-type="forest">🌲 森林</div>
+                <div class="znx-netease-toolbar">
+                    <select class="znx-netease-select">
+                        ${PRESET_PLAYLISTS.map(p => `<option value="${p.id}" ${p.id === savedPlaylistId ? 'selected' : ''}>${p.name}</option>`).join('')}
+                        <option value="custom">➕ 自定义歌单 ID</option>
+                    </select>
                 </div>
-                <div class="znx-sound-controls">
-                    <div class="znx-sound-play-btn">▶ 播放</div>
-                    <input type="range" class="znx-sound-vol-slider" min="0" max="1" step="0.05" value="0.5">
+                <div class="znx-netease-iframe-box">
+                    <iframe id="znx-netease-iframe" src="https://music.163.com/outchain/player?type=0&id=${savedPlaylistId}&auto=0&height=430" frameborder="no" border="0" marginwidth="0" marginheight="0"></iframe>
                 </div>
             </div>
         `;
 
         document.body.appendChild(container);
 
-        const tab = container.querySelector('.znx-sound-tab');
-        const closeBtn = container.querySelector('.znx-sound-close-btn');
-        const playBtn = container.querySelector('.znx-sound-play-btn');
-        const volSlider = container.querySelector('.znx-sound-vol-slider');
-        const pills = container.querySelectorAll('.znx-sound-pill');
+        const tab = container.querySelector('.znx-netease-tab');
+        const closeBtn = container.querySelector('.znx-netease-close-btn');
+        const select = container.querySelector('.znx-netease-select');
+        const iframe = container.querySelector('#znx-netease-iframe');
 
         tab.addEventListener('click', () => {
-            container.classList.remove('znx-sound-collapsed');
-            container.classList.add('znx-sound-expanded');
+            container.classList.remove('znx-netease-collapsed');
+            container.classList.add('znx-netease-expanded');
         });
 
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            container.classList.remove('znx-sound-expanded');
-            container.classList.add('znx-sound-collapsed');
+            container.classList.remove('znx-netease-expanded');
+            container.classList.add('znx-netease-collapsed');
         });
 
-        pills.forEach(pill => {
-            pill.addEventListener('click', () => {
-                pills.forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                const type = pill.getAttribute('data-type');
-                if (audioEngine.isPlaying) {
-                    audioEngine.play(type);
+        select.addEventListener('change', (e) => {
+            let playlistId = e.target.value;
+            if (playlistId === 'custom') {
+                const userInput = prompt('请输入您的网易云歌单 ID (可直接复制歌单链接中的 id 数字):');
+                if (userInput) {
+                    const match = userInput.match(/id=(\d+)/) || userInput.match(/(\d+)/);
+                    if (match && match[1]) {
+                        playlistId = match[1];
+                        localStorage.setItem('znx_netease_playlist_id', playlistId);
+                    } else {
+                        alert('无法解析歌单 ID，请重新输入！');
+                        return;
+                    }
                 } else {
-                    audioEngine.currentType = type;
+                    return;
                 }
-            });
-        });
-
-        playBtn.addEventListener('click', () => {
-            if (audioEngine.isPlaying) {
-                audioEngine.stopCurrent();
-                playBtn.innerHTML = '▶ 播放';
-                playBtn.style.background = '#3b82f6';
-                container.querySelector('.znx-sound-icon').innerText = '🎵';
             } else {
-                audioEngine.play();
-                playBtn.innerHTML = '⏸ 暂停';
-                playBtn.style.background = '#ef4444';
-                container.querySelector('.znx-sound-icon').innerText = '🎶';
+                localStorage.setItem('znx_netease_playlist_id', playlistId);
             }
-        });
-
-        volSlider.addEventListener('input', (e) => {
-            audioEngine.setVolume(parseFloat(e.target.value));
+            iframe.src = `https://music.163.com/outchain/player?type=0&id=${playlistId}&auto=0&height=430`;
         });
     }
 
@@ -991,7 +923,7 @@
     function init() {
         injectAnimeGlassTheme();
         injectTimeManager();
-        injectAmbientSoundPlayer();
+        injectNetEasePlayer();
         loadConfettiScript();
         injectLive2D();
         setupEnterKeySubmitHandler();

@@ -1,6 +1,6 @@
 # <img src="icon.png" width="36" height="36" align="center"> 知能行考研开源插件合集 (ZhiNengX Plugins)
 
-![Version](https://img.shields.io/badge/Version-v11.0.1%20%7C%20v8.4.1-brightgreen?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v11.0.1%20%7C%20v8.5.0-brightgreen?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-winslght-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=for-the-badge)
@@ -23,8 +23,8 @@
 
 ---
 
-### 2. 🎨 知能行 UI 视觉美化与考研助手 (`v8.4.1`)
-方案二高清音质升级！左侧抽屉式 CSS 平移 (translateX) 专注白噪音播放器（高清真实立体声：柔雨 / 海浪 / 咖啡馆 / 森林，平滑无爆炸变长），快捷键 Enter 提交，Live2D 换装与陪伴提示。
+### 2. 🎨 知能行 UI 视觉美化与考研助手 (`v8.5.0`)
+重磅升级网易云音乐外挂播放器！左侧抽屉式 CSS 平移 (translateX) 嵌入原生网易云唱片组件（预置 4 套考研沉浸自习/雨声/Lo-Fi歌单，支持输入用户自定义歌单 ID），快捷键 Enter 提交，Live2D 换装与陪伴提示。
 
 👉 **[🚀 点击一键安装【UI 视觉美化插件】](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-beautifier/zhinengx_beautifier.user.js)**
 
