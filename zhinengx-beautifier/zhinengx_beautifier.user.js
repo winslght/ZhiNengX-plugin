@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.3.3
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、fghrsh 海量 Live2D 看板娘/换装/考研短精炼金句陪伴、Dark Reader 深色自适应与倒计时
+// @version      8.4.0
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、左侧收纳式 Web Audio 专注白噪音播放器 (柔雨/浪涌/10Hz Alpha波)、回车快捷提交/下一步、fghrsh 海量 Live2D 看板娘/换装/考研金句陪伴、Dark Reader 深色自适应与倒计时
 // @author       winslght
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -706,11 +706,370 @@
     }
 
     // ==========================================
+    // 11. 专注白噪音播放器 (吸附左侧可收纳，同款毛玻璃材质)
+    // ==========================================
+    class ZNXAudioEngine {
+        constructor() {
+            this.ctx = null;
+            this.activeSound = null;
+            this.volumeNode = null;
+            this.currentType = 'rain';
+            this.volume = 0.5;
+            this.isPlaying = false;
+        }
+
+        init() {
+            if (!this.ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioCtx();
+                this.volumeNode = this.ctx.createGain();
+                this.volumeNode.gain.value = this.volume;
+                this.volumeNode.connect(this.ctx.destination);
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        }
+
+        setVolume(val) {
+            this.volume = val;
+            if (this.volumeNode) {
+                this.volumeNode.gain.setValueAtTime(val, this.ctx.currentTime);
+            }
+        }
+
+        play(type) {
+            this.init();
+            this.stopCurrent();
+            this.currentType = type || this.currentType;
+
+            if (this.currentType === 'rain') {
+                this.playRain();
+            } else if (this.currentType === 'wave') {
+                this.playWave();
+            } else if (this.currentType === 'alpha') {
+                this.playAlpha();
+            }
+            this.isPlaying = true;
+        }
+
+        stopCurrent() {
+            if (this.activeSound) {
+                if (Array.isArray(this.activeSound)) {
+                    this.activeSound.forEach(node => { try { node.stop(); node.disconnect(); } catch(e){} });
+                } else if (this.activeSound.stop) {
+                    try { this.activeSound.stop(); this.activeSound.disconnect(); } catch(e){}
+                }
+                this.activeSound = null;
+            }
+            this.isPlaying = false;
+        }
+
+        playRain() {
+            const bufferSize = this.ctx.sampleRate * 5;
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+                data[i] *= 0.11;
+                b6 = white * 0.115926;
+            }
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = buffer;
+            noise.loop = true;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 1000;
+            noise.connect(filter);
+            filter.connect(this.volumeNode);
+            noise.start();
+            this.activeSound = noise;
+        }
+
+        playWave() {
+            const bufferSize = this.ctx.sampleRate * 5;
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            let lastOut = 0.0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                data[i] = (lastOut + (0.02 * white)) / 1.02;
+                lastOut = data[i];
+                data[i] *= 3.5;
+            }
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = buffer;
+            noise.loop = true;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 350;
+
+            const lfo = this.ctx.createOscillator();
+            lfo.frequency.value = 0.12;
+            const lfoGain = this.ctx.createGain();
+            lfoGain.gain.value = 250;
+            lfo.connect(lfoGain);
+            lfoGain.connect(filter.frequency);
+            lfo.start();
+
+            noise.connect(filter);
+            filter.connect(this.volumeNode);
+            noise.start();
+            this.activeSound = [noise, lfo];
+        }
+
+        playAlpha() {
+            const merger = this.ctx.createChannelMerger(2);
+            const oscL = this.ctx.createOscillator();
+            oscL.type = 'sine';
+            oscL.frequency.value = 200;
+            const oscR = this.ctx.createOscillator();
+            oscR.type = 'sine';
+            oscR.frequency.value = 210;
+            oscL.connect(merger, 0, 0);
+            oscR.connect(merger, 0, 1);
+            merger.connect(this.volumeNode);
+            oscL.start();
+            oscR.start();
+            this.activeSound = [oscL, oscR];
+        }
+    }
+
+    function injectAmbientSoundPlayer() {
+        if (document.getElementById('znx-sound-player')) return;
+
+        const audioEngine = new ZNXAudioEngine();
+
+        const container = document.createElement('div');
+        container.id = 'znx-sound-player';
+        container.className = 'znx-sound-collapsed';
+
+        const style = document.createElement('style');
+        style.textContent = `
+            #znx-sound-player {
+                position: fixed;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 999998;
+                background: rgba(255, 255, 255, 0.45);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-left: none;
+                border-radius: 0 16px 16px 0;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+                color: #2c3e50;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                user-select: none;
+            }
+            html.dark #znx-sound-player, [data-darkreader-scheme="dark"] #znx-sound-player {
+                background: rgba(30, 41, 59, 0.65) !important;
+                border: 1px solid rgba(255, 255, 255, 0.12) !important;
+                border-left: none !important;
+                color: #f1f5f9 !important;
+            }
+            #znx-sound-player.znx-sound-collapsed {
+                width: 36px;
+                height: 110px;
+                padding: 12px 6px;
+                cursor: pointer;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            #znx-sound-player.znx-sound-collapsed .znx-sound-full-content {
+                display: none;
+            }
+            #znx-sound-player.znx-sound-collapsed .znx-sound-tab {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                writing-mode: vertical-lr;
+                letter-spacing: 2px;
+            }
+            #znx-sound-player.znx-sound-expanded {
+                width: 220px;
+                padding: 14px;
+            }
+            #znx-sound-player.znx-sound-expanded .znx-sound-tab {
+                display: none;
+            }
+            .znx-sound-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 14px;
+                font-weight: bold;
+                margin-bottom: 12px;
+                padding-bottom: 6px;
+                border-bottom: 1px solid rgba(0,0,0,0.06);
+            }
+            html.dark .znx-sound-header {
+                border-bottom-color: rgba(255,255,255,0.1);
+            }
+            .znx-sound-close-btn {
+                cursor: pointer;
+                font-size: 12px;
+                opacity: 0.7;
+                padding: 2px 6px;
+                border-radius: 6px;
+                background: rgba(0,0,0,0.05);
+            }
+            .znx-sound-close-btn:hover {
+                opacity: 1;
+                background: rgba(0,0,0,0.1);
+            }
+            .znx-sound-types {
+                display: flex;
+                gap: 6px;
+                margin-bottom: 12px;
+            }
+            .znx-sound-pill {
+                flex: 1;
+                text-align: center;
+                padding: 5px 0;
+                font-size: 12px;
+                border-radius: 8px;
+                cursor: pointer;
+                background: rgba(0,0,0,0.05);
+                border: 1px solid transparent;
+                transition: all 0.2s;
+            }
+            html.dark .znx-sound-pill {
+                background: rgba(255,255,255,0.08);
+            }
+            .znx-sound-pill.active {
+                background: rgba(59, 130, 246, 0.2);
+                border-color: rgba(59, 130, 246, 0.5);
+                color: #2563eb;
+                font-weight: bold;
+            }
+            html.dark .znx-sound-pill.active {
+                color: #60a5fa;
+            }
+            .znx-sound-controls {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .znx-sound-play-btn {
+                flex: 1;
+                padding: 6px 0;
+                text-align: center;
+                background: #3b82f6;
+                color: white;
+                font-size: 13px;
+                font-weight: bold;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+                box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+            }
+            .znx-sound-play-btn:hover {
+                background: #2563eb;
+            }
+            .znx-sound-vol-slider {
+                width: 70px;
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(style);
+
+        container.innerHTML = `
+            <div class="znx-sound-tab">
+                <span class="znx-sound-icon">🎵</span>
+                <span>专注音</span>
+                <span style="font-size:10px;">▶</span>
+            </div>
+            <div class="znx-sound-full-content">
+                <div class="znx-sound-header">
+                    <span>🎵 专注白噪音</span>
+                    <span class="znx-sound-close-btn">◀ 收起</span>
+                </div>
+                <div class="znx-sound-types">
+                    <div class="znx-sound-pill active" data-type="rain">🌧️ 柔雨</div>
+                    <div class="znx-sound-pill" data-type="wave">🌊 浪涌</div>
+                    <div class="znx-sound-pill" data-type="alpha">🧘 专注波</div>
+                </div>
+                <div class="znx-sound-controls">
+                    <div class="znx-sound-play-btn">▶ 播放</div>
+                    <input type="range" class="znx-sound-vol-slider" min="0" max="1" step="0.05" value="0.5">
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(container);
+
+        const tab = container.querySelector('.znx-sound-tab');
+        const closeBtn = container.querySelector('.znx-sound-close-btn');
+        const playBtn = container.querySelector('.znx-sound-play-btn');
+        const volSlider = container.querySelector('.znx-sound-vol-slider');
+        const pills = container.querySelectorAll('.znx-sound-pill');
+
+        tab.addEventListener('click', () => {
+            container.classList.remove('znx-sound-collapsed');
+            container.classList.add('znx-sound-expanded');
+        });
+
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            container.classList.remove('znx-sound-expanded');
+            container.classList.add('znx-sound-collapsed');
+        });
+
+        pills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                pills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                const type = pill.getAttribute('data-type');
+                if (audioEngine.isPlaying) {
+                    audioEngine.play(type);
+                } else {
+                    audioEngine.currentType = type;
+                }
+            });
+        });
+
+        playBtn.addEventListener('click', () => {
+            if (audioEngine.isPlaying) {
+                audioEngine.stopCurrent();
+                playBtn.innerHTML = '▶ 播放';
+                playBtn.style.background = '#3b82f6';
+                container.querySelector('.znx-sound-icon').innerText = '🎵';
+            } else {
+                audioEngine.play();
+                playBtn.innerHTML = '⏸ 暂停';
+                playBtn.style.background = '#ef4444';
+                container.querySelector('.znx-sound-icon').innerText = '🎶';
+            }
+        });
+
+        volSlider.addEventListener('input', (e) => {
+            audioEngine.setVolume(parseFloat(e.target.value));
+        });
+    }
+
+    // ==========================================
     // 启动
     // ==========================================
     function init() {
         injectAnimeGlassTheme();
         injectTimeManager();
+        injectAmbientSoundPlayer();
         loadConfettiScript();
         injectLive2D();
         setupEnterKeySubmitHandler();
