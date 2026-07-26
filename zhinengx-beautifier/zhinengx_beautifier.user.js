@@ -14,7 +14,7 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) ? GM_info.script.version : '8.1.0.dev';
+    const SCRIPT_VERSION = '8.1.0-dev.1';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -670,7 +670,7 @@
     // ==========================================
     function injectDevVersionBadge() {
         const scriptName = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.name) ? GM_info.script.name : '';
-        const version = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) ? GM_info.script.version : SCRIPT_VERSION;
+        const version = SCRIPT_VERSION;
         const isDev = version.toLowerCase().includes('dev') || scriptName.includes('DEV') || scriptName.includes('开发') || location.hostname.includes('localhost');
 
         if (!isDev || document.getElementById('znx-dev-watermark')) return;
