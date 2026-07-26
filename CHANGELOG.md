@@ -7,7 +7,11 @@
 ## 🚀 [Unreleased / 下一版本 Roadmap 规划]
 
 ### 🧪 本地开发碎版本履历 (Dev History)
-- **v8.1.0-dev.1** (2026-07-26):
+- **Exporter v11.0.1-dev.1** (2026-07-26):
+  - **Fixed**: 彻底修复点击“导出报告”时因 `rates[0]` 等空指针异常导致按钮永久卡死在“生成中...”的 Major BUG。
+  - **Added**: 增加全链路 `try-catch-finally` 防线，确保无论任何未知错误，按钮文字均能正常复位。
+  - **Added**: 实现 `GM_setClipboard` -> `navigator.clipboard` -> 原生 `prompt()` 弹框三级剪贴板降级机制。
+- **Beautifier v8.1.0-dev.1** (2026-07-26):
   - **Fixed**: 修复由于 CDN 网络波动/超时导致 Live2D 看板娘加载失败后彻底消失的问题。
   - **Added**: 引入多 CDN 容灾镜像轮询（Fastly / Primary / TestingCF）与 `onerror` 自动降级重试机制。
   - **Added**: 新增 8 秒 DOM 健康检测 Guard 与指数退避重试队列，确保看板娘高可用。
