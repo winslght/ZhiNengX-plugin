@@ -549,13 +549,22 @@
     }
 
     // ==========================================
-    // 8. 回车快捷键辅助 (填完答案按回车直接触发：提交答案 / 继续 / 下一步)
+    // 8. 键盘高效刷题交互代理
+    //    - 回车快捷提交/下一步
+    //    - 任意有效字符键自动焦点锁定文本输入框
+    //    - 数字键 1-5 快速选中选择题选项 A-E (#choiceButtonA~E)
     // ==========================================
-    function setupEnterKeySubmitHandler() {
+    function setupKeyboardShortcutsHandler() {
         document.addEventListener('keydown', (e) => {
-            // 输入法输入选词时不触发 (防止中文输入法敲回车误触发)
+            // 1. 正在使用中文输入法选词时不触发
             if (e.isComposing || e.keyCode === 229) return;
 
+            // 2. 忽略修饰键组合 (Ctrl/Alt/Meta/Cmd) 与功能键 (F1~F12/Escape/Tab)
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+            const ignoreKeys = ['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab', 'Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
+            if (ignoreKeys.includes(e.key)) return;
+
+            // 3. 回车键代理逻辑 (提交答案 / 继续 / 下一步)
             if (e.key === 'Enter' || e.keyCode === 13) {
                 const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
                 const actionKeywords = ['提交答案', '继续', '下一步', '再试一次', '查看题解'];
@@ -564,7 +573,7 @@
                 for (const kw of actionKeywords) {
                     targetBtn = buttons.find(b => {
                         const t = (b.innerText || b.textContent || '').trim();
-                        return t.includes(kw) && !t.includes('继续训练');
+                        return t.includes(kw) && !t.includes('继续训练') && !t.includes('反馈') && !t.includes('退出');
                     });
                     if (targetBtn) break;
                 }
@@ -573,6 +582,61 @@
                     e.preventDefault();
                     targetBtn.click();
                     console.log('⚡ [知能行小助手] 回车按键触发点击:', targetBtn.innerText.trim());
+                }
+                return;
+            }
+
+            // 检查当前焦点是否在可编辑文本输入框内 (排除 radio/checkbox)
+            const activeEl = document.activeElement;
+            const isCurrentlyInInput = activeEl && (
+                activeEl.tagName === 'TEXTAREA' ||
+                activeEl.isContentEditable ||
+                (activeEl.tagName === 'INPUT' && !['radio', 'checkbox', 'button', 'submit', 'hidden'].includes((activeEl.type || '').toLowerCase()))
+            );
+
+            // 4. 数字键 1~5 精准选择题选项绑定 (1->A, 2->B, 3->C, 4->D, 5->E)
+            const numVal = parseInt(e.key, 10);
+            if (!isNaN(numVal) && numVal >= 1 && numVal <= 5 && !isCurrentlyInInput) {
+                const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
+                const letter = choiceLetters[numVal - 1];
+
+                // 精准匹配知能行选择题 DOM 元素 (优先匹配 id="choiceButtonA" ~ "choiceButtonE")
+                let targetOption = document.getElementById(`choiceButton${letter}`);
+
+                if (!targetOption) {
+                    const inputRadio = document.querySelector(`input[name="choice"][value="${letter}"]`);
+                    if (inputRadio) {
+                        targetOption = inputRadio.closest('label') || inputRadio;
+                    }
+                }
+
+                if (!targetOption) {
+                    const optionLabels = Array.from(document.querySelectorAll('label[name="choiceButton"], label[id^="choiceButton"], div[name="ProblemItemElement"] label'))
+                        .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
+                    if (optionLabels.length >= numVal) {
+                        targetOption = optionLabels[numVal - 1];
+                    }
+                }
+
+                if (targetOption && document.body.contains(targetOption)) {
+                    e.preventDefault();
+                    targetOption.click();
+                    console.log(`⚡ [知能行小助手] 数字键 ${numVal} 选中选择题选项 ${letter}:`, targetOption);
+                    return;
+                }
+            }
+
+            // 5. 任意有效字符按键自动焦点锁定可编辑文本输入框 (排除 radio/checkbox)
+            if (!isCurrentlyInInput && e.key.length === 1) {
+                if (document.querySelector('.MuiDialog-root, [role="dialog"], div[class*="modal"]')) return;
+
+                const textInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]):not([type="button"]):not([type="submit"]), textarea, .MuiInputBase-input'))
+                    .filter(input => !input.disabled && input.offsetWidth > 0 && input.offsetHeight > 0);
+
+                if (textInputs.length > 0) {
+                    const targetInput = textInputs[0];
+                    targetInput.focus();
+                    console.log('⚡ [知能行小助手] 任意键自动锁定文本输入框聚焦:', targetInput);
                 }
             }
         });
@@ -706,7 +770,7 @@
         injectTimeManager();
         loadConfettiScript();
         injectLive2D();
-        setupEnterKeySubmitHandler();
+        setupKeyboardShortcutsHandler();
         setupQuestionModeObserver();
         setupJumbotronFeedbackObserver();
         injectDevVersionBadge();

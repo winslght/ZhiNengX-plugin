@@ -6,6 +6,11 @@
 
 ## 🚀 [Unreleased / 下一版本 Roadmap 规划]
 
+### 🧪 本地开发碎版本履历 (Dev History)
+- **Beautifier v8.1.0-dev.3** (2026-07-27):
+  - **Fixed**: 解析真实知能行 DOM (`#choiceButtonA~E`)，精确绑定数字键 `1~5` 到选择题选项 A-E，彻底解决误触发顶部“反馈/退出”按钮的问题。
+  - **Fixed**: 过滤 `input[type="radio"]` 与 `input[type="checkbox"]`，解决单选框被误认作文本框导致任意键无法自动聚焦填空题输入框的问题。
+
 ### 📌 下一版本重定义目标
 - **Beautifier v8.3.0 目标**：提供更多自定义主题预设（黑曜石、深海蓝、翡翠绿），并支持自定义考研目标倒计时日期。
 - **Exporter v11.1.0 目标**：优化 ECharts 大屏在移动端/窄屏下的自适应显示，增加诊断报告一键导出 PDF 功能。
