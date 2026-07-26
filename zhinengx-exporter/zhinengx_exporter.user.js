@@ -245,7 +245,7 @@
         md += `- **累计刷题时长**：${inApp.totalTimeSpent ? (inApp.totalTimeSpent / 3600000).toFixed(1) + ' 小时' : '未知'}\n`;
         md += `- **完成辅导 Session**：${inApp.numFinishedTutorSession || 0} 次\n`;
         if (yellowDots.length > 0) {
-            const yellowNames = yellowDots.filter(k => !MATH2_EXCLUDE_KEYS.has(k)).map(k => TOPIC_NAMES[k] || k).join('、');
+            const yellowNames = yellowDots.filter(k => !excludeKeys.has(k)).map(k => TOPIC_NAMES[k] || k).join('、');
             if (yellowNames) {
                 md += `- ⚠️ **须优先消灭小黄点章节**：${yellowNames}\n`;
             }
