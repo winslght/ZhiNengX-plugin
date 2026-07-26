@@ -6,21 +6,24 @@
 
 ## 🚀 [Unreleased / 下一版本 Roadmap 规划]
 
-### 🧪 本地开发碎版本履历 (Dev History)
-- **Beautifier v8.1.0-dev.2** (2026-07-26):
-  - **Fixed**: 优化考研倒计时面板，“本周剩余”与“本月剩余”全面升级为 1 位小数精准动态天数（如周日显示 `0.1 天`），消除原本周日显示 `0 天` 的断层尴尬感。
-- **Exporter v11.0.1-dev.1** (2026-07-26):
-  - **Fixed**: 彻底修复点击“导出报告”时因 `rates[0]` 等空指针异常导致按钮永久卡死在“生成中...”的 Major BUG。
-  - **Added**: 增加全链路 `try-catch-finally` 防线，确保无论任何未知错误，按钮文字均能正常复位。
-  - **Added**: 实现 `GM_setClipboard` -> `navigator.clipboard` -> 原生 `prompt()` 弹框三级剪贴板降级机制。
-- **Beautifier v8.1.0-dev.1** (2026-07-26):
-  - **Fixed**: 修复由于 CDN 网络波动/超时导致 Live2D 看板娘加载失败后彻底消失的问题。
-  - **Added**: 引入多 CDN 容灾镜像轮询（Fastly / Primary / TestingCF）与 `onerror` 自动降级重试机制。
-  - **Added**: 新增 8 秒 DOM 健康检测 Guard 与指数退避重试队列，确保看板娘高可用。
-
 ### 📌 下一版本重定义目标
 - **Beautifier v8.3.0 目标**：提供更多自定义主题预设（黑曜石、深海蓝、翡翠绿），并支持自定义考研目标倒计时日期。
 - **Exporter v11.1.0 目标**：优化 ECharts 大屏在移动端/窄屏下的自适应显示，增加诊断报告一键导出 PDF 功能。
+
+---
+
+## 🧪 专版公测 (Beta Branches)
+
+### 📌 [v8.2.0-beta.1 / v11.0.1-beta.1] - 2026-07-26 (Beta 公测版)
+> **本版主要动机**：全量修复三大已知 BUG（Live2D 容灾重试、导出报告卡死、倒计时精度）并发布公测。
+
+#### ✨ 变更明细 (Changes)
+- **Fixed (Beautifier)**: 修复由于 CDN 网络波动/超时导致 Live2D 看板娘加载失败后彻底消失的问题，引入多 CDN 容灾轮询（Fastly / Primary / TestingCF）与 8s DOM 健康重试 Guard。
+- **Fixed (Beautifier)**: 优化考研倒计时面板，“本周剩余”与“本月剩余”全面升级为 1 位小数精准动态天数（如周日显示 `0.1 天`），消除原本周日显示 `0 天` 的断层尴尬感。
+- **Fixed (Exporter)**: 彻底修复点击“导出报告”时因 `rates[0]` 等空指针异常与 `MATH2_EXCLUDE_KEYS` 变量未定义导致按钮卡死在“生成中...”的 Major BUG。
+- **Added (Exporter)**: 增加全链路 `try-catch-finally` 防线与三级剪贴板降级机制 (`GM_setClipboard` -> `navigator.clipboard` -> 原生 `prompt()` 弹框）。
+
+---
 
 ### 🔮 计划新增功能 (Planned Features)
 - [ ] **【Beautifier】** 新增自定义背景图片 URL 替换输入框与模糊度独立微调。
