@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.3.1
+// @version      8.3.2
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、fghrsh 海量 Live2D 看板娘/换装/考研互动陪伴、Dark Reader 深色自适应与倒计时
 // @author       winslght
 // @license      MIT
@@ -468,7 +468,7 @@
     }
 
     function setupKaoyanWaifuTips() {
-        const welcomeMsg = '✨ 欢迎来到知能行考研数学！今天也要元气满满地消灭突破口哦！加油，winslght！';
+        const welcomeMsg = '✨ 欢迎来到知能行考研数学！今天也要元气满满地消灭突破口哦！加油，考研人！';
 
         // 拦截并替换原脚本空的“欢迎阅读『』”提示
         const observer = new MutationObserver(() => {
@@ -495,7 +495,7 @@
             "遇到难题别慌，认真看解题拆解，一步一步来，你一定行！",
             "手写算一算，做题手感会越来越棒的哦！",
             "记得适度休息，保持好心态，你是最棒的考研战士！",
-            "数学没有捷径，唯有熟能生巧！加油，winslght！",
+            "数学没有捷径，唯有熟能生巧！加油，考研人！",
             "消灭一个小黄点，你就离名校更近一步！"
         ];
 

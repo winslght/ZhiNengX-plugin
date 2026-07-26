@@ -1,6 +1,6 @@
 # <img src="icon.png" width="36" height="36" align="center"> 知能行考研开源插件合集 (ZhiNengX Plugins)
 
-![Version](https://img.shields.io/badge/Version-v11.0.1%20%7C%20v8.3.1-brightgreen?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v11.0.1%20%7C%20v8.3.2-brightgreen?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-winslght-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=for-the-badge)
@@ -23,8 +23,8 @@
 
 ---
 
-### 2. 🎨 知能行 UI 视觉美化与考研助手 (`v8.3.1`)
-修复空标题欢迎语“欢迎阅读『』”、接入 fghrsh 海量 Live2D 动漫模型库与换装系统、考研专属陪伴提示与金句交互、键盘 Enter 快捷提交。
+### 2. 🎨 知能行 UI 视觉美化与考研助手 (`v8.3.2`)
+通用开源版！面向全体考研学子的通用陪伴欢迎语、接入 fghrsh 海量 Live2D 动漫模型库与换装系统、考研专属陪伴提示与金句交互、键盘 Enter 快捷提交。
 
 👉 **[🚀 点击一键安装【UI 视觉美化插件】](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-beautifier/zhinengx_beautifier.user.js)**
 
