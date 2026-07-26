@@ -1,5 +1,15 @@
-*.tmp
+# System and Editor files
 .DS_Store
-*.bak
+Thumbs.db
 .vscode/
 .idea/
+.agents/
+
+# Temp and backup files
+*.tmp
+*.bak
+*.swp
+
+# Dev debug dumps (optional large html pages)
+dev_resources/html/*.html
+dev_resources/data/*.json
