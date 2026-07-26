@@ -1,7 +1,7 @@
 # <img src="icon.png" width="36" height="36" align="center"> 知能行考研开源插件合集 (ZhiNengX Plugins)
 
 ![Version](https://img.shields.io/badge/Version-v11.0.1%20%7C%20v8.1.0-brightgreen?style=for-the-badge)
-![Branch](https://img.shields.io/badge/Branch-main%20%7C%20dev--panel%20%7C%20beta-blue?style=for-the-badge)
+![Branch](https://img.shields.io/badge/Branch-main%20%7C%20develop%20%7C%20dev--panel%20%7C%20beta-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=for-the-badge)
 ![Target](https://img.shields.io/badge/Target-%E6%95%B0%E5%AD%A6%E4%B8%80%20%7C%20%E6%95%B0%E5%AD%A6%E4%BA%8C%20%7C%20%E6%95%B0%E5%AD%A6%E4%BA%8C-red?style=for-the-badge)
@@ -23,7 +23,7 @@
 
 ---
 
-### 2. 🎨 知能行 UI 视觉美化与考研助手 (3 大分支版本选择)
+### 2. 🎨 知能行 UI 视觉美化与考研助手 (版本分支选择)
 
 | 分支版本 | 适用人群 | 特性说明 | 一键安装链接 |
 | :--- | :--- | :--- | :--- |
@@ -33,26 +33,13 @@
 
 ---
 
-## 🛠️ 插件核心功能概览
+## 🛠️ 开发者指南与研发 SOP (Developer Portal)
 
-### 📊 数据分析与诊断报告导出器 (Exporter)
-- 🎯 **自动识别数一/数二/数三**：根据用户账户自动切换考纲过滤规则，完美匹配对应科目。
-- 📝 **纯净 Markdown 报告导出**：一键导出包含考纲能力分布、L1~L5 五级熟练度矩阵、重计算题做对率及错误归因报告。
-- 📈 **ECharts 全景数据大屏**：嵌入原生选项卡，可视化生成三维能力雷达图与近期做题趋势图。
+针对贡献者与本地调试，项目提供了完整、极速的免 Push 开发流：
 
-### 🎨 UI 视觉美化与考研助手 (Beautifier)
-- 🌊 **高雅毛玻璃与暗色联动**：打造高舒适度毛玻璃界面，智能感应 Dark Reader 深色模式同频切换。
-- ⌨️ **键盘 Enter 快捷提交**：键盘 Enter 回车自动触发“提交答案”、“继续”及“下一题”，答题效率大幅提升。
-- 📅 **考研倒计时与时间管理**：2027 考研倒计时、今日/本周/本月剩余比例进度条及公历日期显示。
-- 🤖 **Live2D 看板娘**：内置可折叠交互看板娘，伴你沉浸式备考。
-
----
-
-## 🔄 版本日志与缺陷管理 (Changelog & Issues)
-
-为了保持主 README 的纯净，全量更新历史与 Known Issues 独立在专用文档中维系：
-
-- 📝 **[完整更新日志 (CHANGELOG.md)](CHANGELOG.md)**：查看全版本演进历程与详细修复细节。
+- ⚡ **[0 次 Push 秒级调试指南 (DEVELOPMENT_WORKFLOW.md)](docs/DEVELOPMENT_WORKFLOW.md)**：通过油猴 `file://` 直加载存根脚本，IDE 修改按 `Ctrl+S` 保存后，浏览器刷新即刻生效，无需频繁改动版本号及提交 Git。
+- 🛡️ **[Git Task 分支隔离与 BUG 止损 SOP (GIT_DEVELOPMENT_SOP.md)](docs/GIT_DEVELOPMENT_SOP.md)**：规范 Task 隔离分支 (feature/fix)，指导当修 BUG 引发新问题时的 Fix Forward 与 Revert / Abandon 决策。
+- 📝 **[完整更新日志 (CHANGELOG.md)](CHANGELOG.md)**：查看全版本演进履历与详细修复细节。
 - 🐞 **[已知 BUG 矩阵与 Roadmap (ROADMAP_AND_ISSUES.md)](docs/ROADMAP_AND_ISSUES.md)**：查看当前版本已知 BUG 规避方案与下版开发规划。
 
 ---
@@ -74,7 +61,9 @@ ZhiNengX/
 │   ├── zhinengx_exporter.user.js       # 核心源码 (v11.0.1 稳定版)
 │   └── README.md                       # Sub-module 说明
 │
-├── docs/                               # 📖 项目规范与文档
+├── docs/                               # 📖 研发 SOP 与项目规范
+│   ├── DEVELOPMENT_WORKFLOW.md        # ⚡ 0 Push 秒级调试与发版 SOP
+│   ├── GIT_DEVELOPMENT_SOP.md         # 🛡️ Task 分支隔离与止损回退 SOP
 │   ├── ROADMAP_AND_ISSUES.md          # 🐞 已知 BUG 矩阵与需求池
 │   ├── RELEASE_TEMPLATE.md            # 📋 发版日志模版
 │   └── version_history_and_ratings.md # 📜 历史评分记录
@@ -83,7 +72,8 @@ ZhiNengX/
 │   ├── beautifier/                     # 历史美化插件备份
 │   └── exporter/                       # 历史导出插件备份
 │
-└── dev_resources/                      # 🛠️ 开发测试资源 (Git Ignored)
+└── dev_resources/                      # 🛠️ 本地开发测试资源 (Git Ignored)
+    ├── zhinengx_beautifier.dev.user.js # ⚡ 油猴本地直加载调试存根
     ├── data/                           # 调试 JSON 数据
     ├── html/                           # 离线 DOM 快照
     └── screenshots/                    # 问题反馈截图
