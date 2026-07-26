@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.3.2
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、fghrsh 海量 Live2D 看板娘/换装/考研互动陪伴、Dark Reader 深色自适应与倒计时
+// @version      8.3.3
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、fghrsh 海量 Live2D 看板娘/换装/考研短精炼金句陪伴、Dark Reader 深色自适应与倒计时
 // @author       winslght
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -468,7 +468,14 @@
     }
 
     function setupKaoyanWaifuTips() {
-        const welcomeMsg = '✨ 欢迎来到知能行考研数学！今天也要元气满满地消灭突破口哦！加油，考研人！';
+        const welcomeMsgs = [
+            "✨ 欢迎！今天也要元气满满哦！",
+            "🔥 坚持就是胜利，考研人加油！",
+            "🎯 开始消灭今天的突破口吧！",
+            "💡 保持专注，每一题都是进步！",
+            "🚀 乾坤未定，你我皆是黑马！"
+        ];
+        const getRandomWelcome = () => welcomeMsgs[Math.floor(Math.random() * welcomeMsgs.length)];
 
         // 拦截并替换原脚本空的“欢迎阅读『』”提示
         const observer = new MutationObserver(() => {
@@ -476,7 +483,7 @@
             if (tips) {
                 const text = (tips.innerText || tips.textContent || '').trim();
                 if (text.includes('欢迎阅读') || text.includes('『』') || text === '欢迎阅读『』' || text.endsWith('『』')) {
-                    tips.innerHTML = welcomeMsg;
+                    tips.innerHTML = getRandomWelcome();
                 }
             }
         });
@@ -485,44 +492,51 @@
             const tips = document.getElementById('waifu-tips');
             if (tips) {
                 observer.observe(tips, { childList: true, characterData: true, subtree: true });
-                showWaifuTip(welcomeMsg, 5000);
+                showWaifuTip(getRandomWelcome(), 4000);
                 clearInterval(checkTipsInterval);
             }
         }, 300);
 
         const kaoyanQuotes = [
-            "今天的高数习题刷完了吗？消灭每一个突破口，27考研高分上岸！",
-            "遇到难题别慌，认真看解题拆解，一步一步来，你一定行！",
-            "手写算一算，做题手感会越来越棒的哦！",
-            "记得适度休息，保持好心态，你是最棒的考研战士！",
-            "数学没有捷径，唯有熟能生巧！加油，考研人！",
-            "消灭一个小黄点，你就离名校更近一步！"
+            "消灭突破口，名校在等你！",
+            "遇到难题别慌，一步步来！",
+            "手写算一算，手感更棒！",
+            "适度休息，保持好心态！",
+            "熟能生巧，数学无捷径！",
+            "消灭小黄点，离高分更近！",
+            "保持节奏，27考研必胜！",
+            "错题是上岸的阶梯！加油！",
+            "相信自己，你远比想象中强大！",
+            "星光不问赶路人，加油！",
+            "越努力，越幸运！",
+            "每一分汗水，都在为高分加码！",
+            "今天高数刷了几题？加油！"
         ];
 
         document.addEventListener('mouseover', (e) => {
             const target = e.target;
             if (!target) return;
             if (target.closest('input[type="text"], textarea')) {
-                showWaifuTip('✍️ 用心算一算，填完答案直接按回车（Enter）就能快捷提交哦！', 3000);
+                showWaifuTip('✍️ 用心计算，按回车（Enter）直接提交！', 2500);
             } else if (target.closest('#znx-time-manager')) {
-                showWaifuTip('🔥 每一秒的汗水都在为你走向高分加码！坚持到底！', 3000);
+                showWaifuTip('🔥 每一秒都在为高分加码！', 2500);
             } else if (target.closest('button, .btn, .MuiButtonBase-root')) {
                 const text = (target.innerText || target.textContent || '').trim();
                 if (text.includes('提交答案')) {
-                    showWaifuTip('🎯 准备好了吗？相信自己，敲下回车提交答案吧！', 2500);
+                    showWaifuTip('🎯 准备好了吗？按回车提交答案！', 2000);
                 } else if (text.includes('查看题解')) {
-                    showWaifuTip('💡 搞懂错题逻辑就是最大的进步！复盘走起！', 2500);
+                    showWaifuTip('💡 搞懂错题逻辑就是进步！', 2000);
                 } else if (text.includes('继续') || text.includes('下一步')) {
-                    showWaifuTip('🚀 乘胜追击，开启下一道突破口！', 2500);
+                    showWaifuTip('🚀 乘胜追击，下一题！', 2000);
                 }
             }
         });
 
-        // 点击看板娘触发考研金句
+        // 点击看板娘触发精炼考研金句
         document.addEventListener('click', (e) => {
             if (e.target.closest('#waifu canvas, #live2d')) {
                 const randomQuote = kaoyanQuotes[Math.floor(Math.random() * kaoyanQuotes.length)];
-                showWaifuTip(randomQuote, 4000);
+                showWaifuTip(randomQuote, 3000);
             }
         });
     }
