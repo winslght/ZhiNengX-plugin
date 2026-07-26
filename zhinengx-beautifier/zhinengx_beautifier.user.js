@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.2.1
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
+// @version      8.2.0-beta.1
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)与考研倒计时(1位小数)辅助
 // @author       winslght
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -14,7 +14,8 @@
 (function() {
     'use strict';
 
-    console.log('[ZhiNengX Enhancer] 知能行视觉美化与助手 v8.2.1 已就绪');
+    const SCRIPT_VERSION = '8.2.0-beta.1';
+    console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
 
@@ -60,13 +61,12 @@
                 color: var(--znx-tab-text) !important;
             }
 
-            /* 进度条绝对防护：绝对保留经验值/等级进度条原生填充色彩，禁止被透明毛玻璃覆盖 */
-            .MuiLinearProgress-root, .MuiLinearProgress-bar, div[role="progressbar"], [class*="progress"], [class*="Progress"] {
+            /* 进度条保真防护 */
+            html body #root div[style*="height: 16px"],
+            html body #root div[style*="height:16px"] {
+                border-radius: 0 !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
-            }
-            .MuiLinearProgress-bar, div[role="progressbar"] > div, [class*="progress"] > div {
-                opacity: 1 !important;
             }
 
             /* F. 做题界面顶部工具栏 (opacity: 0.85, blur: 15px) */
@@ -159,8 +159,12 @@
             #waifu-tool { opacity: 0 !important; transition: opacity 0.3s ease-in-out !important; pointer-events: none !important; }
             #waifu:hover #waifu-tool, #waifu-tool:hover { opacity: 1 !important; pointer-events: auto !important; }
 
-            /* G. 做题底栏做对/做错毛玻璃 (精准锁定底栏，绝不误伤题卡与关联题) */
-            html.znx-doing-questions [data-znx-result="correct"] {
+            /* G. 做题底栏做对/做错毛玻璃 (opacity: 0.4, blur: 8px) */
+            html.znx-doing-questions .jumbotron:has(#FootcontentYes),
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes),
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentYes),
+            html.znx-doing-questions .jumbotron[data-znx-result="correct"],
+            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="correct"] {
                 background: rgba(34, 197, 94, 0.4) !important;
                 backdrop-filter: blur(8px) saturate(140%) !important;
                 -webkit-backdrop-filter: blur(8px) saturate(140%) !important;
@@ -168,12 +172,23 @@
                 box-shadow: 0 -4px 20px rgba(34, 197, 94, 0.25), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
                 transition: background 0.2s ease !important;
             }
-            html.znx-doing-questions [data-znx-result="correct"] div {
+            html.znx-doing-questions .jumbotron:has(#FootcontentYes) div,
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes) div,
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentYes) div,
+            html.znx-doing-questions .jumbotron[data-znx-result="correct"] div,
+            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="correct"] div {
                 background: transparent !important;
                 box-shadow: none !important;
             }
 
-            html.znx-doing-questions [data-znx-result="wrong"] {
+            html.znx-doing-questions .jumbotron:has(#FootcontentNo),
+            html.znx-doing-questions .jumbotron:has(#FootcontentWrong),
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentNo),
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentWrong),
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentNo),
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentWrong),
+            html.znx-doing-questions .jumbotron[data-znx-result="wrong"],
+            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="wrong"] {
                 background: rgba(239, 68, 68, 0.4) !important;
                 backdrop-filter: blur(8px) saturate(140%) !important;
                 -webkit-backdrop-filter: blur(8px) saturate(140%) !important;
@@ -181,7 +196,14 @@
                 box-shadow: 0 -4px 20px rgba(239, 68, 68, 0.25), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
                 transition: background 0.2s ease !important;
             }
-            html.znx-doing-questions [data-znx-result="wrong"] div {
+            html.znx-doing-questions .jumbotron:has(#FootcontentNo) div,
+            html.znx-doing-questions .jumbotron:has(#FootcontentWrong) div,
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentNo) div,
+            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentWrong) div,
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentNo) div,
+            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentWrong) div,
+            html.znx-doing-questions .jumbotron[data-znx-result="wrong"] div,
+            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="wrong"] div {
                 background: transparent !important;
                 box-shadow: none !important;
             }
@@ -225,8 +247,6 @@
             el.setAttribute('data-znx-checked', '1');
             if (el.closest('[id*="waifu"], [id*="live2d"], [id*="landlord"], [class*="waifu"], [class*="live2d"]')) return;
             if (el.closest('.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"]')) return;
-            // 排除所有进度条元素
-            if (el.closest('.MuiLinearProgress-root, [role="progressbar"], [class*="progress"], [class*="Progress"], [style*="height: 16px"], [style*="height:16px"]')) return;
 
             const targetClasses = Array.from(el.classList).filter(c => c.startsWith('jss') || c.startsWith('_'));
             if (targetClasses.length === 0) return;
@@ -329,11 +349,13 @@
 
             let dow = now.getDay(); if (dow === 0) dow = 7;
             const weekLeft = 7 - dow;
+            const weekExactDays = (weekLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
             const weekRemainingRatio = ((weekLeft + (todayMs / (24 * 60 * 60 * 1000))) / 7) * 100;
 
             const eom = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             const monthTotal = eom.getDate();
             const monthLeft = monthTotal - now.getDate();
+            const monthExactDays = (monthLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
             const monthRemainingRatio = ((monthLeft + (todayMs / (24 * 60 * 60 * 1000))) / monthTotal) * 100;
 
             const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
@@ -341,7 +363,7 @@
 
             const bar = (label, value, ratio, color) => `<div style="margin-top:15px"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:bold;margin-bottom:5px"><span>${label}</span><span style="color:${color}">${value}</span></div><div style="width:100%;height:8px;background:rgba(0,0,0,0.1);border-radius:4px;overflow:hidden"><div style="width:${ratio.toFixed(1)}%;height:100%;background:${color};transition:width 1s"></div></div></div>`;
 
-            widget.innerHTML = `<div style="text-align:center;margin-bottom:15px"><h3 style="margin:0;font-size:18px;color:#1e3a8a;font-weight:900">🔥 27考研倒计时</h3><div style="font-size:42px;font-weight:900;color:#e11d48;line-height:1.2;text-shadow:2px 2px 4px rgba(0,0,0,0.1)">${daysLeft > 0 ? daysLeft : 0} <span style="font-size:16px;color:#666">天</span></div><div style="font-size:13px;color:#475569;font-weight:bold;margin-top:6px;letter-spacing:0.5px">📅 ${todayDateStr}</div></div><hr style="border:none;border-top:1px dashed rgba(0,0,0,0.2);margin:15px 0">${bar('今日剩余', h+'时 '+m+'分 '+s+'秒', todayRemainingRatio, '#3b82f6')}${bar('本周剩余', weekLeft+' 天', weekRemainingRatio, '#10b981')}${bar('本月剩余', monthLeft+' 天', monthRemainingRatio, '#8b5cf6')}`;
+            widget.innerHTML = `<div style="text-align:center;margin-bottom:15px"><h3 style="margin:0;font-size:18px;color:#1e3a8a;font-weight:900">🔥 27考研倒计时</h3><div style="font-size:42px;font-weight:900;color:#e11d48;line-height:1.2;text-shadow:2px 2px 4px rgba(0,0,0,0.1)">${daysLeft > 0 ? daysLeft : 0} <span style="font-size:16px;color:#666">天</span></div><div style="font-size:13px;color:#475569;font-weight:bold;margin-top:6px;letter-spacing:0.5px">📅 ${todayDateStr}</div></div><hr style="border:none;border-top:1px dashed rgba(0,0,0,0.2);margin:15px 0">${bar('今日剩余', h+'时 '+m+'分 '+s+'秒', todayRemainingRatio, '#3b82f6')}${bar('本周剩余', weekExactDays+' 天', weekRemainingRatio, '#10b981')}${bar('本月剩余', monthExactDays+' 天', monthRemainingRatio, '#8b5cf6')}`;
         }
 
         updateTime();
@@ -421,22 +443,109 @@
     });
 
     // ==========================================
-    // 7. Live2D 看板娘
+    // 7. Live2D 看板娘 (多 CDN 容灾与健康重试 Guard)
     // ==========================================
+    const LIVE2D_CDN_SOURCES = [
+        'https://fastly.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js',
+        'https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js',
+        'https://testingcf.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js'
+    ];
+
+    const FA_CDN_SOURCES = [
+        'https://fastly.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css',
+        'https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css',
+        'https://testingcf.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css'
+    ];
+
+    let live2dCdnIndex = 0;
+    let live2dRetryCount = 0;
+    const MAX_LIVE2D_RETRIES = 5;
+    let live2dHealthGuardTimer = null;
+
     function injectLive2D() {
-        if (document.getElementById('waifu') || document.getElementById('live2d-widget-script')) return;
+        // 如果已经成功渲染出 waifu 容器，无需重复注入
+        if (document.getElementById('waifu')) return;
+
+        // 清除可能残留的失败 script 节点
+        const oldScript = document.getElementById('live2d-widget-script');
+        if (oldScript) {
+            oldScript.remove();
+        }
+
         localStorage.removeItem('waifu-display');
         sessionStorage.removeItem('waifu-display');
 
-        const fa = document.createElement('link');
-        fa.rel = 'stylesheet';
-        fa.href = 'https://fastly.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css';
-        document.head.appendChild(fa);
+        // 注入 Font Awesome CSS (带容灾)
+        if (!document.getElementById('live2d-fa-css')) {
+            const fa = document.createElement('link');
+            fa.id = 'live2d-fa-css';
+            fa.rel = 'stylesheet';
+            fa.href = FA_CDN_SOURCES[0];
+            fa.onerror = () => {
+                fa.href = FA_CDN_SOURCES[1] || FA_CDN_SOURCES[2];
+            };
+            document.head.appendChild(fa);
+        }
+
+        const currentCdn = LIVE2D_CDN_SOURCES[live2dCdnIndex % LIVE2D_CDN_SOURCES.length];
+        console.log(`[ZhiNengX Live2D] 尝试加载 Live2D 看板娘 (CDN ${live2dCdnIndex + 1}/${LIVE2D_CDN_SOURCES.length}, 第 ${live2dRetryCount + 1} 次):`, currentCdn);
 
         const s = document.createElement('script');
         s.id = 'live2d-widget-script';
-        s.src = 'https://fastly.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js';
+        s.src = currentCdn;
+
+        // 绑定 onerror 事件：当前 CDN 加载失败时，清除旧 script 并自动轮换 CDN 重试
+        s.onerror = () => {
+            console.warn(`[ZhiNengX Live2D] ⚠️ 当前 CDN 加载失败: ${currentCdn}，自动切换至下一镜像重试...`);
+            s.remove();
+            live2dCdnIndex++;
+            scheduleLive2DRetry(2000);
+        };
+
+        s.onload = () => {
+            console.log(`[ZhiNengX Live2D] Live2D autoload.js 脚本成功响应 (${currentCdn})`);
+        };
+
         document.body.appendChild(s);
+
+        // 启动 8s DOM 健康检测 Guard
+        setupLive2DHealthGuard();
+    }
+
+    function scheduleLive2DRetry(delayMs) {
+        if (live2dRetryCount >= MAX_LIVE2D_RETRIES) {
+            console.warn(`[ZhiNengX Live2D] 🛑 已达最大重试次数 (${MAX_LIVE2D_RETRIES} 次)，看板娘暂无法加载。`);
+            return;
+        }
+
+        live2dRetryCount++;
+        const backoffDelay = delayMs || Math.min(3000 * Math.pow(2, live2dRetryCount - 1), 30000);
+        console.log(`[ZhiNengX Live2D] 🔄 计划在 ${(backoffDelay / 1000).toFixed(1)} 秒后触发下一次重试...`);
+
+        setTimeout(() => {
+            if (!document.getElementById('waifu')) {
+                injectLive2D();
+            }
+        }, backoffDelay);
+    }
+
+    function setupLive2DHealthGuard() {
+        if (live2dHealthGuardTimer) clearTimeout(live2dHealthGuardTimer);
+
+        // 脚本插入 8 秒后检测 #waifu 节点是否存在
+        live2dHealthGuardTimer = setTimeout(() => {
+            const waifu = document.getElementById('waifu');
+            if (!waifu) {
+                console.warn('[ZhiNengX Live2D] ⚠️ 8 秒内未检测到 #waifu 渲染节点 (可能网络超时)，启动健康保底重试...');
+                const oldScript = document.getElementById('live2d-widget-script');
+                if (oldScript) oldScript.remove();
+                live2dCdnIndex++;
+                scheduleLive2DRetry(3000);
+            } else {
+                console.log('[ZhiNengX Live2D] ✅ 看板娘健康校验通过 (#waifu 已渲染)');
+                live2dRetryCount = 0; // 校验成功，重置计数器
+            }
+        }, 8000);
     }
 
     // ==========================================
@@ -481,62 +590,39 @@
     }
 
     // ==========================================
-    // 10. 底栏做对/做错状态感应器 (完美防误伤与防跨层染色)
+    // 10. 底栏做对/做错状态感应器
     // ==========================================
     function setupJumbotronFeedbackObserver() {
         const updateStatus = () => {
             const isDoing = document.documentElement.classList.contains('znx-doing-questions');
-            
-            // 全局清理函数
-            const clearFeedbackStyles = () => {
-                document.querySelectorAll('[data-znx-result]').forEach(el => {
-                    el.removeAttribute('data-znx-result');
-                    ['background', 'backdrop-filter', '-webkit-backdrop-filter', 'border-top', 'box-shadow'].forEach(p => el.style.removeProperty(p));
-                    el.querySelectorAll('div').forEach(c => c.style.removeProperty('background'));
-                });
-            };
+            const jumbotron = document.querySelector('.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"]');
 
-            if (!isDoing) {
-                clearFeedbackStyles();
+            if (!isDoing || !jumbotron) {
+                if (jumbotron) {
+                    jumbotron.removeAttribute('data-znx-result');
+                    ['background', 'backdrop-filter', '-webkit-backdrop-filter', 'border-top', 'box-shadow'].forEach(p => jumbotron.style.removeProperty(p));
+                    jumbotron.querySelectorAll('div').forEach(c => c.style.removeProperty('background'));
+                }
                 return;
             }
 
-            // 查找做题底栏的关键动作按钮
             const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
             const actionBtn = buttons.find(b => {
                 const t = (b.innerText || b.textContent || '').trim();
                 return t.includes('提交答案') || t.includes('继续') || t.includes('再试一次') || t.includes('查看题解');
             });
 
-            if (!actionBtn) {
-                clearFeedbackStyles();
-                return;
-            }
+            const targetJumbotron = actionBtn ? (
+                actionBtn.closest('.jumbotron') || actionBtn.closest('div[class*="jumbotron"]') ||
+                actionBtn.closest('div[class*="_3o6JR"]') || actionBtn.closest('div[class*="_1ktiDhx"]') ||
+                actionBtn.parentElement?.parentElement
+            ) : jumbotron;
 
-            // 核心修复：精准定位最外层的底栏容器，绝不选到包含题目卡片（_3WnwfR）的大容器！
-            let targetBar = actionBtn.closest('div[class*="_1JpWFCTNY81yLAVb14XE8H"]')?.parentElement ||
-                            actionBtn.closest('div[class*="_1ktiDhx"]') ||
-                            actionBtn.closest('div[class*="_3o6JR"]');
+            if (!targetJumbotron) return;
 
-            // 如果找到的容器包含题目主体 (_3WnwfR)，说明找得太高了，降级锁定 actionBtn 所在的上一层父容器
-            if (targetBar && (targetBar.querySelector('div[class*="_3WnwfR"]') || targetBar.innerText.includes('已掌握的有关联的题'))) {
-                targetBar = actionBtn.parentElement?.parentElement || actionBtn.parentElement;
-            }
+            const fullPageText = document.body.innerText || '';
 
-            if (!targetBar) return;
-
-            // 核心修复：排除所有弹窗 (Dialog) 影响！弹窗里的“确认查看”、“再试一次”不能干扰主做题判定
-            let fullPageText = '';
-            const rootEl = document.getElementById('root') || document.body;
-            if (document.querySelector('.MuiDialog-root')) {
-                const clone = rootEl.cloneNode(true);
-                clone.querySelectorAll('.MuiDialog-root, .MuiDialog-paper, #znx-time-manager, #waifu').forEach(n => n.remove());
-                fullPageText = clone.innerText || '';
-            } else {
-                fullPageText = rootEl.innerText || '';
-            }
-
-            // 1. 最高优先级：判定做错 / 超时 / 放弃场景
+            // 1. 最高优先级：判定做错 / 超时 / 放弃场景（防止“超时，点击继续”被误识别为做对继续）
             const isWrong = fullPageText.includes('答案错误') ||
                             fullPageText.includes('再试一次') ||
                             fullPageText.includes('超时') ||
@@ -552,42 +638,64 @@
                 (fullPageText.includes('继续') && !fullPageText.includes('继续训练') && !fullPageText.includes('点击继续'))
             );
 
-            // 保证同时只有一个底栏被染色，清除其他误染色的节点
-            document.querySelectorAll('[data-znx-result]').forEach(el => {
-                if (el !== targetBar) {
-                    el.removeAttribute('data-znx-result');
-                    ['background', 'backdrop-filter', '-webkit-backdrop-filter', 'border-top', 'box-shadow'].forEach(p => el.style.removeProperty(p));
-                    el.querySelectorAll('div').forEach(c => c.style.removeProperty('background'));
-                }
-            });
-
-            const children = targetBar.querySelectorAll('div');
+            const children = targetJumbotron.querySelectorAll('div');
 
             if (isCorrect) {
-                targetBar.setAttribute('data-znx-result', 'correct');
-                targetBar.style.setProperty('background', 'rgba(34, 197, 94, 0.4)', 'important');
-                targetBar.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
-                targetBar.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
-                targetBar.style.setProperty('border-top', '1.5px solid rgba(34, 197, 94, 0.8)', 'important');
-                targetBar.style.setProperty('box-shadow', '0 -4px 20px rgba(34, 197, 94, 0.25)', 'important');
+                targetJumbotron.setAttribute('data-znx-result', 'correct');
+                targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.4)', 'important');
+                targetJumbotron.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
+                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
+                targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(34, 197, 94, 0.8)', 'important');
+                targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(34, 197, 94, 0.25)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else if (isWrong) {
-                targetBar.setAttribute('data-znx-result', 'wrong');
-                targetBar.style.setProperty('background', 'rgba(239, 68, 68, 0.4)', 'important');
-                targetBar.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
-                targetBar.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
-                targetBar.style.setProperty('border-top', '1.5px solid rgba(239, 68, 68, 0.8)', 'important');
-                targetBar.style.setProperty('box-shadow', '0 -4px 20px rgba(239, 68, 68, 0.25)', 'important');
+                targetJumbotron.setAttribute('data-znx-result', 'wrong');
+                targetJumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.4)', 'important');
+                targetJumbotron.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
+                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
+                targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(239, 68, 68, 0.8)', 'important');
+                targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(239, 68, 68, 0.25)', 'important');
                 children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else {
-                targetBar.removeAttribute('data-znx-result');
-                ['background', 'backdrop-filter', '-webkit-backdrop-filter', 'border-top', 'box-shadow'].forEach(p => targetBar.style.removeProperty(p));
+                targetJumbotron.removeAttribute('data-znx-result');
+                ['background', 'backdrop-filter', '-webkit-backdrop-filter', 'border-top', 'box-shadow'].forEach(p => targetJumbotron.style.removeProperty(p));
                 children.forEach(c => c.style.removeProperty('background'));
             }
         };
 
         new MutationObserver(updateStatus).observe(document.body, { childList: true, subtree: true, characterData: true });
         updateStatus();
+    }
+
+    // ==========================================
+    // 11. 本地 Dev 碎版本底栏追溯水印
+    // ==========================================
+    function injectDevVersionBadge() {
+        const scriptName = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.name) ? GM_info.script.name : '';
+        const version = SCRIPT_VERSION;
+        const isDev = version.toLowerCase().includes('dev') || scriptName.includes('DEV') || scriptName.includes('开发') || location.hostname.includes('localhost');
+
+        if (!isDev || document.getElementById('znx-dev-watermark')) return;
+
+        const badge = document.createElement('div');
+        badge.id = 'znx-dev-watermark';
+        badge.title = '知能行 0-Push 本地开发调试模式 - 点击可一键复制当前碎版本号';
+        badge.style.cssText = 'position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:999999;background:rgba(15,23,42,0.85);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(56,189,248,0.4);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:#38bdf8;box-shadow:0 4px 14px rgba(0,0,0,0.25),0 0 10px rgba(56,189,248,0.15);cursor:pointer;user-select:none;transition:all 0.2s ease;display:flex;align-items:center;gap:6px;letter-spacing:0.5px;';
+
+        badge.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#38bdf8;box-shadow:0 0 6px #38bdf8;animation:znxPulse 1.5s infinite"></span><span>🛠️ DEV <span style="color:#f43f5e;font-weight:800">v${version}</span> | 本地直加载模式</span>`;
+
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes znxPulse{0%{opacity:0.4;transform:scale(0.9)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0.4;transform:scale(0.9)}}#znx-dev-watermark:hover{background:rgba(15,23,42,0.95) !important;border-color:rgba(56,189,248,0.8) !important;transform:translateX(-50%) translateY(-2px) !important;box-shadow:0 6px 18px rgba(0,0,0,0.35),0 0 14px rgba(56,189,248,0.3) !important}`;
+        document.head.appendChild(style);
+
+        badge.onclick = () => {
+            navigator.clipboard.writeText(`v${version}`);
+            const oldHTML = badge.innerHTML;
+            badge.innerHTML = `<span style="color:#10b981">✓ 已复制版本号 v${version}</span>`;
+            setTimeout(() => { badge.innerHTML = oldHTML; }, 1500);
+        };
+
+        document.body.appendChild(badge);
     }
 
     // ==========================================
@@ -601,6 +709,7 @@
         setupEnterKeySubmitHandler();
         setupQuestionModeObserver();
         setupJumbotronFeedbackObserver();
+        injectDevVersionBadge();
     }
 
     if (document.readyState === 'loading') {

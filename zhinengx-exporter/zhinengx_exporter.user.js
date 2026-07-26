@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行考研数学 - 通用诊断报告与数据大屏导出器
 // @namespace    http://tampermonkey.net/
-// @version      11.0.1
+// @version      11.0.1-beta.1
 // @description  自动识别数学一、数学二、数学三，一键导出纯净 Markdown 诊断报告与 ECharts 可视化数据大屏
 // @author       winslght
 // @license      MIT
@@ -173,8 +173,12 @@
     async function fetchFullJsonActively() {
         const candidateUrls = [
             '/getUserProfileDiagramLast',
+            '/getUserProfile',
+            '/getUserProfileDiagram',
             'https://app.bestzixue.com/getUserProfileDiagramLast',
-            'https://app.zhinengxing.com/getUserProfileDiagramLast'
+            'https://app.bestzixue.com/getUserProfile',
+            'https://app.zhinengxing.com/getUserProfileDiagramLast',
+            'https://app.zhinengxing.com/getUserProfile'
         ];
 
         for (const url of candidateUrls) {
@@ -184,6 +188,7 @@
                     const data = await res.json();
                     if (data && (data.status || data.profile)) {
                         rawFullJson = data;
+                        console.log('【知能行 AI 导出器】主动 Fetch 补全数据成功:', rawFullJson);
                         return rawFullJson;
                     }
                 }
@@ -240,7 +245,7 @@
         md += `- **累计刷题时长**：${inApp.totalTimeSpent ? (inApp.totalTimeSpent / 3600000).toFixed(1) + ' 小时' : '未知'}\n`;
         md += `- **完成辅导 Session**：${inApp.numFinishedTutorSession || 0} 次\n`;
         if (yellowDots.length > 0) {
-            const yellowNames = yellowDots.filter(k => !MATH2_EXCLUDE_KEYS.has(k)).map(k => TOPIC_NAMES[k] || k).join('、');
+            const yellowNames = yellowDots.filter(k => !excludeKeys.has(k)).map(k => TOPIC_NAMES[k] || k).join('、');
             if (yellowNames) {
                 md += `- ⚠️ **须优先消灭小黄点章节**：${yellowNames}\n`;
             }
@@ -256,21 +261,22 @@
             if (excludeKeys.has(key)) continue;
 
             const rates = levelsData[key];
+            const safeRates = Array.isArray(rates) ? rates : [0, 0, 0, 0, 0];
             const rawScoreVal = topicScores[key] || 0;
             const noRustyScoreVal = topicWithoutRusty[key] || 0;
 
-            const hasProgress = (Array.isArray(rates) && rates.some(r => r > 0)) || rawScoreVal > 0 || noRustyScoreVal > 0;
+            const hasProgress = safeRates.some(r => r > 0) || rawScoreVal > 0 || noRustyScoreVal > 0;
             if (!hasProgress) continue;
 
             const topicName = TOPIC_NAMES[key] || key;
             const rawScore = (rawScoreVal * 100).toFixed(1) + '%';
             const noRustyScore = (noRustyScoreVal * 100).toFixed(1) + '%';
 
-            const l1 = (rates[0] * 100).toFixed(1) + '%';
-            const l2 = (rates[1] * 100).toFixed(1) + '%';
-            const l3 = (rates[2] * 100).toFixed(1) + '%';
-            const l4 = (rates[3] * 100).toFixed(1) + '%';
-            const l5 = (rates[4] * 100).toFixed(1) + '%';
+            const l1 = ((safeRates[0] || 0) * 100).toFixed(1) + '%';
+            const l2 = ((safeRates[1] || 0) * 100).toFixed(1) + '%';
+            const l3 = ((safeRates[2] || 0) * 100).toFixed(1) + '%';
+            const l4 = ((safeRates[3] || 0) * 100).toFixed(1) + '%';
+            const l5 = ((safeRates[4] || 0) * 100).toFixed(1) + '%';
             
             md += `| \`${key}\` | **${topicName}** | **${rawScore}** | ${noRustyScore} | ${l1} | ${l2} | ${l3} | ${l4} | ${l5} |\n`;
         }
@@ -568,26 +574,67 @@
             exportBtn.addEventListener('click', async () => {
                 const textSpan = exportBtn.querySelector('#exportTabText');
                 const iconSvg = exportBtn.querySelector('#exportIconSvg');
-                const originalText = textSpan.innerText;
-                textSpan.innerText = '生成中...';
-                
-                let data = rawFullJson;
-                if (!data) data = await fetchFullJsonActively();
-                if (!data) {
-                    alert('未能调取到熟练度 JSON 数据，请确认知能行是否已登录并刷新页面！');
-                    textSpan.innerText = originalText; return;
+                const originalText = '导出报告';
+
+                try {
+                    textSpan.innerText = '生成中...';
+                    
+                    let data = rawFullJson;
+                    if (!data) data = await fetchFullJsonActively();
+                    if (!data) {
+                        alert('未能调取到熟练度 JSON 数据，请确认知能行是否已登录并刷新页面！');
+                        return;
+                    }
+
+                    const reportMarkdown = buildPureMarkdownReport(data);
+                    if (!reportMarkdown) {
+                        alert('诊断报告生成失败：返回的数据解构缺乏核心状态，请刷新页面重试！');
+                        return;
+                    }
+
+                    let copySuccess = false;
+
+                    // 1. 优先尝试油猴特权 GM_setClipboard
+                    if (typeof GM_setClipboard !== 'undefined') {
+                        try {
+                            GM_setClipboard(reportMarkdown);
+                            copySuccess = true;
+                        } catch (e) {
+                            console.warn('【知能行 AI 导出器】GM_setClipboard 写入失败:', e);
+                        }
+                    }
+
+                    // 2. 降级尝试原生 navigator.clipboard.writeText
+                    if (!copySuccess && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                        try {
+                            await navigator.clipboard.writeText(reportMarkdown);
+                            copySuccess = true;
+                        } catch (e) {
+                            console.warn('【知能行 AI 导出器】navigator.clipboard.writeText 写入失败:', e);
+                        }
+                    }
+
+                    // 3. UI 反馈与终极 prompt 兜底
+                    if (copySuccess) {
+                        textSpan.innerText = '复制成功!';
+                        textSpan.style.color = '#4ade80';
+                        if (iconSvg) iconSvg.style.color = '#4ade80';
+                        setTimeout(() => {
+                            textSpan.innerText = originalText;
+                            textSpan.style.color = '';
+                            if (iconSvg) iconSvg.style.color = '';
+                        }, 2500);
+                    } else {
+                        prompt('已成功生成诊断报告 Markdown，请按下 Ctrl+C 复制以下内容：', reportMarkdown);
+                    }
+                } catch (err) {
+                    console.error('【知能行 AI 导出器】导出报告运行时异常:', err);
+                    alert('导出报告时发生未捕获异常错误：' + (err.message || err));
+                } finally {
+                    if (textSpan && textSpan.innerText === '生成中...') {
+                        textSpan.innerText = originalText;
+                    }
                 }
-
-                const reportMarkdown = buildPureMarkdownReport(data);
-                if (typeof GM_setClipboard !== 'undefined') GM_setClipboard(reportMarkdown);
-                else navigator.clipboard.writeText(reportMarkdown);
-
-                textSpan.innerText = '复制成功!';
-                textSpan.style.color = '#4ade80'; iconSvg.style.color = '#4ade80';
-                setTimeout(() => {
-                    textSpan.innerText = '导出报告';
-                    textSpan.style.color = ''; iconSvg.style.color = '';
-                }, 2500);
             });
 
             tabContainer.appendChild(exportBtn);
