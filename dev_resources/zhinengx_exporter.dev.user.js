@@ -5,6 +5,7 @@
 // @description  本地调试存根脚本 - 无需运行 git push，IDE 保存后刷新网页秒级生效！
 // @match        *://*.bestzixue.com/*
 // @match        *://*.zhinengxing.com/*
+// @run-at       document-start
 // @grant        GM_setClipboard
 // @grant        unsafeWindow
 // @require      file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/zhinengx-exporter/zhinengx_exporter.user.js

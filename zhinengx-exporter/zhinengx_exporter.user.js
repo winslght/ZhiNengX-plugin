@@ -173,8 +173,12 @@
     async function fetchFullJsonActively() {
         const candidateUrls = [
             '/getUserProfileDiagramLast',
+            '/getUserProfile',
+            '/getUserProfileDiagram',
             'https://app.bestzixue.com/getUserProfileDiagramLast',
-            'https://app.zhinengxing.com/getUserProfileDiagramLast'
+            'https://app.bestzixue.com/getUserProfile',
+            'https://app.zhinengxing.com/getUserProfileDiagramLast',
+            'https://app.zhinengxing.com/getUserProfile'
         ];
 
         for (const url of candidateUrls) {
@@ -184,6 +188,7 @@
                     const data = await res.json();
                     if (data && (data.status || data.profile)) {
                         rawFullJson = data;
+                        console.log('【知能行 AI 导出器】主动 Fetch 补全数据成功:', rawFullJson);
                         return rawFullJson;
                     }
                 }
