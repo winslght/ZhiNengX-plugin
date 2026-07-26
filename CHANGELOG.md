@@ -6,6 +6,12 @@
 
 ## 🚀 [Unreleased / 下一版本 Roadmap 规划]
 
+### 🧪 本地开发碎版本履历 (Dev History)
+- **v8.1.0-dev.1** (2026-07-26):
+  - **Fixed**: 修复由于 CDN 网络波动/超时导致 Live2D 看板娘加载失败后彻底消失的问题。
+  - **Added**: 引入多 CDN 容灾镜像轮询（Fastly / Primary / TestingCF）与 `onerror` 自动降级重试机制。
+  - **Added**: 新增 8 秒 DOM 健康检测 Guard 与指数退避重试队列，确保看板娘高可用。
+
 ### 📌 下一版本重定义目标
 - **Beautifier v8.3.0 目标**：提供更多自定义主题预设（黑曜石、深海蓝、翡翠绿），并支持自定义考研目标倒计时日期。
 - **Exporter v11.1.0 目标**：优化 ECharts 大屏在移动端/窄屏下的自适应显示，增加诊断报告一键导出 PDF 功能。

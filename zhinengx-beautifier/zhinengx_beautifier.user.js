@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.1.0
+// @version      8.1.0-dev.1
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
 // @author       winslght
 // @license      MIT
@@ -14,7 +14,8 @@
 (function() {
     'use strict';
 
-    console.log('[ZhiNengX Enhancer] 知能行视觉美化与助手 v8.0.0 Stable 已启动');
+    const SCRIPT_VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) ? GM_info.script.version : '8.1.0.dev';
+    console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
 
@@ -440,22 +441,109 @@
     });
 
     // ==========================================
-    // 7. Live2D 看板娘
+    // 7. Live2D 看板娘 (多 CDN 容灾与健康重试 Guard)
     // ==========================================
+    const LIVE2D_CDN_SOURCES = [
+        'https://fastly.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js',
+        'https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js',
+        'https://testingcf.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js'
+    ];
+
+    const FA_CDN_SOURCES = [
+        'https://fastly.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css',
+        'https://cdn.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css',
+        'https://testingcf.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css'
+    ];
+
+    let live2dCdnIndex = 0;
+    let live2dRetryCount = 0;
+    const MAX_LIVE2D_RETRIES = 5;
+    let live2dHealthGuardTimer = null;
+
     function injectLive2D() {
-        if (document.getElementById('waifu') || document.getElementById('live2d-widget-script')) return;
+        // 如果已经成功渲染出 waifu 容器，无需重复注入
+        if (document.getElementById('waifu')) return;
+
+        // 清除可能残留的失败 script 节点
+        const oldScript = document.getElementById('live2d-widget-script');
+        if (oldScript) {
+            oldScript.remove();
+        }
+
         localStorage.removeItem('waifu-display');
         sessionStorage.removeItem('waifu-display');
 
-        const fa = document.createElement('link');
-        fa.rel = 'stylesheet';
-        fa.href = 'https://fastly.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css';
-        document.head.appendChild(fa);
+        // 注入 Font Awesome CSS (带容灾)
+        if (!document.getElementById('live2d-fa-css')) {
+            const fa = document.createElement('link');
+            fa.id = 'live2d-fa-css';
+            fa.rel = 'stylesheet';
+            fa.href = FA_CDN_SOURCES[0];
+            fa.onerror = () => {
+                fa.href = FA_CDN_SOURCES[1] || FA_CDN_SOURCES[2];
+            };
+            document.head.appendChild(fa);
+        }
+
+        const currentCdn = LIVE2D_CDN_SOURCES[live2dCdnIndex % LIVE2D_CDN_SOURCES.length];
+        console.log(`[ZhiNengX Live2D] 尝试加载 Live2D 看板娘 (CDN ${live2dCdnIndex + 1}/${LIVE2D_CDN_SOURCES.length}, 第 ${live2dRetryCount + 1} 次):`, currentCdn);
 
         const s = document.createElement('script');
         s.id = 'live2d-widget-script';
-        s.src = 'https://fastly.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js';
+        s.src = currentCdn;
+
+        // 绑定 onerror 事件：当前 CDN 加载失败时，清除旧 script 并自动轮换 CDN 重试
+        s.onerror = () => {
+            console.warn(`[ZhiNengX Live2D] ⚠️ 当前 CDN 加载失败: ${currentCdn}，自动切换至下一镜像重试...`);
+            s.remove();
+            live2dCdnIndex++;
+            scheduleLive2DRetry(2000);
+        };
+
+        s.onload = () => {
+            console.log(`[ZhiNengX Live2D] Live2D autoload.js 脚本成功响应 (${currentCdn})`);
+        };
+
         document.body.appendChild(s);
+
+        // 启动 8s DOM 健康检测 Guard
+        setupLive2DHealthGuard();
+    }
+
+    function scheduleLive2DRetry(delayMs) {
+        if (live2dRetryCount >= MAX_LIVE2D_RETRIES) {
+            console.warn(`[ZhiNengX Live2D] 🛑 已达最大重试次数 (${MAX_LIVE2D_RETRIES} 次)，看板娘暂无法加载。`);
+            return;
+        }
+
+        live2dRetryCount++;
+        const backoffDelay = delayMs || Math.min(3000 * Math.pow(2, live2dRetryCount - 1), 30000);
+        console.log(`[ZhiNengX Live2D] 🔄 计划在 ${(backoffDelay / 1000).toFixed(1)} 秒后触发下一次重试...`);
+
+        setTimeout(() => {
+            if (!document.getElementById('waifu')) {
+                injectLive2D();
+            }
+        }, backoffDelay);
+    }
+
+    function setupLive2DHealthGuard() {
+        if (live2dHealthGuardTimer) clearTimeout(live2dHealthGuardTimer);
+
+        // 脚本插入 8 秒后检测 #waifu 节点是否存在
+        live2dHealthGuardTimer = setTimeout(() => {
+            const waifu = document.getElementById('waifu');
+            if (!waifu) {
+                console.warn('[ZhiNengX Live2D] ⚠️ 8 秒内未检测到 #waifu 渲染节点 (可能网络超时)，启动健康保底重试...');
+                const oldScript = document.getElementById('live2d-widget-script');
+                if (oldScript) oldScript.remove();
+                live2dCdnIndex++;
+                scheduleLive2DRetry(3000);
+            } else {
+                console.log('[ZhiNengX Live2D] ✅ 看板娘健康校验通过 (#waifu 已渲染)');
+                live2dRetryCount = 0; // 校验成功，重置计数器
+            }
+        }, 8000);
     }
 
     // ==========================================
@@ -578,6 +666,37 @@
     }
 
     // ==========================================
+    // 11. 本地 Dev 碎版本底栏追溯水印
+    // ==========================================
+    function injectDevVersionBadge() {
+        const scriptName = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.name) ? GM_info.script.name : '';
+        const version = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) ? GM_info.script.version : SCRIPT_VERSION;
+        const isDev = version.toLowerCase().includes('dev') || scriptName.includes('DEV') || scriptName.includes('开发') || location.hostname.includes('localhost');
+
+        if (!isDev || document.getElementById('znx-dev-watermark')) return;
+
+        const badge = document.createElement('div');
+        badge.id = 'znx-dev-watermark';
+        badge.title = '知能行 0-Push 本地开发调试模式 - 点击可一键复制当前碎版本号';
+        badge.style.cssText = 'position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:999999;background:rgba(15,23,42,0.85);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(56,189,248,0.4);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:#38bdf8;box-shadow:0 4px 14px rgba(0,0,0,0.25),0 0 10px rgba(56,189,248,0.15);cursor:pointer;user-select:none;transition:all 0.2s ease;display:flex;align-items:center;gap:6px;letter-spacing:0.5px;';
+
+        badge.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#38bdf8;box-shadow:0 0 6px #38bdf8;animation:znxPulse 1.5s infinite"></span><span>🛠️ DEV <span style="color:#f43f5e;font-weight:800">v${version}</span> | 本地直加载模式</span>`;
+
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes znxPulse{0%{opacity:0.4;transform:scale(0.9)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0.4;transform:scale(0.9)}}#znx-dev-watermark:hover{background:rgba(15,23,42,0.95) !important;border-color:rgba(56,189,248,0.8) !important;transform:translateX(-50%) translateY(-2px) !important;box-shadow:0 6px 18px rgba(0,0,0,0.35),0 0 14px rgba(56,189,248,0.3) !important}`;
+        document.head.appendChild(style);
+
+        badge.onclick = () => {
+            navigator.clipboard.writeText(`v${version}`);
+            const oldHTML = badge.innerHTML;
+            badge.innerHTML = `<span style="color:#10b981">✓ 已复制版本号 v${version}</span>`;
+            setTimeout(() => { badge.innerHTML = oldHTML; }, 1500);
+        };
+
+        document.body.appendChild(badge);
+    }
+
+    // ==========================================
     // 启动
     // ==========================================
     function init() {
@@ -588,6 +707,7 @@
         setupEnterKeySubmitHandler();
         setupQuestionModeObserver();
         setupJumbotronFeedbackObserver();
+        injectDevVersionBadge();
     }
 
     if (document.readyState === 'loading') {
