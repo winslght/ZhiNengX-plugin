@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.2.1
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘与考研倒计时辅助
+// @version      8.3.0
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、fghrsh 海量 Live2D 看板娘/换装/考研互动陪伴、Dark Reader 深色自适应与倒计时
 // @author       winslght
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -421,22 +421,101 @@
     });
 
     // ==========================================
-    // 7. Live2D 看板娘
+    // 7. Live2D 看板娘与考研专属互动小助手 (接入 fghrsh 全量模型库与换装系统)
     // ==========================================
     function injectLive2D() {
         if (document.getElementById('waifu') || document.getElementById('live2d-widget-script')) return;
+
         localStorage.removeItem('waifu-display');
         sessionStorage.removeItem('waifu-display');
 
+        // 加载 Font-Awesome 图标库
         const fa = document.createElement('link');
         fa.rel = 'stylesheet';
         fa.href = 'https://fastly.jsdelivr.net/npm/font-awesome/css/font-awesome.min.css';
         document.head.appendChild(fa);
 
+        // 使用支持全量模型库 apiPath / cdnPath 的全局配置
+        window.live2d_settings = {
+            modelId: 1,                  // 默认模型：Pio (药水制作师) / 可自由切换海量角色
+            modelTexturesId: 53,         // 默认服装皮肤
+            modelStorage: true,          // 自动记忆用户选择的人物与服装
+            canCloseLive2D: true,        // 允许隐藏看板娘
+            canSwitchModel: true,        // 允许一键切换角色人物 (包含碧蓝航线/2233/初音/海王星等)
+            canSwitchTexture: true,      // 允许一键切换角色服装皮肤 (换装系统)
+            canSwitchHitokoto: true,     // 允许切换一言/考研金句
+            canTakeScreenshot: true,     // 允许拍照截图
+            canTurnToHomePage: false,
+            waifuSize: '280x250',        // 尺寸大小
+            waifuTipsSize: '250x70',     // 提示框尺寸
+            waifuFontSize: '12px',       // 提示框字号
+            waifuToolFont: '14px',       // 工具栏按钮字号
+            waifuToolOpacity: '0.85',    // 工具栏透明度
+            waifuToolPosition: 'right',  // 工具栏靠右排列
+            aboutPageUrl: 'https://github.com/winslght/ZhiNengX-plugin',
+            // 接入国内高速访问的 fghrsh 海量 Live2D 模型 API
+            cdnPath: 'https://fastly.jsdelivr.net/gh/fghrsh/live2d_api/',
+            apiPath: 'https://fastly.jsdelivr.net/gh/fghrsh/live2d_api/'
+        };
+
         const s = document.createElement('script');
         s.id = 'live2d-widget-script';
         s.src = 'https://fastly.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js';
         document.body.appendChild(s);
+
+        // 注入考研专属陪伴互动提示语
+        setupKaoyanWaifuTips();
+    }
+
+    function setupKaoyanWaifuTips() {
+        const kaoyanQuotes = [
+            "今天的高数习题刷完了吗？消灭每一个突破口，27考研高分上岸！",
+            "遇到难题别慌，认真看解题拆解，一步一步来，你一定行！",
+            "手写算一算，做题手感会越来越棒的哦！",
+            "记得适度休息，保持好心态，你是最棒的考研战士！",
+            "数学没有捷径，唯有熟能生巧！加油，winslght！",
+            "消灭一个小黄点，你就离名校更近一步！"
+        ];
+
+        document.addEventListener('mouseover', (e) => {
+            const target = e.target;
+            if (!target) return;
+            if (target.closest('input[type="text"], textarea')) {
+                showWaifuTip('✍️ 用心算一算，填完答案直接按回车（Enter）就能快捷提交哦！', 3000);
+            } else if (target.closest('#znx-time-manager')) {
+                showWaifuTip('🔥 每一秒的汗水都在为你走向高分加码！坚持到底！', 3000);
+            } else if (target.closest('button, .btn, .MuiButtonBase-root')) {
+                const text = (target.innerText || target.textContent || '').trim();
+                if (text.includes('提交答案')) {
+                    showWaifuTip('🎯 准备好了吗？相信自己，敲下回车提交答案吧！', 2500);
+                } else if (text.includes('查看题解')) {
+                    showWaifuTip('💡 搞懂错题逻辑就是最大的进步！复盘走起！', 2500);
+                } else if (text.includes('继续') || text.includes('下一步')) {
+                    showWaifuTip('🚀 乘胜追击，开启下一道突破口！', 2500);
+                }
+            }
+        });
+
+        // 点击看板娘触发考研金句
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#waifu canvas, #live2d')) {
+                const randomQuote = kaoyanQuotes[Math.floor(Math.random() * kaoyanQuotes.length)];
+                showWaifuTip(randomQuote, 4000);
+            }
+        });
+    }
+
+    function showWaifuTip(text, timeout = 3000) {
+        const tips = document.getElementById('waifu-tips');
+        if (!tips) return;
+        tips.innerHTML = text;
+        tips.classList.add('waifu-tips-active');
+        tips.style.opacity = '1';
+        clearTimeout(window.znxWaifuTimer);
+        window.znxWaifuTimer = setTimeout(() => {
+            tips.style.opacity = '0';
+            tips.classList.remove('waifu-tips-active');
+        }, timeout);
     }
 
     // ==========================================
