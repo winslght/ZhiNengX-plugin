@@ -1895,12 +1895,12 @@
     // EXPORTER MODULE: REPORT & DASHBOARD (remaining exporter code)
     // ============================================================ 
     function buildPureMarkdownReport(json) {
-        if (!json || !json.status) return null;
+        if (!json) return null;
 
-        const status = json.status || {};
-        const profile = json.profile || {};
+        const status = json.status || json.data?.status || json.data || json || {};
+        const profile = json.profile || json.data?.profile || status.profile || {};
         const survey = profile.surveyContent || {};
-        const reportInfo = status.progress_report_info || {};
+        const reportInfo = status.progress_report_info || json.progress_report_info || {};
         const mockExam = reportInfo.mock_exam_correct_rate_info || {};
         const wrongInfo = reportInfo.wrong_problem_reason_info || {};
         const changeInfo = reportInfo.period_to_progress_change_info || {};
@@ -1910,6 +1910,8 @@
         const compSkillInfo = status.computational_skill_info_all_topic || {};
         const yellowDots = status.topics_with_yellowDot || [];
         const inApp = profile.inAppMessageInfo || {};
+
+        if (!status && !profile && !reportInfo && !detailed) return null;
 
         const excludeKeys = getExcludeKeys(profile.examType);
         const examName = profile.examType === 1 ? '数学一 (数一)' : (profile.examType === 2 ? '数学二 (数二)' : (profile.examType === 3 ? '数学三 (数三)' : '考研数学'));
