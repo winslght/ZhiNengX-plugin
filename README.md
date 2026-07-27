@@ -1,6 +1,5 @@
 # ZhiNengX Plugins
 
-![Version](https://img.shields.io/badge/Version-v11.0.1%20%7C%20v8.1.0-brightgreen?style=flat-square)
 ![Branch](https://img.shields.io/badge/Branch-main%20%7C%20develop%20%7C%20dev--panel%20%7C%20beta-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=flat-square)
@@ -20,20 +19,20 @@ ZhiNengX Plugins 是专为 [知能行考研数学](https://www.bestzixue.com) �
 
 ### 1. 知能行原生数据诊断报告导出及可视化全景视图 (ZhiNengX Exporter)
 
-| 分支 (Branch) | 版本 (Version) | 定位与适用场景 | 一键安装链接 |
-| :--- | :--- | :--- | :--- |
-| **`main`** | **v11.0.1 (Stable)** | **稳定版**。自动匹配数一/二/三全考纲，Markdown 报告导出与 ECharts 可视化 | [安装 Exporter 稳定版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-exporter/zhinengx_exporter.user.js) |
-| **`beta`** | **v11.0.1-beta.1** | **预发布公测版**。包含全链路异常防护与三级剪贴板降级机制 (`GM_setClipboard` -> `clipboard` -> `prompt`) | [安装 Exporter 公测版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/beta/zhinengx-exporter/zhinengx_exporter.user.js) |
+| 分支 (Branch) | 定位与适用场景 | 一键安装链接 |
+| :--- | :--- | :--- |
+| **`main`** | **稳定版**。自动匹配数一/二/三全考纲，Markdown 报告导出与 ECharts 可视化 | [安装 Exporter 稳定版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-exporter/zhinengx_exporter.user.js) |
+| **`beta`** | **预发布公测版**。包含全链路异常防护与三级剪贴板降级机制 (`GM_setClipboard` -> `clipboard` -> `prompt`) | [安装 Exporter 公测版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/beta/zhinengx-exporter/zhinengx_exporter.user.js) |
 
 ---
 
 ### 2. 知能行UI深度美化及体验高度优化 (ZhiNengX Beautifier)
 
-| 分支 (Branch) | 版本 (Version) | 定位与适用场景 | 一键安装链接 |
-| :--- | :--- | :--- | :--- |
-| **`main`** | **v8.1.0 (Stable)** | **稳定版**。无感 CSS 变量渲染，零运行开销，纯净毛玻璃，适合日常使用 | [安装 Beautifier 稳定版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-beautifier/zhinengx_beautifier.user.js) |
-| **`dev-panel`** | **v7.4.1 (Dev GUI)** | **开发者调参版**。内置 GUI 控制面板，支持实时手动调节透明度与模糊度 | [安装 Dev-Panel 调参版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/dev-panel/zhinengx-beautifier/zhinengx_beautifier.user.js) |
-| **`beta`** | **v8.2.0-beta.4** | **预发布公测版**。集成做题端倒计时晶莹收纳胶囊、一键复制题目 (Markdown + LaTeX) 与 Glassmorphism 2.0 材质体系 | [安装 Beautifier 公测版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/beta/zhinengx-beautifier/zhinengx_beautifier.user.js) |
+| 分支 (Branch) | 定位与适用场景 | 一键安装链接 |
+| :--- | :--- | :--- |
+| **`main`** | **稳定版**。无感 CSS 变量渲染，零运行开销，纯净毛玻璃，适合日常使用 | [安装 Beautifier 稳定版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-beautifier/zhinengx_beautifier.user.js) |
+| **`dev-panel`** | **开发者调参版**。内置 GUI 控制面板，支持实时手动调节透明度与模糊度 | [安装 Dev-Panel 调参版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/dev-panel/zhinengx-beautifier/zhinengx_beautifier.user.js) |
+| **`beta`** | **预发布公测版**。集成做题端倒计时晶莹收纳胶囊、一键复制题目 (Markdown + LaTeX) 与 Glassmorphism 2.0 材质体系 | [安装 Beautifier 公测版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/beta/zhinengx-beautifier/zhinengx_beautifier.user.js) |
 
 ---
 
