@@ -62,6 +62,23 @@
 
 ---
 
+## 💬 5. 提交信息规范与中英文双语纪律 (Commit Message Guidelines)
+
+> [!IMPORTANT]
+> **【强制】中英文双语 Commit 提交纪律 (Bilingual Commit Rule)**
+> 项目所有分支（包括 `feat` / `fix` / `develop` / `beta` / `main`）的每次提交（Commit），必须严格包含**中英文双语提交信息**，以确保国际化团队与本土研发的清晰协作。
+> 
+> **标准格式 (Standard Format):**
+> `<type>(<scope>): <English Description> / <中文说明>`
+> 
+> **标准示例 (Examples):**
+> - `feat(shortcuts): add choice keys 1-5 support / 合并选择题 1-5 快捷键功能`
+> - `fix(beautifier): resolve ReferenceError in DOM handler / 修复快捷键处理逻辑中的未定义变量与语法错误`
+> - `merge: release v8.2.0-beta.2 - integrate shortcuts / 合并发布 v8.2.0-beta.2 - 集成快捷键功能与稳定性修复`
+> - `docs(spec): add bilingual commit message specification / 添加中英文双语 Commit 提交信息规范`
+
+---
+
 ## 🚀 4. 标准六维流转操作示例 (SOP)
 
 ### 4.1 开发与集成分程 (`feature` ➔ `dev`)

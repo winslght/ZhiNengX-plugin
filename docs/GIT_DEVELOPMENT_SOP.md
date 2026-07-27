@@ -58,6 +58,15 @@ git checkout -b feat/theme-presets  # 特性类任务分支命名: feat/xxxx
 
 ---
 
+## 💬 4. 提交日志规范 (Bilingual Commit Rule)
+
+所有提交必须遵守**中英文双语 Commit 提交格式**：
+`<type>(<scope>): <English Description> / <中文说明>`
+
+例如：`fix(scope): resolve issue / 修复特定逻辑问题`
+
+---
+
 ## 🏁 3. 验证与合并 (Git Flow 标准流转)
 
 当 Task 分支在本地测试 100% 稳健后，遵循标准 Git Flow 汇聚流程：
