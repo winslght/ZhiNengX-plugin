@@ -1188,6 +1188,10 @@
                 const dark = isDarkModeActive();
                 const capsuleEl = document.getElementById('znx-doing-countdown-btn');
                 if (capsuleEl) {
+                    const renderKey = `${info.daysLeft}-${info.h}:${info.m}-${dark}`;
+                    if (capsuleEl.getAttribute('data-znx-render-key') === renderKey) return;
+                    capsuleEl.setAttribute('data-znx-render-key', renderKey);
+
                     capsuleEl.innerHTML = `
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
                             <span style="font-weight:900;color:#e11d48;font-size:12px;display:inline-flex;align-items:center;gap:2px;">🔥 ${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:11px;color:${dark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></span>
@@ -1316,8 +1320,29 @@
             }
         };
 
-        new MutationObserver(checkAndUpdateButton).observe(document.body, { childList: true, subtree: true });
-        checkAndUpdateButton();
+        let isScheduled = false;
+        let copyObserver = null;
+
+        const scheduleCheckAndUpdateButton = () => {
+            if (isScheduled) return;
+            isScheduled = true;
+            const runTask = () => {
+                isScheduled = false;
+                if (copyObserver) copyObserver.disconnect();
+                checkAndUpdateButton();
+                if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
+            };
+
+            if (window.requestIdleCallback) {
+                window.requestIdleCallback(runTask, { timeout: 100 });
+            } else {
+                requestAnimationFrame(runTask);
+            }
+        };
+
+        copyObserver = new MutationObserver(() => scheduleCheckAndUpdateButton());
+        copyObserver.observe(document.body, { childList: true, subtree: true });
+        scheduleCheckAndUpdateButton();
     }
 
     // ==========================================
