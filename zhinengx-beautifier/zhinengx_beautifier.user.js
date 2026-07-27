@@ -912,6 +912,8 @@
     // ==========================================
     function setupCopyProblemHandler() {
         const BUTTON_ID = 'znx-copy-problem-btn';
+        let isCapsuleExpanded = false;
+        let capsuleTimer = null;
 
         const showToast = (message, isError = false) => {
             let toast = document.getElementById('znx-copy-toast');
@@ -1239,10 +1241,10 @@
 
                 if (!isCapsuleExpanded) {
                     // 1. 紧凑胶囊态
-                    capsuleEl.style.width = '135px';
-                    capsuleEl.style.height = '32px';
-                    capsuleEl.style.padding = '4px 12px';
-                    capsuleEl.style.borderRadius = '12px';
+                    capsuleEl.style.setProperty('width', '135px', 'important');
+                    capsuleEl.style.setProperty('height', '32px', 'important');
+                    capsuleEl.style.setProperty('padding', '4px 12px', 'important');
+                    capsuleEl.style.setProperty('border-radius', '12px', 'important');
 
                     capsuleEl.innerHTML = `
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
@@ -1255,10 +1257,10 @@
                     `;
                 } else {
                     // 2. 就地形变放大态 (全量经典大卡片内容)
-                    capsuleEl.style.width = '250px';
-                    capsuleEl.style.height = 'auto';
-                    capsuleEl.style.padding = '16px';
-                    capsuleEl.style.borderRadius = '16px';
+                    capsuleEl.style.setProperty('width', '250px', 'important');
+                    capsuleEl.style.setProperty('height', 'auto', 'important');
+                    capsuleEl.style.setProperty('padding', '16px', 'important');
+                    capsuleEl.style.setProperty('border-radius', '16px', 'important');
 
                     const bar = (label, value, ratio, color) => `
                         <div style="margin-top:10px">
