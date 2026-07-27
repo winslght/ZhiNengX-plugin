@@ -10,8 +10,8 @@ Thumbs.db
 *.bak
 *.swp
 
-# Dev debug dumps (optional large html pages)
-dev_resources/html/*.html
+# Dev debug dumps (optional large html pages & downloaded static files)
+dev_resources/html/
 dev_resources/data/*.json
 
 # Environment and Security Sensitive Files (Secret Isolation)
