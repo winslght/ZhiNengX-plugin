@@ -61,12 +61,42 @@
                 color: var(--znx-tab-text) !important;
             }
 
-            /* 进度条保真防护 */
-            html body #root div[style*="height: 16px"],
-            html body #root div[style*="height:16px"] {
-                border-radius: 0 !important;
+            /* 进度条最高优先级保真防护 (防止对话框/成就卡片内的等级进度条被毛玻璃规则覆盖) */
+            .MuiLinearProgress-root,
+            .MuiLinearProgress-bar,
+            div[class*="MuiLinearProgress"],
+            div[class*="LinearProgress"],
+            div[class*="linearProgress"],
+            div[class*="progressbar"],
+            div[class*="progressBar"],
+            div[class*="ProgressBar"],
+            div[role="progressbar"],
+            div[aria-valuenow],
+            div[style*="height: 16px"], div[style*="height:16px"],
+            div[style*="height: 14px"], div[style*="height:14px"],
+            div[style*="height: 12px"], div[style*="height:12px"],
+            div[style*="height: 10px"], div[style*="height:10px"],
+            div[style*="height: 8px"],  div[style*="height:8px"] {
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+
+            .MuiLinearProgress-bar,
+            div[class*="MuiLinearProgress"] > div,
+            div[class*="LinearProgress"] > div,
+            div[class*="progressBar"] > div,
+            div[class*="ProgressBar"] > div,
+            div[role="progressbar"] > div,
+            div[aria-valuenow] > div,
+            div[style*="height: 16px"] > div, div[style*="height:16px"] > div,
+            div[style*="height: 14px"] > div, div[style*="height:14px"] > div,
+            div[style*="height: 12px"] > div, div[style*="height:12px"] > div {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
 
             /* F. 做题界面顶部工具栏 (opacity: 0.85, blur: 15px) */
@@ -251,6 +281,17 @@
             const targetClasses = Array.from(el.classList).filter(c => c.startsWith('jss') || c.startsWith('_'));
             if (targetClasses.length === 0) return;
             if (targetClasses.every(c => processedClasses.has(c) || excludedClasses.has(c))) return;
+
+            // 严禁捕获并覆盖进度条及填充轨道的类名，防止弹窗或卡片内的等级进度条丢失
+            if (
+                el.closest('.MuiLinearProgress-root, div[class*="LinearProgress"], div[class*="progressbar"], div[role="progressbar"], div[aria-valuenow]') ||
+                el.classList.contains('MuiLinearProgress-bar') ||
+                el.classList.contains('MuiLinearProgress-root') ||
+                (el.style.height && ['16px', '14px', '12px', '10px', '8px'].some(h => el.style.height.includes(h)))
+            ) {
+                targetClasses.forEach(c => excludedClasses.add(c));
+                return;
+            }
 
             if (appBar && el.contains(appBar)) {
                 targetClasses.forEach(c => excludedClasses.add(c));
