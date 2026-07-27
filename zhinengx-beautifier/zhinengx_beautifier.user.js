@@ -504,10 +504,17 @@
     let live2dHealthGuardTimer = null;
 
     function injectLive2D() {
-        // 如果已经成功渲染出 waifu 容器，无需重复注入
-        if (document.getElementById('waifu')) return;
+        const existingWaifu = document.getElementById('waifu');
+        const existingCanvas = document.getElementById('live2d') || existingWaifu?.querySelector('canvas');
+        if (existingWaifu && existingCanvas && (existingCanvas.offsetWidth > 0 || existingCanvas.offsetHeight > 0)) {
+            // 看板娘与 Canvas 画布已真实健康渲染，无需重复注入
+            return;
+        }
 
-        // 清除可能残留的失败 script 节点
+        // 清除可能残留的失败/空壳 waifu 与 script 节点
+        if (existingWaifu) {
+            existingWaifu.remove();
+        }
         const oldScript = document.getElementById('live2d-widget-script');
         if (oldScript) {
             oldScript.remove();
@@ -564,7 +571,9 @@
         console.log(`[ZhiNengX Live2D] 🔄 计划在 ${(backoffDelay / 1000).toFixed(1)} 秒后触发下一次重试...`);
 
         setTimeout(() => {
-            if (!document.getElementById('waifu')) {
+            const waifu = document.getElementById('waifu');
+            const canvas = document.getElementById('live2d') || waifu?.querySelector('canvas');
+            if (!waifu || !canvas || canvas.offsetWidth === 0) {
                 injectLive2D();
             }
         }, backoffDelay);
@@ -575,14 +584,21 @@
 
         live2dHealthGuardTimer = setTimeout(() => {
             const waifu = document.getElementById('waifu');
-            if (!waifu) {
-                console.warn('[ZhiNengX Live2D] ⚠️ 8 秒内未检测到 #waifu 渲染节点 (可能网络超时)，启动健康保底重试...');
+            const canvas = document.getElementById('live2d') || waifu?.querySelector('canvas');
+            const isCanvasVisible = canvas && (canvas.offsetWidth > 0 || canvas.offsetHeight > 0);
+            const isWaifuVisible = waifu && (waifu.offsetWidth > 0 || waifu.offsetHeight > 0) && getComputedStyle(waifu).display !== 'none';
+
+            const isHealthy = waifu && canvas && isCanvasVisible && isWaifuVisible;
+
+            if (!isHealthy) {
+                console.warn('[ZhiNengX Live2D] ⚠️ 8 秒内未检测到有效的 #waifu 画布渲染 (模型可能加载失败)，自动清理无效节点并轮换 CDN 重试...');
+                if (waifu) waifu.remove();
                 const oldScript = document.getElementById('live2d-widget-script');
                 if (oldScript) oldScript.remove();
                 live2dCdnIndex++;
-                scheduleLive2DRetry(3000);
+                scheduleLive2DRetry(2000);
             } else {
-                console.log('[ZhiNengX Live2D] ✅ 看板娘健康校验通过 (#waifu 已渲染)');
+                console.log('[ZhiNengX Live2D] ✅ 看板娘健康校验通过 (#waifu 与 Canvas 画布已正常渲染)');
                 live2dRetryCount = 0;
             }
         }, 8000);
