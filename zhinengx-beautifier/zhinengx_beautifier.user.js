@@ -551,7 +551,6 @@
     // ==========================================
     // 8. 键盘高效刷题交互代理
     //    - 回车快捷提交/下一步
-    //    - 任意有效字符键自动焦点锁定文本输入框
     //    - 数字键 1-5 快速选中选择题选项 A-E (#choiceButtonA~E)
     // ==========================================
     function setupKeyboardShortcutsHandler() {
@@ -624,21 +623,6 @@
                     console.log(`⚡ [知能行小助手] 数字键 ${numVal} 选中选择题选项 ${letter}:`, targetOption);
                     return;
                 }
-            }
-
-            // 5. 任意有效字符按键自动焦点锁定可编辑文本输入框 (排除 radio/checkbox)
-            if (!isCurrentlyInInput && e.key.length === 1) {
-                if (document.querySelector('.MuiDialog-root, [role="dialog"], div[class*="modal"]')) return;
-
-                const textInputs = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]):not([type="button"]):not([type="submit"]), textarea, .MuiInputBase-input'))
-                    .filter(input => !input.disabled && input.offsetWidth > 0 && input.offsetHeight > 0);
-
-                if (textInputs.length > 0) {
-                    const targetInput = textInputs[0];
-                    targetInput.focus();
-                    console.log('⚡ [知能行小助手] 任意键自动锁定文本输入框聚焦:', targetInput);
-                }
-            }
         });
     }
 
