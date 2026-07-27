@@ -552,27 +552,25 @@
     // ==========================================
     function setupKeyboardShortcutsHandler() {
         document.addEventListener('keydown', (e) => {
-            // 1. 正在使用中文输入法选词时不触发
-            if (e.isComposing || e.keyCode === 229) return;
-
-            // 2. 忽略修饰键组合 (Ctrl/Alt/Meta/Cmd) 与功能键 (F1~F12/Escape/Tab)
+            // 1. 忽略修饰键组合 (Ctrl/Alt/Meta/Cmd) 与功能键 (F1~F12/Escape/Tab)
             if (e.ctrlKey || e.altKey || e.metaKey) return;
             const ignoreKeys = ['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab', 'Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
             if (ignoreKeys.includes(e.key)) return;
 
-            // 3. 检查当前焦点是否在可编辑文本输入框内
+            // 2. 检查当前焦点是否在可编辑文本输入框内
             const activeEl = document.activeElement;
-            const isCurrentlyInInput = activeEl && (
-                activeEl.tagName === 'TEXTAREA' ||
-                activeEl.isContentEditable ||
-                activeEl.getAttribute('role') === 'textbox' ||
-                (activeEl.tagName === 'INPUT' && !['radio', 'checkbox', 'button', 'submit', 'hidden'].includes((activeEl.type || '').toLowerCase()))
+            const isMultilineInput = activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+            const isSingleLineInput = activeEl && (
+                (activeEl.tagName === 'INPUT' && !['radio', 'checkbox', 'button', 'submit', 'hidden'].includes((activeEl.type || '').toLowerCase())) ||
+                activeEl.getAttribute('role') === 'textbox'
             );
+            const isInAnyInput = isMultilineInput || isSingleLineInput;
 
-            if (isCurrentlyInInput) return;
-
-            // 4. 回车键代理逻辑
+            // 3. 回车键代理逻辑 (无论光标是否在单行填空数字输入框内，按回车直通“提交答案/继续”)
             if (e.key === 'Enter' || e.keyCode === 13) {
+                // 如果是在多行 TEXTAREA 内，且未按 Shift，优先交由文本框原生换行，按 Shift+Enter 才触发提交
+                if (isMultilineInput && !e.shiftKey) return;
+
                 const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
                 const actionKeywords = ['提交答案', '继续', '下一步', '再试一次', '查看题解'];
 
@@ -589,11 +587,13 @@
                     e.preventDefault();
                     targetBtn.click();
                     console.log('⚡ [知能行小助手] 回车按键触发点击:', targetBtn.innerText.trim());
+                    return;
                 }
-                return;
             }
 
-            // 5. 数字键 1~5 精准选择题选项绑定
+            // 4. 数字键 1~5 选择题秒选 (仅在未聚焦在输入框时触发，避免干扰数字输入)
+            if (isInAnyInput) return;
+
             const numVal = parseInt(e.key, 10);
             if (!isNaN(numVal) && numVal >= 1 && numVal <= 5) {
                 const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
