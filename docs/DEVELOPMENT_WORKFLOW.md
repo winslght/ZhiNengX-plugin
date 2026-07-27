@@ -33,34 +33,41 @@
 
 ---
 
-## 🌿 2. Git 双层分支模型与版本号规则
+## 🌿 2. Git Flow 分支模型与版本号规则
 
 - **`main` 分支**：唯一的线上生产分支，只接受经过完整验证的代码。保持 100% 稳健无 BUG。
-- **`develop` 分支**：常驻开发与集成分支。所有日常编码、Task 分支合并均在此分支汇总。
-- **版本号规则**：
-  - **在 `develop` 分支上日常编码与多次 Commit 时，严格不改动 Header 中的 `@version`**！
-  - 只有在确定要将代码从 `develop` 合并到 `main` 进行对外发布时，才**单次自增版本号**。
+- **`develop` 分支**：常驻开发与集成分支。所有日常编码、`feature/*` 分支合并均在此分支汇总。
+- **`release/*` 分支**：预发布封版分支（如 `release/v8.2.0`）。修改 Header 中的 `@version` 与 `CHANGELOG.md` 均在此分支进行。
+- **`hotfix/*` 分支**：线上紧急修复分支（如 `hotfix/v8.1.1`）。从 `main` 拉出急救，合回 `main` 与 `develop`。
+- **版本号修改规则**：
+  - **在 `develop` 和 `feature/*` 分支上编码与多次 Commit 时，严格禁止改动 Header 中的 `@version`**！
+  - 只有在拉出 `release/*` 或 `hotfix/*` 分支封版准备发布时，才**单次自增版本号**。
 
 ---
 
-## 🚀 3. 标准发版流程四步法 (Release Checklist)
+## 🚀 3. 标准 Git Flow Release 发版 Checklist
 
-当在 `develop` 分支上完成了一阶段开发并准备发布新版本时：
+当在 `develop` 分支上完成了一阶段开发并准备发布新版本（如 `v8.2.0`）时：
 
 ```bash
-# 1. 在 develop 分支上修改 Header 中的 @version 并更新 CHANGELOG.md
+# 1. 从 develop 拉出 release 预发布封版分支
 git checkout develop
-# (编辑版本号如 8.1.0 -> 8.2.0，更新 CHANGELOG.md)
+git checkout -b release/v8.2.0
+
+# 2. 在 release 分支上修改 Header 中的 @version 并更新 CHANGELOG.md
+# (编辑版本号 8.1.0 -> 8.2.0，更新 CHANGELOG.md)
 git commit -am "chore(release): bump version to 8.2.0"
 
-# 2. 合并入 main 生产分支
+# 3. 验证无误后合并入 main 生产分支并打标准 Git Tag
 git checkout main
-git merge develop
-
-# 3. 打上标准 Git Tag 标记
+git merge release/v8.2.0
 git tag -a v8.2.0 -m "release: v8.2.0"
 
-# 4. 推送到 GitHub 远程仓库
-git push origin main --tags
-git checkout develop  # 切回开发分支继续后续研发
+# 4. 同步合并回 develop，清理 release 分支
+git checkout develop
+git merge release/v8.2.0
+git branch -d release/v8.2.0
+
+# 5. 推送到 GitHub 远程仓库
+git push origin main develop --tags
 ```
