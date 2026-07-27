@@ -1240,11 +1240,16 @@
                 capsuleEl.setAttribute('data-znx-render-key', renderKey);
 
                 if (!isCapsuleExpanded) {
-                    // 1. 紧凑胶囊态
+                    // 1. 紧凑胶囊态 (绝对定位在占位父节点上，z-index 99)
+                    capsuleEl.style.setProperty('position', 'absolute', 'important');
+                    capsuleEl.style.setProperty('top', '0', 'important');
+                    capsuleEl.style.setProperty('left', '0', 'important');
+                    capsuleEl.style.setProperty('z-index', '99', 'important');
                     capsuleEl.style.setProperty('width', '135px', 'important');
                     capsuleEl.style.setProperty('height', '32px', 'important');
                     capsuleEl.style.setProperty('padding', '4px 12px', 'important');
                     capsuleEl.style.setProperty('border-radius', '12px', 'important');
+                    capsuleEl.style.setProperty('box-shadow', dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)', 'important');
 
                     capsuleEl.innerHTML = `
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
@@ -1256,11 +1261,16 @@
                         </div>
                     `;
                 } else {
-                    // 2. 就地形变放大态 (全量经典大卡片内容)
+                    // 2. 就地形变放大态 (提升至 z-index 99999 覆盖悬浮在题目内容上方，绝对不挤压任何下方 DOM 元素)
+                    capsuleEl.style.setProperty('position', 'absolute', 'important');
+                    capsuleEl.style.setProperty('top', '0', 'important');
+                    capsuleEl.style.setProperty('left', '0', 'important');
+                    capsuleEl.style.setProperty('z-index', '99999', 'important');
                     capsuleEl.style.setProperty('width', '250px', 'important');
                     capsuleEl.style.setProperty('height', 'auto', 'important');
                     capsuleEl.style.setProperty('padding', '16px', 'important');
                     capsuleEl.style.setProperty('border-radius', '16px', 'important');
+                    capsuleEl.style.setProperty('box-shadow', dark ? '0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)' : '0 16px 40px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9)', 'important');
 
                     const bar = (label, value, ratio, color) => `
                         <div style="margin-top:10px">
@@ -1332,12 +1342,13 @@
             toolsBar.id = 'znx-problem-tools-bar';
             toolsBar.style.cssText = `
                 display: inline-flex !important;
-                align-items: flex-start !important;
+                align-items: center !important;
                 gap: 10px !important;
                 margin-bottom: 10px !important;
                 margin-right: auto !important;
                 flex-wrap: wrap !important;
                 position: relative !important;
+                height: 32px !important;
                 z-index: 1 !important;
             `;
 
@@ -1359,7 +1370,7 @@
                     box-shadow: ${dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'} !important;
                     cursor: pointer !important;
                     user-select: none !important;
-                    transition: width 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), padding 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), background 0.3s ease, border-color 0.3s ease, transform 0.2s ease !important;
+                    transition: width 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), padding 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease !important;
                     display: inline-flex !important;
                     box-sizing: border-box !important;
                     overflow: hidden !important;
@@ -1399,11 +1410,27 @@
                 copyToClipboard(pureText);
             };
 
-            // 2. 🔥 27考研倒计时 做题极简胶囊按钮 (与复制按钮同层级同材质，支持就地形变平滑放大/收缩)
+            // 2. 🔥 27考研倒计时 做题极简胶囊按钮 Wrapper (固定 135px x 32px 占位，防止拉下下方题目文本)
+            const timerWrapper = document.createElement('div');
+            timerWrapper.id = 'znx-doing-countdown-wrapper';
+            timerWrapper.style.cssText = `
+                position: relative !important;
+                width: 135px !important;
+                height: 32px !important;
+                flex-shrink: 0 !important;
+            `;
+
             const timerBtn = document.createElement('div');
             timerBtn.id = 'znx-doing-countdown-btn';
             timerBtn.title = '点击展开/收起考研倒计时卡片 (闲置5秒自动收回)';
-            timerBtn.style.cssText = getCapsuleStyle() + 'flex-direction: column !important; justify-content: center !important;';
+            timerBtn.style.cssText = getCapsuleStyle() + `
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                z-index: 99 !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            `;
 
             timerBtn.onmouseover = () => {
                 if (isCapsuleExpanded && capsuleTimer) {
@@ -1435,8 +1462,9 @@
                 }
             };
 
+            timerWrapper.appendChild(timerBtn);
             toolsBar.appendChild(copyBtn);
-            toolsBar.appendChild(timerBtn);
+            toolsBar.appendChild(timerWrapper);
 
             updateTimerCapsuleHTML();
 
