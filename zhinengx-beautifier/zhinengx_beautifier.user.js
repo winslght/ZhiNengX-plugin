@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.2.0-beta.3
+// @version      8.3.0-dev.1
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)与考研倒计时(1位小数)辅助
 // @author       winslght
 // @license      MIT
@@ -14,7 +14,7 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.2.0-beta.3';
+    const SCRIPT_VERSION = '8.3.0-dev.1';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -61,12 +61,42 @@
                 color: var(--znx-tab-text) !important;
             }
 
-            /* 进度条保真防护 */
-            html body #root div[style*="height: 16px"],
-            html body #root div[style*="height:16px"] {
-                border-radius: 0 !important;
+            /* 进度条最高优先级保真防护 (防止对话框/成就卡片内的等级进度条被毛玻璃规则覆盖) */
+            .MuiLinearProgress-root,
+            .MuiLinearProgress-bar,
+            div[class*="MuiLinearProgress"],
+            div[class*="LinearProgress"],
+            div[class*="linearProgress"],
+            div[class*="progressbar"],
+            div[class*="progressBar"],
+            div[class*="ProgressBar"],
+            div[role="progressbar"],
+            div[aria-valuenow],
+            div[style*="height: 16px"], div[style*="height:16px"],
+            div[style*="height: 14px"], div[style*="height:14px"],
+            div[style*="height: 12px"], div[style*="height:12px"],
+            div[style*="height: 10px"], div[style*="height:10px"],
+            div[style*="height: 8px"],  div[style*="height:8px"] {
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+
+            .MuiLinearProgress-bar,
+            div[class*="MuiLinearProgress"] > div,
+            div[class*="LinearProgress"] > div,
+            div[class*="progressBar"] > div,
+            div[class*="ProgressBar"] > div,
+            div[role="progressbar"] > div,
+            div[aria-valuenow] > div,
+            div[style*="height: 16px"] > div, div[style*="height:16px"] > div,
+            div[style*="height: 14px"] > div, div[style*="height:14px"] > div,
+            div[style*="height: 12px"] > div, div[style*="height:12px"] > div {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
 
             /* F. 做题界面顶部工具栏 (opacity: 0.85, blur: 15px) */
@@ -221,7 +251,7 @@
         // 壁纸遮光罩联动 Dark Reader
         const overlay = document.getElementById('znx-anime-overlay');
         if (overlay) {
-            overlay.style.opacity = isDarkModeActive() ? '0.6' : '0';
+            overlay.style.opacity = isDarkModeActive() ? '0.5' : '0';
         }
     }
 
@@ -251,6 +281,17 @@
             const targetClasses = Array.from(el.classList).filter(c => c.startsWith('jss') || c.startsWith('_'));
             if (targetClasses.length === 0) return;
             if (targetClasses.every(c => processedClasses.has(c) || excludedClasses.has(c))) return;
+
+            // 严禁捕获并覆盖进度条及填充轨道的类名，防止弹窗或卡片内的等级进度条丢失
+            if (
+                el.closest('.MuiLinearProgress-root, div[class*="LinearProgress"], div[class*="progressbar"], div[role="progressbar"], div[aria-valuenow]') ||
+                el.classList.contains('MuiLinearProgress-bar') ||
+                el.classList.contains('MuiLinearProgress-root') ||
+                (el.style.height && ['16px', '14px', '12px', '10px', '8px'].some(h => el.style.height.includes(h)))
+            ) {
+                targetClasses.forEach(c => excludedClasses.add(c));
+                return;
+            }
 
             if (appBar && el.contains(appBar)) {
                 targetClasses.forEach(c => excludedClasses.add(c));
@@ -323,19 +364,86 @@
     // ==========================================
     // 5. 考研倒计时悬浮窗
     // ==========================================
+    // ==========================================
+    // 5. 考研倒计时悬浮窗 (支持闲时 5 秒自动靠边收纳、点击展开、拖拽与位置记忆)
+    // ==========================================
+    // ==========================================
+    // 5. 考研倒计时 (非做题界面全量展开经典卡片 / 做题界面收纳为题目卡片顶部晶莹胶囊，点击展开大卡片 5s 自动收回)
+    // ==========================================
+    let expandTimer = null;
+    let isTempExpanded = false;
+
     function injectTimeManager() {
         if (document.getElementById('znx-time-manager')) return;
+
         const widget = document.createElement('div');
         widget.id = 'znx-time-manager';
-        widget.style.cssText = 'position:fixed;top:50%;right:20px;transform:translateY(-50%);width:260px;background:rgba(255,255,255,0.75);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.6);border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.1);z-index:999998;font-family:-apple-system,"PingFang SC",sans-serif;color:#333;transition:all 0.3s;';
+        widget.title = '27考研倒计时';
 
-        widget.onmouseenter = () => widget.style.transform = 'translateY(-50%) scale(1.02)';
-        widget.onmouseleave = () => widget.style.transform = 'translateY(-50%) scale(1)';
+        widget.style.cssText = `
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 260px;
+            z-index: 999998;
+            font-family: -apple-system, "PingFang SC", sans-serif;
+            user-select: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        `;
+
+        window.showFullCountdownCard = (durationMs = 5000) => {
+            isTempExpanded = true;
+            widget.style.display = 'block';
+            requestAnimationFrame(() => {
+                widget.style.opacity = '1';
+                widget.style.transform = 'translateY(-50%) scale(1)';
+            });
+
+            if (expandTimer) clearTimeout(expandTimer);
+            expandTimer = setTimeout(() => {
+                const isDoing = document.documentElement.classList.contains('znx-doing-questions');
+                if (isDoing) {
+                    isTempExpanded = false;
+                    widget.style.opacity = '0';
+                    widget.style.transform = 'translateY(-50%) scale(0.95)';
+                    setTimeout(() => {
+                        if (!isTempExpanded && document.documentElement.classList.contains('znx-doing-questions')) {
+                            widget.style.display = 'none';
+                        }
+                    }, 300);
+                }
+            }, durationMs);
+        };
+
+        widget.onmouseenter = () => {
+            if (expandTimer) clearTimeout(expandTimer);
+        };
+
+        widget.onmouseleave = () => {
+            const isDoing = document.documentElement.classList.contains('znx-doing-questions');
+            if (isDoing && isTempExpanded) {
+                window.showFullCountdownCard(3000);
+            }
+        };
+
         document.body.appendChild(widget);
 
         const targetDate = new Date('2026-12-19T00:00:00').getTime();
 
-        function updateTime() {
+        function renderWidget() {
+            const isDark = isDarkModeActive();
+            const isDoing = document.documentElement.classList.contains('znx-doing-questions');
+
+            // 做题界面且非主动点击展开状态时，隐藏侧边固定大卡片
+            if (isDoing && !isTempExpanded) {
+                widget.style.display = 'none';
+                return;
+            } else {
+                widget.style.display = 'block';
+                widget.style.opacity = '1';
+            }
+
             const now = new Date();
             const diffMs = targetDate - now.getTime();
             const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
@@ -345,29 +453,63 @@
             const h = Math.floor(todayMs / (1000 * 60 * 60)).toString().padStart(2, '0');
             const m = Math.floor((todayMs / (1000 * 60)) % 60).toString().padStart(2, '0');
             const s = Math.floor((todayMs / 1000) % 60).toString().padStart(2, '0');
-            const todayRemainingRatio = (todayMs / (24 * 60 * 60 * 1000)) * 100;
+            const todayRemainingRatio = Math.max(0, Math.min(100, (todayMs / (24 * 60 * 60 * 1000)) * 100));
 
             let dow = now.getDay(); if (dow === 0) dow = 7;
             const weekLeft = 7 - dow;
             const weekExactDays = (weekLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
-            const weekRemainingRatio = ((weekLeft + (todayMs / (24 * 60 * 60 * 1000))) / 7) * 100;
+            const weekRemainingRatio = Math.max(0, Math.min(100, ((weekLeft + (todayMs / (24 * 60 * 60 * 1000))) / 7) * 100));
 
             const eom = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             const monthTotal = eom.getDate();
             const monthLeft = monthTotal - now.getDate();
             const monthExactDays = (monthLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
-            const monthRemainingRatio = ((monthLeft + (todayMs / (24 * 60 * 60 * 1000))) / monthTotal) * 100;
+            const monthRemainingRatio = Math.max(0, Math.min(100, ((monthLeft + (todayMs / (24 * 60 * 60 * 1000))) / monthTotal) * 100));
 
             const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
             const todayDateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekDays[now.getDay()]}`;
 
-            const bar = (label, value, ratio, color) => `<div style="margin-top:15px"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:bold;margin-bottom:5px"><span>${label}</span><span style="color:${color}">${value}</span></div><div style="width:100%;height:8px;background:rgba(0,0,0,0.1);border-radius:4px;overflow:hidden"><div style="width:${ratio.toFixed(1)}%;height:100%;background:${color};transition:width 1s"></div></div></div>`;
+            // 应用经典全量毛玻璃卡片材质
+            widget.style.padding = '20px';
+            widget.style.borderRadius = '20px';
+            widget.style.background = isDark
+                ? 'rgba(15, 23, 42, 0.88)'
+                : 'rgba(255, 255, 255, 0.85)';
+            widget.style.backdropFilter = 'blur(20px) saturate(180%)';
+            widget.style.webkitBackdropFilter = 'blur(20px)';
+            widget.style.border = isDark
+                ? '1px solid rgba(56, 189, 248, 0.45)'
+                : '1px solid rgba(255, 255, 255, 0.7)';
+            widget.style.boxShadow = isDark
+                ? '0 12px 36px rgba(0, 0, 0, 0.45)'
+                : '0 12px 36px rgba(0, 0, 0, 0.12)';
 
-            widget.innerHTML = `<div style="text-align:center;margin-bottom:15px"><h3 style="margin:0;font-size:18px;color:#1e3a8a;font-weight:900">🔥 27考研倒计时</h3><div style="font-size:42px;font-weight:900;color:#e11d48;line-height:1.2;text-shadow:2px 2px 4px rgba(0,0,0,0.1)">${daysLeft > 0 ? daysLeft : 0} <span style="font-size:16px;color:#666">天</span></div><div style="font-size:13px;color:#475569;font-weight:bold;margin-top:6px;letter-spacing:0.5px">📅 ${todayDateStr}</div></div><hr style="border:none;border-top:1px dashed rgba(0,0,0,0.2);margin:15px 0">${bar('今日剩余', h+'时 '+m+'分 '+s+'秒', todayRemainingRatio, '#3b82f6')}${bar('本周剩余', weekExactDays+' 天', weekRemainingRatio, '#10b981')}${bar('本月剩余', monthExactDays+' 天', monthRemainingRatio, '#8b5cf6')}`;
+            const bar = (label, value, ratio, color) => `
+                <div style="margin-top:14px">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;color:${isDark ? '#e2e8f0' : '#334155'}">
+                        <span>${label}</span>
+                        <span style="color:${color};font-weight:800;">${value}</span>
+                    </div>
+                    <div style="width:100%;height:8px;background:rgba(0,0,0,0.12);border-radius:4px;overflow:hidden">
+                        <div style="width:${ratio.toFixed(1)}%;height:100%;background:${color};transition:width 1s"></div>
+                    </div>
+                </div>`;
+
+            widget.innerHTML = `
+                <div style="text-align:left">
+                    <h3 style="margin:0;font-size:16px;color:${isDark ? '#38bdf8' : '#1e3a8a'};font-weight:900;display:flex;align-items:center;gap:4px;">🔥 27考研倒计时</h3>
+                    <div style="font-size:36px;font-weight:900;color:#e11d48;line-height:1.1;margin-top:2px;text-shadow:0 2px 8px rgba(225,29,72,0.15)">${daysLeft > 0 ? daysLeft : 0} <span style="font-size:15px;color:${isDark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></div>
+                </div>
+                <div style="font-size:12px;color:${isDark ? '#cbd5e1' : '#475569'};font-weight:700;margin-top:6px;margin-bottom:8px;">📅 ${todayDateStr}</div>
+                <hr style="border:none;border-top:1px dashed ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'};margin:10px 0">
+                ${bar('今日剩余', h+'时 '+m+'分 '+s+'秒', todayRemainingRatio, '#3b82f6')}
+                ${bar('本周剩余', weekExactDays+' 天', weekRemainingRatio, '#10b981')}
+                ${bar('本月剩余', monthExactDays+' 天', monthRemainingRatio, '#8b5cf6')}
+            `;
         }
 
-        updateTime();
-        setInterval(updateTime, 1000);
+        renderWidget();
+        setInterval(renderWidget, 1000);
     }
 
     // ==========================================
@@ -462,11 +604,113 @@
     const MAX_LIVE2D_RETRIES = 5;
     let live2dHealthGuardTimer = null;
 
-    function injectLive2D() {
-        // 如果已经成功渲染出 waifu 容器，无需重复注入
-        if (document.getElementById('waifu')) return;
+    // ==========================================
+    // 7.1 看板娘考研短精炼金句与交互提示 (移植自 v8.3.3)
+    // ==========================================
+    function showWaifuTip(text, timeout = 3000) {
+        if (typeof window.showMessage === 'function') {
+            window.showMessage(text, timeout, 5000);
+        } else {
+            const tips = document.getElementById('waifu-tips');
+            if (tips) {
+                tips.innerHTML = text;
+                tips.classList.add('waifu-tips-active');
+                setTimeout(() => tips.classList.remove('waifu-tips-active'), timeout);
+            }
+        }
+    }
 
-        // 清除可能残留的失败 script 节点
+    let isKaoyanTipsSetup = false;
+    function setupKaoyanWaifuTips() {
+        if (isKaoyanTipsSetup) return;
+        isKaoyanTipsSetup = true;
+
+        const welcomeMsgs = [
+            "✨ 欢迎！今天也要元气满满哦！",
+            "🔥 坚持就是胜利，考研人加油！",
+            "🎯 开始消灭今天的突破口吧！",
+            "💡 保持专注，每一题都是进步！",
+            "🚀 乾坤未定，你我皆是黑马！"
+        ];
+        const getRandomWelcome = () => welcomeMsgs[Math.floor(Math.random() * welcomeMsgs.length)];
+
+        // 拦截并替换原脚本空的“欢迎阅读『』”与“欢迎阅读（）”提示
+        const observer = new MutationObserver(() => {
+            const tips = document.getElementById('waifu-tips');
+            if (tips) {
+                const text = (tips.innerText || tips.textContent || '').trim();
+                if (text.includes('欢迎阅读') || text.includes('『』') || text.includes('（）') || text.includes('()') || text === '欢迎阅读『』' || text.endsWith('『』')) {
+                    tips.innerHTML = getRandomWelcome();
+                }
+            }
+        });
+
+        const checkTipsInterval = setInterval(() => {
+            const tips = document.getElementById('waifu-tips');
+            if (tips) {
+                observer.observe(tips, { childList: true, characterData: true, subtree: true });
+                showWaifuTip(getRandomWelcome(), 4000);
+                clearInterval(checkTipsInterval);
+            }
+        }, 300);
+
+        const kaoyanQuotes = [
+            "消灭突破口，名校在等你！",
+            "遇到难题别慌，一步步来！",
+            "手写算一算，手感更棒！",
+            "适度休息，保持好心态！",
+            "熟能生巧，数学无捷径！",
+            "消灭小黄点，离高分更近！",
+            "保持节奏，27考研必胜！",
+            "错题是上岸的阶梯！加油！",
+            "相信自己，你远比想象中强大！",
+            "星光不问赶路人，加油！",
+            "越努力，越幸运！",
+            "每一分汗水，都在为高分加码！",
+            "今天高数刷了几题？加油！"
+        ];
+
+        document.addEventListener('mouseover', (e) => {
+            const target = e.target;
+            if (!target) return;
+            if (target.closest('input[type="text"], textarea')) {
+                showWaifuTip('✍️ 用心计算，按回车（Enter）直接提交！', 2500);
+            } else if (target.closest('#znx-time-manager, #znx-doing-countdown-btn')) {
+                showWaifuTip('🔥 每一秒都在为高分加码！', 2500);
+            } else if (target.closest('button, .btn, .MuiButtonBase-root')) {
+                const text = (target.innerText || target.textContent || '').trim();
+                if (text.includes('提交答案')) {
+                    showWaifuTip('🎯 准备好了吗？按回车提交答案！', 2000);
+                } else if (text.includes('查看题解')) {
+                    showWaifuTip('💡 搞懂错题逻辑就是进步！', 2000);
+                } else if (text.includes('继续') || text.includes('下一步')) {
+                    showWaifuTip('🚀 乘胜追击，下一题！', 2000);
+                }
+            }
+        });
+
+        // 点击看板娘触发精炼考研金句
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#waifu canvas, #live2d')) {
+                const randomQuote = kaoyanQuotes[Math.floor(Math.random() * kaoyanQuotes.length)];
+                showWaifuTip(randomQuote, 3000);
+            }
+        });
+    }
+
+    function injectLive2D() {
+        setupKaoyanWaifuTips();
+        const existingWaifu = document.getElementById('waifu');
+        const existingCanvas = document.getElementById('live2d') || existingWaifu?.querySelector('canvas');
+        if (existingWaifu && existingCanvas && (existingCanvas.offsetWidth > 0 || existingCanvas.offsetHeight > 0)) {
+            // 看板娘与 Canvas 画布已真实健康渲染，无需重复注入
+            return;
+        }
+
+        // 清除可能残留的失败/空壳 waifu 与 script 节点
+        if (existingWaifu) {
+            existingWaifu.remove();
+        }
         const oldScript = document.getElementById('live2d-widget-script');
         if (oldScript) {
             oldScript.remove();
@@ -523,7 +767,9 @@
         console.log(`[ZhiNengX Live2D] 🔄 计划在 ${(backoffDelay / 1000).toFixed(1)} 秒后触发下一次重试...`);
 
         setTimeout(() => {
-            if (!document.getElementById('waifu')) {
+            const waifu = document.getElementById('waifu');
+            const canvas = document.getElementById('live2d') || waifu?.querySelector('canvas');
+            if (!waifu || !canvas || canvas.offsetWidth === 0) {
                 injectLive2D();
             }
         }, backoffDelay);
@@ -534,14 +780,21 @@
 
         live2dHealthGuardTimer = setTimeout(() => {
             const waifu = document.getElementById('waifu');
-            if (!waifu) {
-                console.warn('[ZhiNengX Live2D] ⚠️ 8 秒内未检测到 #waifu 渲染节点 (可能网络超时)，启动健康保底重试...');
+            const canvas = document.getElementById('live2d') || waifu?.querySelector('canvas');
+            const isCanvasVisible = canvas && (canvas.offsetWidth > 0 || canvas.offsetHeight > 0);
+            const isWaifuVisible = waifu && (waifu.offsetWidth > 0 || waifu.offsetHeight > 0) && getComputedStyle(waifu).display !== 'none';
+
+            const isHealthy = waifu && canvas && isCanvasVisible && isWaifuVisible;
+
+            if (!isHealthy) {
+                console.warn('[ZhiNengX Live2D] ⚠️ 8 秒内未检测到有效的 #waifu 画布渲染 (模型可能加载失败)，自动清理无效节点并轮换 CDN 重试...');
+                if (waifu) waifu.remove();
                 const oldScript = document.getElementById('live2d-widget-script');
                 if (oldScript) oldScript.remove();
                 live2dCdnIndex++;
-                scheduleLive2DRetry(3000);
+                scheduleLive2DRetry(2000);
             } else {
-                console.log('[ZhiNengX Live2D] ✅ 看板娘健康校验通过 (#waifu 已渲染)');
+                console.log('[ZhiNengX Live2D] ✅ 看板娘健康校验通过 (#waifu 与 Canvas 画布已正常渲染)');
                 live2dRetryCount = 0;
             }
         }, 8000);
@@ -552,27 +805,25 @@
     // ==========================================
     function setupKeyboardShortcutsHandler() {
         document.addEventListener('keydown', (e) => {
-            // 1. 正在使用中文输入法选词时不触发
-            if (e.isComposing || e.keyCode === 229) return;
-
-            // 2. 忽略修饰键组合 (Ctrl/Alt/Meta/Cmd) 与功能键 (F1~F12/Escape/Tab)
+            // 1. 忽略修饰键组合 (Ctrl/Alt/Meta/Cmd) 与功能键 (F1~F12/Escape/Tab)
             if (e.ctrlKey || e.altKey || e.metaKey) return;
             const ignoreKeys = ['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab', 'Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
             if (ignoreKeys.includes(e.key)) return;
 
-            // 3. 检查当前焦点是否在可编辑文本输入框内
+            // 2. 检查当前焦点是否在可编辑文本输入框内
             const activeEl = document.activeElement;
-            const isCurrentlyInInput = activeEl && (
-                activeEl.tagName === 'TEXTAREA' ||
-                activeEl.isContentEditable ||
-                activeEl.getAttribute('role') === 'textbox' ||
-                (activeEl.tagName === 'INPUT' && !['radio', 'checkbox', 'button', 'submit', 'hidden'].includes((activeEl.type || '').toLowerCase()))
+            const isMultilineInput = activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+            const isSingleLineInput = activeEl && (
+                (activeEl.tagName === 'INPUT' && !['radio', 'checkbox', 'button', 'submit', 'hidden'].includes((activeEl.type || '').toLowerCase())) ||
+                activeEl.getAttribute('role') === 'textbox'
             );
+            const isInAnyInput = isMultilineInput || isSingleLineInput;
 
-            if (isCurrentlyInInput) return;
-
-            // 4. 回车键代理逻辑
+            // 3. 回车键代理逻辑 (无论光标是否在单行填空数字输入框内，按回车直通“提交答案/继续”)
             if (e.key === 'Enter' || e.keyCode === 13) {
+                // 如果是在多行 TEXTAREA 内，且未按 Shift，优先交由文本框原生换行，按 Shift+Enter 才触发提交
+                if (isMultilineInput && !e.shiftKey) return;
+
                 const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
                 const actionKeywords = ['提交答案', '继续', '下一步', '再试一次', '查看题解'];
 
@@ -589,11 +840,13 @@
                     e.preventDefault();
                     targetBtn.click();
                     console.log('⚡ [知能行小助手] 回车按键触发点击:', targetBtn.innerText.trim());
+                    return;
                 }
-                return;
             }
 
-            // 5. 数字键 1~5 精准选择题选项绑定
+            // 4. 数字键 1~5 选择题秒选 (仅在未聚焦在输入框时触发，避免干扰数字输入)
+            if (isInAnyInput) return;
+
             const numVal = parseInt(e.key, 10);
             if (!isNaN(numVal) && numVal >= 1 && numVal <= 5) {
                 const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
@@ -754,45 +1007,73 @@
     // ==========================================
     function setupCopyProblemHandler() {
         const BUTTON_ID = 'znx-copy-problem-btn';
+        let isCapsuleExpanded = false;
+        let capsuleTimer = null;
 
         const showToast = (message, isError = false) => {
             let toast = document.getElementById('znx-copy-toast');
             if (toast) toast.remove();
 
+            const isDark = isDarkModeActive();
             toast = document.createElement('div');
             toast.id = 'znx-copy-toast';
+
+            // 浅色模式材质：与“📋 复制题目”按钮一致的透亮晶莹毛玻璃；深色模式材质：保存暗高斯毛玻璃与天蓝荧光
+            const toastBg = isError
+                ? (isDark ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.88) 0%, rgba(185, 28, 28, 0.78) 100%)' : 'linear-gradient(135deg, rgba(254, 226, 226, 0.95) 0%, rgba(252, 165, 165, 0.85) 100%)')
+                : (isDark ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 41, 59, 0.72) 100%)' : 'linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.35) 100%)');
+
+            const toastBorder = isError
+                ? (isDark ? 'rgba(252, 165, 165, 0.45)' : 'rgba(239, 68, 68, 0.4)')
+                : (isDark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.6)');
+
+            const toastColor = isError
+                ? (isDark ? '#ffffff' : '#991b1b')
+                : (isDark ? '#38bdf8' : '#1e293b');
+
+            const toastShadow = isDark
+                ? '0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25)'
+                : '0 10px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8)';
+
             toast.style.cssText = `
                 position: fixed;
-                top: 24px;
+                top: 28px;
                 left: 50%;
-                transform: translateX(-50%);
+                transform: translateX(-50%) translateY(-10px) scale(0.95);
+                opacity: 0;
                 z-index: 999999;
-                background: ${isError ? 'rgba(239, 68, 68, 0.9)' : 'rgba(15, 23, 42, 0.88)'};
-                backdrop-filter: blur(12px) saturate(180%);
-                -webkit-backdrop-filter: blur(12px);
-                border: 1px solid ${isError ? 'rgba(248, 113, 113, 0.5)' : 'rgba(56, 189, 248, 0.4)'};
+                background: ${toastBg};
+                backdrop-filter: blur(16px) saturate(200%);
+                -webkit-backdrop-filter: blur(16px) saturate(200%);
+                border: 1px solid ${toastBorder};
                 border-radius: 20px;
-                padding: 8px 18px;
+                padding: 9px 22px;
                 font-size: 13px;
-                font-weight: 600;
-                color: ${isError ? '#fff' : '#38bdf8'};
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                font-weight: 700;
+                color: ${toastColor};
+                box-shadow: ${toastShadow};
+                transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
                 pointer-events: none;
                 display: flex;
                 align-items: center;
                 gap: 8px;
+                letter-spacing: 0.3px;
             `;
             toast.innerHTML = message;
             document.body.appendChild(toast);
 
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(-50%) translateY(0) scale(1)';
+            });
+
             setTimeout(() => {
                 if (toast && toast.parentNode) {
                     toast.style.opacity = '0';
-                    toast.style.transform = 'translateX(-50%) translateY(-8px)';
-                    setTimeout(() => toast.remove(), 300);
+                    toast.style.transform = 'translateX(-50%) translateY(-12px) scale(0.95)';
+                    setTimeout(() => toast.remove(), 350);
                 }
-            }, 1800);
+            }, 2000);
         };
 
         const copyToClipboard = (text) => {
@@ -836,17 +1117,32 @@
             let modal = document.getElementById('znx-copy-modal');
             if (modal) modal.remove();
 
+            const isDark = isDarkModeActive();
             modal = document.createElement('div');
             modal.id = 'znx-copy-modal';
-            modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+            const maskBg = isDark ? 'rgba(15, 23, 42, 0.65)' : 'rgba(15, 23, 42, 0.35)';
+            const cardBg = isDark
+                ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(240, 244, 248, 0.75) 100%)';
+            const cardBorder = isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.6)';
+            const cardShadow = isDark
+                ? '0 24px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                : '0 24px 48px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)';
+            const titleColor = isDark ? '#38bdf8' : '#0f172a';
+            const areaBg = isDark ? 'rgba(2, 6, 23, 0.7)' : 'rgba(255, 255, 255, 0.6)';
+            const areaColor = isDark ? '#f8fafc' : '#0f172a';
+            const areaBorder = isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(0, 0, 0, 0.12)';
+
+            modal.style.cssText = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:${maskBg};backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity 0.25s ease;`;
 
             modal.innerHTML = `
-                <div style="background:rgba(15,23,42,0.95);border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:20px;width:100%;max-width:550px;box-shadow:0 20px 40px rgba(0,0,0,0.4);color:#fff;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <h4 style="margin:0;font-size:15px;color:#38bdf8;">📋 请按 Ctrl+C 复制题目内容</h4>
-                        <button id="znx-modal-close-btn" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;">✕</button>
+                <div style="background:${cardBg};backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid ${cardBorder};border-radius:20px;padding:24px;width:100%;max-width:560px;box-shadow:${cardShadow};color:${areaColor};">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                        <h4 style="margin:0;font-size:15px;font-weight:700;color:${titleColor};display:flex;align-items:center;gap:6px;">📋 请按 Ctrl+C 复制题目内容</h4>
+                        <button id="znx-modal-close-btn" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:28px;height:28px;color:${titleColor};font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;">✕</button>
                     </div>
-                    <textarea readonly style="width:100%;height:220px;background:rgba(2,6,23,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f8fafc;padding:10px;font-family:monospace;font-size:13px;resize:none;outline:none;"></textarea>
+                    <textarea readonly style="width:100%;height:230px;background:${areaBg};border:1px solid ${areaBorder};border-radius:12px;color:${areaColor};padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.6;resize:none;outline:none;box-shadow:inset 0 2px 6px rgba(0,0,0,0.1);"></textarea>
                 </div>
             `;
             document.body.appendChild(modal);
@@ -980,10 +1276,10 @@
 
         const checkAndUpdateButton = () => {
             const isDoing = document.documentElement.classList.contains('znx-doing-questions');
-            const existingBtn = document.getElementById(BUTTON_ID);
+            let toolsBar = document.getElementById('znx-problem-tools-bar');
 
             if (!isDoing) {
-                if (existingBtn) existingBtn.remove();
+                if (toolsBar) toolsBar.remove();
                 return;
             }
 
@@ -994,75 +1290,315 @@
                                 document.querySelector('div[class*="_3WnwfR"]');
 
             if (!problemCard) {
-                if (existingBtn) existingBtn.remove();
+                if (toolsBar) toolsBar.remove();
                 return;
             }
 
-            if (existingBtn && problemCard.contains(existingBtn)) return;
-            if (existingBtn) existingBtn.remove();
+            // 倒计时信息获取函数
+            function getCountdownInfo() {
+                const targetDate = new Date('2026-12-19T00:00:00').getTime();
+                const now = new Date();
+                const diffMs = targetDate - now.getTime();
+                const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+                const todayMs = endOfDay - now;
+                const h = Math.floor(todayMs / (1000 * 60 * 60)).toString().padStart(2, '0');
+                const m = Math.floor((todayMs / (1000 * 60)) % 60).toString().padStart(2, '0');
+                const s = Math.floor((todayMs / 1000) % 60).toString().padStart(2, '0');
+                const todayRemainingRatio = Math.max(0, Math.min(100, (todayMs / (24 * 60 * 60 * 1000)) * 100));
 
-            const btn = document.createElement('button');
-            btn.id = BUTTON_ID;
-            btn.type = 'button';
-            btn.title = '一键纯净提取当前题目与 LaTeX 公式';
-            btn.innerHTML = '📋 复制题目';
-            btn.style.cssText = `
-                background: rgba(255, 255, 255, 0.18) !important;
-                backdrop-filter: blur(10px) saturate(160%) !important;
-                -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-                border-radius: 8px !important;
-                padding: 4px 12px !important;
-                font-size: 12px !important;
-                font-weight: 700 !important;
-                color: var(--znx-text-primary, #1e293b) !important;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-                cursor: pointer !important;
-                user-select: none !important;
-                transition: all 0.2s ease !important;
+                let dow = now.getDay(); if (dow === 0) dow = 7;
+                const weekLeft = 7 - dow;
+                const weekExactDays = (weekLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
+                const weekRemainingRatio = Math.max(0, Math.min(100, ((weekLeft + (todayMs / (24 * 60 * 60 * 1000))) / 7) * 100));
+
+                const eom = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                const monthTotal = eom.getDate();
+                const monthLeft = monthTotal - now.getDate();
+                const monthExactDays = (monthLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
+                const monthRemainingRatio = Math.max(0, Math.min(100, ((monthLeft + (todayMs / (24 * 60 * 60 * 1000))) / monthTotal) * 100));
+
+                const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+                const todayDateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekDays[now.getDay()]}`;
+
+                return { daysLeft, h, m, s, todayRemainingRatio, weekExactDays, weekRemainingRatio, monthExactDays, monthRemainingRatio, todayDateStr };
+            }
+
+            function updateTimerCapsuleHTML() {
+                const info = getCountdownInfo();
+                const dark = isDarkModeActive();
+                const capsuleEl = document.getElementById('znx-doing-countdown-btn');
+                if (!capsuleEl) return;
+
+                const renderKey = `${info.daysLeft}-${info.h}:${info.m}-${dark}-${isCapsuleExpanded}`;
+                if (capsuleEl.getAttribute('data-znx-render-key') === renderKey) return;
+                capsuleEl.setAttribute('data-znx-render-key', renderKey);
+
+                if (!isCapsuleExpanded) {
+                    // 1. 紧凑胶囊态 (绝对定位在占位父节点上，z-index 99)
+                    capsuleEl.style.setProperty('position', 'absolute', 'important');
+                    capsuleEl.style.setProperty('top', '0', 'important');
+                    capsuleEl.style.setProperty('left', '0', 'important');
+                    capsuleEl.style.setProperty('z-index', '99', 'important');
+                    capsuleEl.style.setProperty('transform-origin', 'top left', 'important');
+                    capsuleEl.style.setProperty('width', '135px', 'important');
+                    capsuleEl.style.setProperty('height', '32px', 'important');
+                    capsuleEl.style.setProperty('min-height', '32px', 'important');
+                    capsuleEl.style.setProperty('padding', '4px 12px', 'important');
+                    capsuleEl.style.setProperty('border-radius', '12px', 'important');
+                    capsuleEl.style.setProperty('box-shadow', dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)', 'important');
+
+                    capsuleEl.innerHTML = `
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
+                            <span style="font-weight:900;color:#e11d48;font-size:12px;display:inline-flex;align-items:center;gap:2px;">🔥 ${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:11px;color:${dark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></span>
+                            <span style="font-size:10.5px;color:${dark ? '#38bdf8' : '#3b82f6'};font-weight:800;">${info.h}:${info.m}</span>
+                        </div>
+                        <div style="width:100%;height:3px;background:rgba(0,0,0,0.12);border-radius:2px;margin-top:2px;overflow:hidden">
+                            <div style="width:${info.todayRemainingRatio.toFixed(1)}%;height:100%;background:#3b82f6;transition:width 1s"></div>
+                        </div>
+                    `;
+                } else {
+                    // 2. 就地形变放大态 (向右下方直接对角线弹性展开，提升至 z-index 99999)
+                    capsuleEl.style.setProperty('position', 'absolute', 'important');
+                    capsuleEl.style.setProperty('top', '0', 'important');
+                    capsuleEl.style.setProperty('left', '0', 'important');
+                    capsuleEl.style.setProperty('z-index', '99999', 'important');
+                    capsuleEl.style.setProperty('transform-origin', 'top left', 'important');
+                    capsuleEl.style.setProperty('width', '250px', 'important');
+                    capsuleEl.style.setProperty('min-height', '215px', 'important');
+                    capsuleEl.style.setProperty('height', 'auto', 'important');
+                    capsuleEl.style.setProperty('padding', '16px', 'important');
+                    capsuleEl.style.setProperty('border-radius', '16px', 'important');
+                    capsuleEl.style.setProperty('box-shadow', dark ? '0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)' : '0 16px 40px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9)', 'important');
+
+                    const bar = (label, value, ratio, color) => `
+                        <div style="margin-top:10px">
+                            <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;margin-bottom:3px;color:${dark ? '#e2e8f0' : '#334155'}">
+                                <span>${label}</span>
+                                <span style="color:${color};font-weight:800;">${value}</span>
+                            </div>
+                            <div style="width:100%;height:6px;background:rgba(0,0,0,0.12);border-radius:3px;overflow:hidden">
+                                <div style="width:${ratio.toFixed(1)}%;height:100%;background:${color};transition:width 1s"></div>
+                            </div>
+                        </div>`;
+
+                    capsuleEl.innerHTML = `
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;width:100%;">
+                            <h4 style="margin:0;font-size:14px;color:${dark ? '#38bdf8' : '#1e3a8a'};font-weight:900;">🔥 27考研倒计时</h4>
+                            <span id="znx-close-capsule-btn" style="font-size:11px;color:${dark ? '#94a3b8' : '#64748b'};cursor:pointer;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,0.06)">收起 ➖</span>
+                        </div>
+                        <div style="font-size:28px;font-weight:900;color:#e11d48;line-height:1;margin-bottom:4px;">${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:13px;color:${dark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></div>
+                        <div style="font-size:11px;color:${dark ? '#cbd5e1' : '#475569'};font-weight:700;">📅 ${info.todayDateStr}</div>
+                        <hr style="border:none;border-top:1px dashed ${dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'};margin:8px 0;width:100%;">
+                        ${bar('今日剩余', info.h+'时 '+info.m+'分 '+info.s+'秒', info.todayRemainingRatio, '#3b82f6')}
+                        ${bar('本周剩余', info.weekExactDays+' 天', info.weekRemainingRatio, '#10b981')}
+                        ${bar('本月剩余', info.monthExactDays+' 天', info.monthRemainingRatio, '#8b5cf6')}
+                    `;
+
+                    const closeBtn = capsuleEl.querySelector('#znx-close-capsule-btn');
+                    if (closeBtn) {
+                        closeBtn.onclick = (ev) => {
+                            ev.stopPropagation();
+                            collapseCapsule();
+                        };
+                    }
+                }
+            }
+
+            function expandCapsule(durationMs = 5000) {
+                isCapsuleExpanded = true;
+                const timerEl = document.getElementById('znx-doing-countdown-btn');
+                if (timerEl) {
+                    timerEl.removeAttribute('data-znx-render-key');
+                    updateTimerCapsuleHTML();
+                }
+
+                if (capsuleTimer) clearTimeout(capsuleTimer);
+                capsuleTimer = setTimeout(() => {
+                    collapseCapsule();
+                }, durationMs);
+            }
+
+            function collapseCapsule() {
+                isCapsuleExpanded = false;
+                if (capsuleTimer) clearTimeout(capsuleTimer);
+                const timerEl = document.getElementById('znx-doing-countdown-btn');
+                if (timerEl) {
+                    timerEl.removeAttribute('data-znx-render-key');
+                    updateTimerCapsuleHTML();
+                }
+            }
+
+            // 如果工具栏已经存在且归属于当前题目卡片，仅更新倒计时内容，绝不重新操作 DOM，防止 MutationObserver 死循环！
+            if (toolsBar && problemCard.contains(toolsBar)) {
+                updateTimerCapsuleHTML();
+                return;
+            }
+
+            if (toolsBar) toolsBar.remove();
+
+            toolsBar = document.createElement('div');
+            toolsBar.id = 'znx-problem-tools-bar';
+            toolsBar.style.cssText = `
                 display: inline-flex !important;
                 align-items: center !important;
-                gap: 5px !important;
+                gap: 10px !important;
+                margin-bottom: 10px !important;
                 margin-right: auto !important;
-                margin-bottom: 8px !important;
+                flex-wrap: wrap !important;
+                position: relative !important;
+                height: 32px !important;
+                z-index: 1 !important;
             `;
 
-            btn.onmouseover = () => {
-                btn.style.setProperty('background', 'rgba(255, 255, 255, 0.35)', 'important');
-                btn.style.setProperty('border-color', 'rgba(56, 189, 248, 0.6)', 'important');
-                btn.style.setProperty('transform', 'translateY(-1px)', 'important');
-            };
-            btn.onmouseout = () => {
-                btn.style.setProperty('background', 'rgba(255, 255, 255, 0.18)', 'important');
-                btn.style.setProperty('border-color', 'rgba(56, 189, 248, 0.3)', 'important');
-                btn.style.setProperty('transform', 'none', 'important');
+            // 统一胶囊 2.0 材质 (与复制按钮和倒计时胶囊完全一致，与题目卡片在同一 DOM 层级)
+            const getCapsuleStyle = () => {
+                const dark = isDarkModeActive();
+                return `
+                    background: ${dark
+                        ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 41, 59, 0.72) 100%)'
+                        : 'linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.45) 100%)'} !important;
+                    backdrop-filter: blur(12px) saturate(180%) !important;
+                    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+                    border: 1px solid ${dark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.75)'} !important;
+                    border-radius: 12px !important;
+                    padding: 4px 12px !important;
+                    font-size: 12px !important;
+                    font-weight: 800 !important;
+                    color: ${dark ? '#38bdf8' : '#1e293b'} !important;
+                    box-shadow: ${dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'} !important;
+                    cursor: pointer !important;
+                    user-select: none !important;
+                    transform-origin: top left !important;
+                    transition: width 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), min-height 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), height 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), padding 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease !important;
+                    display: inline-flex !important;
+                    box-sizing: border-box !important;
+                    overflow: hidden !important;
+                `;
             };
 
-            btn.onclick = (e) => {
+            // 1. 📋 复制题目 胶囊按钮
+            const copyBtn = document.createElement('button');
+            copyBtn.id = BUTTON_ID;
+            copyBtn.type = 'button';
+            copyBtn.title = '一键纯净提取当前题目与 LaTeX 公式';
+            copyBtn.innerHTML = '📋 复制题目';
+            copyBtn.style.cssText = getCapsuleStyle() + 'gap: 5px !important; align-items: center !important; height: 32px !important;';
+
+            copyBtn.onmouseover = () => {
+                const dark = isDarkModeActive();
+                copyBtn.style.setProperty('transform', 'translateY(-1px)', 'important');
+                copyBtn.style.setProperty('border-color', dark ? 'rgba(56, 189, 248, 0.8)' : 'rgba(56, 189, 248, 0.6)', 'important');
+            };
+            copyBtn.onmouseout = () => {
+                copyBtn.style.setProperty('transform', 'none', 'important');
+                copyBtn.style.setProperty('border-color', isDarkModeActive() ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.75)', 'important');
+            };
+
+            copyBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('[ZhiNengX Copy] 🖱️ 用户点击了 📋 复制题目 按钮');
                 const currentCard = document.querySelector('div[name="ProblemItemElement"]') ||
                                     document.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
-                                    btn.closest('.jumbotron') ||
-                                    btn.closest('div[class*="jumbotron"]') ||
-                                    btn.closest('div[class*="_3WnwfR"]') ||
+                                    copyBtn.closest('.jumbotron') ||
+                                    copyBtn.closest('div[class*="jumbotron"]') ||
+                                    copyBtn.closest('div[class*="_3WnwfR"]') ||
                                     document.querySelector('.jumbotron') ||
                                     problemCard;
                 const pureText = extractPureProblemMarkdown(currentCard);
                 copyToClipboard(pureText);
             };
 
+            // 2. 🔥 27考研倒计时 做题极简胶囊按钮 Wrapper (固定 135px x 32px 占位，防止拉下下方题目文本)
+            const timerWrapper = document.createElement('div');
+            timerWrapper.id = 'znx-doing-countdown-wrapper';
+            timerWrapper.style.cssText = `
+                position: relative !important;
+                width: 135px !important;
+                height: 32px !important;
+                flex-shrink: 0 !important;
+            `;
+
+            const timerBtn = document.createElement('div');
+            timerBtn.id = 'znx-doing-countdown-btn';
+            timerBtn.title = '点击展开/收起考研倒计时卡片 (闲置5秒自动收回)';
+            timerBtn.style.cssText = getCapsuleStyle() + `
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                z-index: 99 !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            `;
+
+            timerBtn.onmouseover = () => {
+                if (isCapsuleExpanded && capsuleTimer) {
+                    clearTimeout(capsuleTimer);
+                } else if (!isCapsuleExpanded) {
+                    const dark = isDarkModeActive();
+                    timerBtn.style.setProperty('transform', 'translateY(-1px)', 'important');
+                    timerBtn.style.setProperty('border-color', dark ? 'rgba(56, 189, 248, 0.8)' : 'rgba(56, 189, 248, 0.6)', 'important');
+                }
+            };
+
+            timerBtn.onmouseout = () => {
+                if (isCapsuleExpanded) {
+                    if (capsuleTimer) clearTimeout(capsuleTimer);
+                    capsuleTimer = setTimeout(() => collapseCapsule(), 3000);
+                } else {
+                    timerBtn.style.setProperty('transform', 'none', 'important');
+                    timerBtn.style.setProperty('border-color', isDarkModeActive() ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.75)', 'important');
+                }
+            };
+
+            timerBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isCapsuleExpanded) {
+                    expandCapsule(5000);
+                } else {
+                    collapseCapsule();
+                }
+            };
+
+            timerWrapper.appendChild(timerBtn);
+            toolsBar.appendChild(copyBtn);
+            toolsBar.appendChild(timerWrapper);
+
+            updateTimerCapsuleHTML();
+
             const targetHeader = problemCard.querySelector('div[class*="_3r5idY"]') || problemCard.firstElementChild || problemCard;
             if (targetHeader !== problemCard) {
-                targetHeader.insertBefore(btn, targetHeader.firstChild);
+                targetHeader.insertBefore(toolsBar, targetHeader.firstChild);
             } else {
-                problemCard.insertBefore(btn, problemCard.firstChild);
+                problemCard.insertBefore(toolsBar, problemCard.firstChild);
             }
         };
 
-        new MutationObserver(checkAndUpdateButton).observe(document.body, { childList: true, subtree: true });
-        checkAndUpdateButton();
+        let isScheduled = false;
+        let copyObserver = null;
+
+        const scheduleCheckAndUpdateButton = () => {
+            if (isScheduled) return;
+            isScheduled = true;
+            const runTask = () => {
+                isScheduled = false;
+                if (copyObserver) copyObserver.disconnect();
+                checkAndUpdateButton();
+                if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
+            };
+
+            if (window.requestIdleCallback) {
+                window.requestIdleCallback(runTask, { timeout: 100 });
+            } else {
+                requestAnimationFrame(runTask);
+            }
+        };
+
+        copyObserver = new MutationObserver(() => scheduleCheckAndUpdateButton());
+        copyObserver.observe(document.body, { childList: true, subtree: true });
+        scheduleCheckAndUpdateButton();
     }
 
     // ==========================================
