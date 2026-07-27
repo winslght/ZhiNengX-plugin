@@ -251,7 +251,7 @@
         // 壁纸遮光罩联动 Dark Reader
         const overlay = document.getElementById('znx-anime-overlay');
         if (overlay) {
-            overlay.style.opacity = isDarkModeActive() ? '0.6' : '0';
+            overlay.style.opacity = isDarkModeActive() ? '0.5' : '0';
         }
     }
 
