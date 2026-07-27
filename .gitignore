@@ -13,3 +13,16 @@ Thumbs.db
 # Dev debug dumps (optional large html pages)
 dev_resources/html/*.html
 dev_resources/data/*.json
+
+# Environment and Security Sensitive Files (Secret Isolation)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.crt
+secrets/
+credentials.json
+*.log
+

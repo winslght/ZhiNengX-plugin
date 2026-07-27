@@ -25,7 +25,7 @@
 // @description  本地秒级调试存根脚本 - 无需 Push，IDE 保存即刷新生效
 // @match        *://*.bestzixue.com/*
 // @match        *://*.zhinengxing.com/*
-// @require      file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/zhinengx-beautifier/zhinengx_beautifier.user.js
+// @require      file:///path/to/your/ZhiNengX/zhinengx-beautifier/zhinengx_beautifier.user.js
 // ==/UserScript==
 ```
 
