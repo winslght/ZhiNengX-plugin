@@ -119,6 +119,8 @@
         return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
 
+    const isProfilePayload = (data) => data && typeof data === 'object' && (data.status || data.profile);
+
     // ==========================================
     // 拦截 1：挂载 unsafeWindow.XMLHttpRequest
     // ==========================================
@@ -134,41 +136,40 @@
 
         XHR.send = function(body) {
             this.addEventListener('load', function() {
-                if (this._url && (this._url.includes('getUserProfileDiagramLast') || this._url.includes('getUserProfile'))) {
-                    try {
+                try {
+                    const url = (this._url || '').toLowerCase();
+                    if (url.includes('userprofile') || url.includes('profile') || url.includes('diagram') || !url) {
                         const parsed = JSON.parse(this.responseText);
-                        if (parsed && (parsed.status || parsed.profile)) {
+                        if (isProfilePayload(parsed)) {
                             rawFullJson = parsed;
-                            console.log('【知能行 AI 导出器】XHR 捕获数据成功:', rawFullJson);
-                            updateBtnState(true);
+                            console.log('【知能行全能引擎】XHR 捕获诊断数据成功:', rawFullJson);
                         }
-                    } catch (e) {}
-                }
+                    }
+                } catch (e) {}
             });
             return originalSend.apply(this, arguments);
         };
     } catch (e) {}
 
     // ==========================================
-    // 拦截 2：挂载 unsafeWindow.fetch (非阻塞式异步拦截)
+    // 拦截 2：挂载 unsafeWindow.fetch (非阻塞式全量 Payload 捕获)
     // ==========================================
     try {
         const originalFetch = win.fetch;
         if (originalFetch) {
             win.fetch = function(...args) {
                 const fetchPromise = originalFetch.apply(this, args);
-                const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '');
+                const url = (typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '')).toLowerCase();
 
-                if (url && (url.includes('getUserProfileDiagramLast') || url.includes('getUserProfile'))) {
+                if (url.includes('userprofile') || url.includes('profile') || url.includes('diagram') || !url) {
                     fetchPromise.then(response => {
                         if (response && response.ok) {
                             try {
                                 const clone = response.clone();
                                 clone.json().then(parsed => {
-                                    if (parsed && (parsed.status || parsed.profile)) {
+                                    if (isProfilePayload(parsed)) {
                                         rawFullJson = parsed;
-                                        console.log('【知能行 AI 导出器】Fetch 捕获数据成功:', rawFullJson);
-                                        updateBtnState(true);
+                                        console.log('【知能行全能引擎】Fetch 捕获诊断数据成功:', rawFullJson);
                                     }
                                 }).catch(() => {});
                             } catch (err) {}
@@ -181,40 +182,106 @@
     } catch (e) {}
 
     // ==========================================
-    // 主动接口请求机制 (带 2.5 秒超时保护)
+    // 多维主动补全与本地缓存扫盘机制
     // ==========================================
     async function fetchFullJsonActively() {
+        if (isProfilePayload(rawFullJson)) return rawFullJson;
+
+        // 1. 扫描 window / unsafeWindow 全局对象
+        const winGlobals = [win.__INITIAL_STATE__, win.rawFullJson, win.userProfileData];
+        for (const g of winGlobals) {
+            if (isProfilePayload(g)) {
+                rawFullJson = g;
+                console.log('【知能行全能引擎】全局对象匹配成功:', rawFullJson);
+                return rawFullJson;
+            }
+        }
+
+        // 2. 扫描 localStorage 与 sessionStorage
+        try {
+            const storages = [localStorage, sessionStorage];
+            for (const store of storages) {
+                for (let i = 0; i < store.length; i++) {
+                    const key = store.key(i);
+                    if (key && (key.toLowerCase().includes('profile') || key.toLowerCase().includes('diagram') || key.toLowerCase().includes('user'))) {
+                        try {
+                            const parsed = JSON.parse(store.getItem(key));
+                            if (isProfilePayload(parsed)) {
+                                rawFullJson = parsed;
+                                console.log('【知能行全能引擎】Web Storage 扫描数据成功:', rawFullJson);
+                                return rawFullJson;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+        } catch (e) {}
+
+        // 3. 候选 API 主动 Fetch 请求
         const candidateUrls = [
             '/getUserProfileDiagramLast',
             '/getUserProfile',
             '/getUserProfileDiagram',
+            '/api/getUserProfileDiagramLast',
+            '/api/getUserProfile',
             'https://app.bestzixue.com/getUserProfileDiagramLast',
             'https://app.bestzixue.com/getUserProfile',
             'https://app.zhinengxing.com/getUserProfileDiagramLast',
             'https://app.zhinengxing.com/getUserProfile'
         ];
 
+        const fetchImpl = win.fetch || window.fetch;
+
         for (const url of candidateUrls) {
             try {
                 const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-                const timeoutId = controller ? setTimeout(() => controller.abort(), 2500) : null;
+                const timeoutId = controller ? setTimeout(() => controller.abort(), 2000) : null;
 
                 const fetchOptions = { credentials: 'include' };
                 if (controller) fetchOptions.signal = controller.signal;
 
-                const res = await win.fetch(url, fetchOptions);
+                const res = await fetchImpl(url, fetchOptions);
                 if (timeoutId) clearTimeout(timeoutId);
 
                 if (res && res.ok) {
                     const data = await res.json();
-                    if (data && (data.status || data.profile)) {
+                    if (isProfilePayload(data)) {
                         rawFullJson = data;
-                        console.log('【知能行 AI 导出器】主动 Fetch 补全数据成功:', rawFullJson);
+                        console.log('【知能行全能引擎】主动 Fetch 补全成功:', rawFullJson);
                         return rawFullJson;
                     }
                 }
             } catch (e) {}
         }
+
+        // 4. 原生 XHR 终极兜底主动请求
+        for (const url of candidateUrls.slice(0, 3)) {
+            try {
+                const xhrResult = await new Promise((resolve) => {
+                    const xhr = new (win.XMLHttpRequest || XMLHttpRequest)();
+                    xhr.open('GET', url, true);
+                    xhr.withCredentials = true;
+                    xhr.timeout = 2000;
+                    xhr.onload = function() {
+                        try {
+                            const parsed = JSON.parse(xhr.responseText);
+                            if (isProfilePayload(parsed)) resolve(parsed);
+                            else resolve(null);
+                        } catch (e) { resolve(null); }
+                    };
+                    xhr.onerror = () => resolve(null);
+                    xhr.ontimeout = () => resolve(null);
+                    xhr.send();
+                });
+
+                if (xhrResult) {
+                    rawFullJson = xhrResult;
+                    console.log('【知能行全能引擎】主动 XHR 补全成功:', rawFullJson);
+                    return rawFullJson;
+                }
+            } catch (e) {}
+        }
+
         return null;
     }
 
