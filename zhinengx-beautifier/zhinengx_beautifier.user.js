@@ -763,36 +763,45 @@
             toast.id = 'znx-copy-toast';
             toast.style.cssText = `
                 position: fixed;
-                top: 24px;
+                top: 28px;
                 left: 50%;
-                transform: translateX(-50%);
+                transform: translateX(-50%) translateY(-10px) scale(0.95);
+                opacity: 0;
                 z-index: 999999;
-                background: ${isError ? 'rgba(239, 68, 68, 0.9)' : 'rgba(15, 23, 42, 0.88)'};
-                backdrop-filter: blur(12px) saturate(180%);
-                -webkit-backdrop-filter: blur(12px);
-                border: 1px solid ${isError ? 'rgba(248, 113, 113, 0.5)' : 'rgba(56, 189, 248, 0.4)'};
+                background: ${isError 
+                    ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.88) 0%, rgba(185, 28, 28, 0.78) 100%)' 
+                    : 'linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 41, 59, 0.72) 100%)'};
+                backdrop-filter: blur(16px) saturate(200%);
+                -webkit-backdrop-filter: blur(16px) saturate(200%);
+                border: 1px solid ${isError ? 'rgba(252, 165, 165, 0.45)' : 'rgba(56, 189, 248, 0.45)'};
                 border-radius: 20px;
-                padding: 8px 18px;
+                padding: 9px 22px;
                 font-size: 13px;
-                font-weight: 600;
-                color: ${isError ? '#fff' : '#38bdf8'};
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                font-weight: 700;
+                color: ${isError ? '#ffffff' : '#38bdf8'};
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+                transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
                 pointer-events: none;
                 display: flex;
                 align-items: center;
                 gap: 8px;
+                letter-spacing: 0.3px;
             `;
             toast.innerHTML = message;
             document.body.appendChild(toast);
 
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(-50%) translateY(0) scale(1)';
+            });
+
             setTimeout(() => {
                 if (toast && toast.parentNode) {
                     toast.style.opacity = '0';
-                    toast.style.transform = 'translateX(-50%) translateY(-8px)';
-                    setTimeout(() => toast.remove(), 300);
+                    toast.style.transform = 'translateX(-50%) translateY(-12px) scale(0.95)';
+                    setTimeout(() => toast.remove(), 350);
                 }
-            }, 1800);
+            }, 2000);
         };
 
         const copyToClipboard = (text) => {
@@ -838,15 +847,15 @@
 
             modal = document.createElement('div');
             modal.id = 'znx-copy-modal';
-            modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.65);backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity 0.25s ease;';
 
             modal.innerHTML = `
-                <div style="background:rgba(15,23,42,0.95);border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:20px;width:100%;max-width:550px;box-shadow:0 20px 40px rgba(0,0,0,0.4);color:#fff;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <h4 style="margin:0;font-size:15px;color:#38bdf8;">📋 请按 Ctrl+C 复制题目内容</h4>
-                        <button id="znx-modal-close-btn" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;">✕</button>
+                <div style="background:linear-gradient(135deg, rgba(15,23,42,0.85) 0%, rgba(30,41,59,0.75) 100%);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(56,189,248,0.35);border-radius:20px;padding:24px;width:100%;max-width:560px;box-shadow:0 24px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2);color:#fff;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                        <h4 style="margin:0;font-size:15px;font-weight:700;color:#38bdf8;display:flex;align-items:center;gap:6px;">📋 请按 Ctrl+C 复制题目内容</h4>
+                        <button id="znx-modal-close-btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:28px;height:28px;color:#94a3b8;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;">✕</button>
                     </div>
-                    <textarea readonly style="width:100%;height:220px;background:rgba(2,6,23,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f8fafc;padding:10px;font-family:monospace;font-size:13px;resize:none;outline:none;"></textarea>
+                    <textarea readonly style="width:100%;height:230px;background:rgba(2,6,23,0.7);border:1px solid rgba(56,189,248,0.2);border-radius:12px;color:#f8fafc;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.6;resize:none;outline:none;box-shadow:inset 0 2px 6px rgba(0,0,0,0.3);"></textarea>
                 </div>
             `;
             document.body.appendChild(modal);
