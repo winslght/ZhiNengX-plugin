@@ -1245,8 +1245,10 @@
                     capsuleEl.style.setProperty('top', '0', 'important');
                     capsuleEl.style.setProperty('left', '0', 'important');
                     capsuleEl.style.setProperty('z-index', '99', 'important');
+                    capsuleEl.style.setProperty('transform-origin', 'top left', 'important');
                     capsuleEl.style.setProperty('width', '135px', 'important');
                     capsuleEl.style.setProperty('height', '32px', 'important');
+                    capsuleEl.style.setProperty('min-height', '32px', 'important');
                     capsuleEl.style.setProperty('padding', '4px 12px', 'important');
                     capsuleEl.style.setProperty('border-radius', '12px', 'important');
                     capsuleEl.style.setProperty('box-shadow', dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)', 'important');
@@ -1261,12 +1263,14 @@
                         </div>
                     `;
                 } else {
-                    // 2. 就地形变放大态 (提升至 z-index 99999 覆盖悬浮在题目内容上方，绝对不挤压任何下方 DOM 元素)
+                    // 2. 就地形变放大态 (向右下方直接对角线弹性展开，提升至 z-index 99999)
                     capsuleEl.style.setProperty('position', 'absolute', 'important');
                     capsuleEl.style.setProperty('top', '0', 'important');
                     capsuleEl.style.setProperty('left', '0', 'important');
                     capsuleEl.style.setProperty('z-index', '99999', 'important');
+                    capsuleEl.style.setProperty('transform-origin', 'top left', 'important');
                     capsuleEl.style.setProperty('width', '250px', 'important');
+                    capsuleEl.style.setProperty('min-height', '215px', 'important');
                     capsuleEl.style.setProperty('height', 'auto', 'important');
                     capsuleEl.style.setProperty('padding', '16px', 'important');
                     capsuleEl.style.setProperty('border-radius', '16px', 'important');
@@ -1370,7 +1374,8 @@
                     box-shadow: ${dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'} !important;
                     cursor: pointer !important;
                     user-select: none !important;
-                    transition: width 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), padding 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease !important;
+                    transform-origin: top left !important;
+                    transition: width 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), min-height 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), height 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), padding 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease !important;
                     display: inline-flex !important;
                     box-sizing: border-box !important;
                     overflow: hidden !important;
