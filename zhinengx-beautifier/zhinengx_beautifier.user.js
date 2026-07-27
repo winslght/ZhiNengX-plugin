@@ -876,14 +876,28 @@
             console.log(`[ZhiNengX Copy] 🧹 清理交互/样式节点 ${itemsToRemove.length} 个`);
             itemsToRemove.forEach(el => el.remove());
 
-            // 2. 选择题选项智能补全标号 (A. / B. / C. / D. / E.) 与独占换行
+            // 2. 选择题选项智能过滤与标号补全 (A. / B. / C. / D. / E.)
             const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
-            const choiceLabels = Array.from(clone.querySelectorAll('label[id^="choiceButton"], label[name="choiceButton"]'));
-            console.log(`[ZhiNengX Copy] 📝 匹配到选择题选项 ${choiceLabels.length} 个`);
+            let choiceLabels = Array.from(clone.querySelectorAll('label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label'));
+            if (choiceLabels.length === 0) {
+                choiceLabels = Array.from(clone.querySelectorAll('label')).filter(l => l.querySelector('input[type="radio"], input[type="checkbox"], input[name="choice"]'));
+            }
+
+            // 剔除包含“我没有思路”或“显示有问题”的假选项 (如 E 选项“我没有思路”)
+            choiceLabels = choiceLabels.filter(label => {
+                const txt = (label.textContent || '').trim();
+                if (txt.includes('我没有思路') || txt.includes('显示有问题')) {
+                    label.remove();
+                    return false;
+                }
+                return true;
+            });
+
+            console.log(`[ZhiNengX Copy] 📝 匹配到有效选择题选项 ${choiceLabels.length} 个`);
             choiceLabels.forEach((label, idx) => {
                 const letter = choiceLetters[idx] || '';
                 const txt = (label.textContent || '').trim();
-                if (letter && !txt.startsWith(letter)) {
+                if (letter && !txt.startsWith(`${letter}.`) && !txt.startsWith(`${letter} `)) {
                     label.prepend(document.createTextNode(`${letter}. `));
                 }
                 label.before(document.createTextNode('\n'));
