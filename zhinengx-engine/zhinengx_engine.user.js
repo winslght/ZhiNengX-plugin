@@ -2311,15 +2311,8 @@
         injectDevVersionBadge();
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
-
-
     function unifiedInit() {
+        init();
         loadECharts();
         exporterObserver.observe(document.body, { childList: true, subtree: true });
         injectTabs();
