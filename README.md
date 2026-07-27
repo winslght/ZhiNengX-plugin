@@ -33,7 +33,7 @@ ZhiNengX Plugins 是专为 [知能行考研数学](https://www.bestzixue.com) �
 | :--- | :--- | :--- | :--- |
 | **`main`** | **v8.1.0 (Stable)** | **稳定版**。无感 CSS 变量渲染，零运行开销，纯净毛玻璃，适合日常使用 | [安装 Beautifier 稳定版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-beautifier/zhinengx_beautifier.user.js) |
 | **`dev-panel`** | **v7.4.1 (Dev GUI)** | **开发者调参版**。内置 GUI 控制面板，支持实时手动调节透明度与模糊度 | [安装 Dev-Panel 调参版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/dev-panel/zhinengx-beautifier/zhinengx_beautifier.user.js) |
-| **`beta`** | **v8.2.0-beta.1** | **预发布公测版**。包含水波纹做题感应、Live2D 多 CDN 容灾与 1 位小数倒计时等最新特性 | [安装 Beautifier 公测版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/beta/zhinengx-beautifier/zhinengx_beautifier.user.js) |
+| **`beta`** | **v8.2.0-beta.2** | **预发布公测版**。集成选择题 1-5 快捷键秒选、回车快捷提交/下一步与高频交互优化 | [安装 Beautifier 公测版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/beta/zhinengx-beautifier/zhinengx_beautifier.user.js) |
 
 ---
 
@@ -62,9 +62,10 @@ ZhiNengX Plugins 是专为 [知能行考研数学](https://www.bestzixue.com) �
 本项目建立了完整的规范体系，研发与缺陷追踪详见以下文档：
 
 - 📝 **[更新日志 (CHANGELOG.md)](CHANGELOG.md)**：项目全量演进历史与版本变更履历。
-- 🐞 **[缺陷矩阵与 Roadmap (ROADMAP_AND_ISSUES.md)](docs/ROADMAP_AND_ISSUES.md)**：已知 BUG 追踪表、临时规避方案与下版功能规划。
+- 🏛️ **[六维 Git Flow 分支架构规范 (GIT_FLOW_SPECIFICATION.md)](docs/GIT_FLOW_SPECIFICATION.md)**：分层隔离递进交付模型与中英文双语 Commit 提交纪律。
 - ⚡ **[0 Push 秒级调试指南 (DEVELOPMENT_WORKFLOW.md)](docs/DEVELOPMENT_WORKFLOW.md)**：基于 Tampermonkey `file://` 直加载机制的本地调试与发版 SOP。
 - 🛡️ **[Git Task 分支隔离规范 (GIT_DEVELOPMENT_SOP.md)](docs/GIT_DEVELOPMENT_SOP.md)**：任务分支隔离 (feature/fix) 与止损回退决策 SOP。
+- 🐞 **[缺陷矩阵与 Roadmap (ROADMAP_AND_ISSUES.md)](docs/ROADMAP_AND_ISSUES.md)**：已知 BUG 追踪表、临时规避方案与下版功能规划。
 
 ---
 
@@ -82,6 +83,7 @@ ZhiNengX/
 ├── docs/                               # 研发 SOP 与缺陷追踪文档
 │   ├── DEVELOPMENT_WORKFLOW.md
 │   ├── GIT_DEVELOPMENT_SOP.md
+│   ├── GIT_FLOW_SPECIFICATION.md
 │   ├── ROADMAP_AND_ISSUES.md
 │   ├── RELEASE_TEMPLATE.md
 │   └── version_history_and_ratings.md
