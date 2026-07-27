@@ -368,8 +368,11 @@
     // 5. 考研倒计时悬浮窗 (支持闲时 5 秒自动靠边收纳、点击展开、拖拽与位置记忆)
     // ==========================================
     // ==========================================
-    // 5. 考研倒计时 (非做题界面全量展开经典卡片 / 做题界面收纳为题目卡片顶部晶莹胶囊)
+    // 5. 考研倒计时 (非做题界面全量展开经典卡片 / 做题界面收纳为题目卡片顶部晶莹胶囊，点击展开大卡片 5s 自动收回)
     // ==========================================
+    let expandTimer = null;
+    let isTempExpanded = false;
+
     function injectTimeManager() {
         if (document.getElementById('znx-time-manager')) return;
 
@@ -386,8 +389,43 @@
             z-index: 999998;
             font-family: -apple-system, "PingFang SC", sans-serif;
             user-select: none;
-            transition: all 0.3s ease;
+            transition: opacity 0.3s ease, transform 0.3s ease;
         `;
+
+        window.showFullCountdownCard = (durationMs = 5000) => {
+            isTempExpanded = true;
+            widget.style.display = 'block';
+            requestAnimationFrame(() => {
+                widget.style.opacity = '1';
+                widget.style.transform = 'translateY(-50%) scale(1)';
+            });
+
+            if (expandTimer) clearTimeout(expandTimer);
+            expandTimer = setTimeout(() => {
+                const isDoing = document.documentElement.classList.contains('znx-doing-questions');
+                if (isDoing) {
+                    isTempExpanded = false;
+                    widget.style.opacity = '0';
+                    widget.style.transform = 'translateY(-50%) scale(0.95)';
+                    setTimeout(() => {
+                        if (!isTempExpanded && document.documentElement.classList.contains('znx-doing-questions')) {
+                            widget.style.display = 'none';
+                        }
+                    }, 300);
+                }
+            }, durationMs);
+        };
+
+        widget.onmouseenter = () => {
+            if (expandTimer) clearTimeout(expandTimer);
+        };
+
+        widget.onmouseleave = () => {
+            const isDoing = document.documentElement.classList.contains('znx-doing-questions');
+            if (isDoing && isTempExpanded) {
+                window.showFullCountdownCard(3000);
+            }
+        };
 
         document.body.appendChild(widget);
 
@@ -397,12 +435,13 @@
             const isDark = isDarkModeActive();
             const isDoing = document.documentElement.classList.contains('znx-doing-questions');
 
-            // 做题界面时隐藏侧边固定大卡片 (因为已无缝收纳至题目卡片顶部的晶莹胶囊工具栏中，且与题目卡片在同一 DOM 层级)
-            if (isDoing) {
+            // 做题界面且非主动点击展开状态时，隐藏侧边固定大卡片
+            if (isDoing && !isTempExpanded) {
                 widget.style.display = 'none';
                 return;
             } else {
                 widget.style.display = 'block';
+                widget.style.opacity = '1';
             }
 
             const now = new Date();
@@ -434,8 +473,8 @@
             widget.style.padding = '20px';
             widget.style.borderRadius = '20px';
             widget.style.background = isDark
-                ? 'rgba(15, 23, 42, 0.85)'
-                : 'rgba(255, 255, 255, 0.78)';
+                ? 'rgba(15, 23, 42, 0.88)'
+                : 'rgba(255, 255, 255, 0.85)';
             widget.style.backdropFilter = 'blur(20px) saturate(180%)';
             widget.style.webkitBackdropFilter = 'blur(20px)';
             widget.style.border = isDark
@@ -1303,8 +1342,9 @@
             timerBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const info = getCountdownInfo();
-                showToast(`🔥 27考研倒计时：距考研 <b>${info.daysLeft}</b> 天 │ 今日还剩 ${info.h}时${info.m}分 │ 本周还剩 ${info.weekExactDays}天 │ 本月还剩 ${info.monthExactDays}天`);
+                if (window.showFullCountdownCard) {
+                    window.showFullCountdownCard(5000);
+                }
             };
 
             toolsBar.appendChild(copyBtn);
