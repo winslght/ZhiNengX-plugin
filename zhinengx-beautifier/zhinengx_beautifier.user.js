@@ -367,125 +367,44 @@
     // ==========================================
     // 5. 考研倒计时悬浮窗 (支持闲时 5 秒自动靠边收纳、点击展开、拖拽与位置记忆)
     // ==========================================
+    // ==========================================
+    // 5. 考研倒计时 (非做题界面全量展开经典卡片 / 做题界面收纳为题目卡片顶部晶莹胶囊)
+    // ==========================================
     function injectTimeManager() {
         if (document.getElementById('znx-time-manager')) return;
 
-        const POS_KEY = 'znx_countdown_pos';
-        let savedPos = null;
-        try {
-            savedPos = JSON.parse(localStorage.getItem(POS_KEY));
-        } catch (e) {}
-
         const widget = document.createElement('div');
         widget.id = 'znx-time-manager';
-        widget.title = '考研倒计时 (点击展开/折叠，闲置5秒自动靠边收纳，可拖拽)';
-
-        let isFolded = true; // 默认做题界面极简靠边收纳
-        let idleTimer = null;
-
-        // 设置初始坐标与状态
-        const initialTop = savedPos && typeof savedPos.top === 'number' ? savedPos.top : Math.max(100, window.innerHeight / 2 - 100);
-        const initialLeft = savedPos && typeof savedPos.left === 'number' ? savedPos.left : (window.innerWidth - 180);
+        widget.title = '27考研倒计时';
 
         widget.style.cssText = `
             position: fixed;
-            top: ${initialTop}px;
-            left: ${initialLeft}px;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 260px;
             z-index: 999998;
             font-family: -apple-system, "PingFang SC", sans-serif;
-            cursor: move;
             user-select: none;
-            transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        padding 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+            transition: all 0.3s ease;
         `;
 
         document.body.appendChild(widget);
-
-        // 拖拽逻辑
-        let isDragging = false;
-        let startX = 0, startY = 0;
-        let elemStartX = 0, elemStartY = 0;
-        let hasMoved = false;
-
-        widget.onmousedown = (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-            isDragging = true;
-            hasMoved = false;
-            startX = e.clientX;
-            startY = e.clientY;
-            elemStartX = widget.offsetLeft;
-            elemStartY = widget.offsetTop;
-
-            const onMouseMove = (moveEvent) => {
-                const dx = moveEvent.clientX - startX;
-                const dy = moveEvent.clientY - startY;
-                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
-
-                let newLeft = elemStartX + dx;
-                let newTop = elemStartY + dy;
-
-                // 屏幕视口边界卡位限制
-                newLeft = Math.max(10, Math.min(window.innerWidth - widget.offsetWidth - 10, newLeft));
-                newTop = Math.max(10, Math.min(window.innerHeight - widget.offsetHeight - 10, newTop));
-
-                widget.style.left = `${newLeft}px`;
-                widget.style.top = `${newTop}px`;
-            };
-
-            const onMouseUp = () => {
-                isDragging = false;
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-
-                // 保存位置记忆
-                try {
-                    localStorage.setItem(POS_KEY, JSON.stringify({
-                        top: widget.offsetTop,
-                        left: widget.offsetLeft
-                    }));
-                } catch (err) {}
-            };
-
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-        };
-
-        const resetIdleTimer = () => {
-            if (idleTimer) clearTimeout(idleTimer);
-            idleTimer = setTimeout(() => {
-                if (!isFolded) {
-                    isFolded = true;
-                    renderWidget();
-                }
-            }, 5000);
-        };
-
-        widget.onclick = (e) => {
-            if (hasMoved) return; // 拖拽结束不触发点击折叠/展开
-            isFolded = !isFolded;
-            renderWidget();
-            if (!isFolded) {
-                resetIdleTimer();
-            }
-        };
-
-        widget.onmouseenter = () => {
-            if (idleTimer) clearTimeout(idleTimer);
-            if (!isFolded) widget.style.transform = 'scale(1.02)';
-        };
-
-        widget.onmouseleave = () => {
-            widget.style.transform = 'scale(1)';
-            if (!isFolded) {
-                resetIdleTimer();
-            }
-        };
 
         const targetDate = new Date('2026-12-19T00:00:00').getTime();
 
         function renderWidget() {
             const isDark = isDarkModeActive();
+            const isDoing = document.documentElement.classList.contains('znx-doing-questions');
+
+            // 做题界面时隐藏侧边固定大卡片 (因为已无缝收纳至题目卡片顶部的晶莹胶囊工具栏中，且与题目卡片在同一 DOM 层级)
+            if (isDoing) {
+                widget.style.display = 'none';
+                return;
+            } else {
+                widget.style.display = 'block';
+            }
+
             const now = new Date();
             const diffMs = targetDate - now.getTime();
             const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
@@ -511,80 +430,47 @@
             const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
             const todayDateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekDays[now.getDay()]}`;
 
-            if (isFolded) {
-                // 收缩态材质 (天数 + 今日剩余微型进度条)
-                widget.style.width = '145px';
-                widget.style.padding = '8px 14px';
-                widget.style.borderRadius = '20px';
-                widget.style.background = isDark
-                    ? 'rgba(15, 23, 42, 0.82)'
-                    : 'rgba(255, 255, 255, 0.75)';
-                widget.style.backdropFilter = 'blur(16px) saturate(180%)';
-                widget.style.webkitBackdropFilter = 'blur(16px)';
-                widget.style.border = isDark
-                    ? '1px solid rgba(56, 189, 248, 0.4)'
-                    : '1px solid rgba(255, 255, 255, 0.6)';
-                widget.style.boxShadow = isDark
-                    ? '0 8px 24px rgba(0, 0, 0, 0.35)'
-                    : '0 8px 24px rgba(0, 0, 0, 0.1)';
+            // 应用经典全量毛玻璃卡片材质
+            widget.style.padding = '20px';
+            widget.style.borderRadius = '20px';
+            widget.style.background = isDark
+                ? 'rgba(15, 23, 42, 0.85)'
+                : 'rgba(255, 255, 255, 0.78)';
+            widget.style.backdropFilter = 'blur(20px) saturate(180%)';
+            widget.style.webkitBackdropFilter = 'blur(20px)';
+            widget.style.border = isDark
+                ? '1px solid rgba(56, 189, 248, 0.45)'
+                : '1px solid rgba(255, 255, 255, 0.7)';
+            widget.style.boxShadow = isDark
+                ? '0 12px 36px rgba(0, 0, 0, 0.45)'
+                : '0 12px 36px rgba(0, 0, 0, 0.12)';
 
-                widget.innerHTML = `
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-                        <span style="font-weight:900;color:#e11d48;font-size:15px;display:flex;align-items:center;gap:3px;">🔥 ${daysLeft > 0 ? daysLeft : 0} <span style="font-size:11px;color:${isDark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></span>
-                        <span style="font-size:10px;color:${isDark ? '#38bdf8' : '#3b82f6'};font-weight:800;">${h}:${m}</span>
+            const bar = (label, value, ratio, color) => `
+                <div style="margin-top:14px">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;color:${isDark ? '#e2e8f0' : '#334155'}">
+                        <span>${label}</span>
+                        <span style="color:${color};font-weight:800;">${value}</span>
                     </div>
-                    <div style="width:100%;height:4px;background:rgba(0,0,0,0.12);border-radius:2px;margin-top:4px;overflow:hidden">
-                        <div style="width:${todayRemainingRatio.toFixed(1)}%;height:100%;background:#3b82f6;transition:width 1s"></div>
+                    <div style="width:100%;height:8px;background:rgba(0,0,0,0.12);border-radius:4px;overflow:hidden">
+                        <div style="width:${ratio.toFixed(1)}%;height:100%;background:${color};transition:width 1s"></div>
                     </div>
-                `;
-            } else {
-                // 展开态材质 (完整面板)
-                widget.style.width = '260px';
-                widget.style.padding = '20px';
-                widget.style.borderRadius = '20px';
-                widget.style.background = isDark
-                    ? 'rgba(15, 23, 42, 0.88)'
-                    : 'rgba(255, 255, 255, 0.85)';
-                widget.style.backdropFilter = 'blur(20px) saturate(180%)';
-                widget.style.webkitBackdropFilter = 'blur(20px)';
-                widget.style.border = isDark
-                    ? '1px solid rgba(56, 189, 248, 0.45)'
-                    : '1px solid rgba(255, 255, 255, 0.7)';
-                widget.style.boxShadow = isDark
-                    ? '0 12px 36px rgba(0, 0, 0, 0.45)'
-                    : '0 12px 36px rgba(0, 0, 0, 0.12)';
+                </div>`;
 
-                const bar = (label, value, ratio, color) => `
-                    <div style="margin-top:14px">
-                        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;color:${isDark ? '#e2e8f0' : '#334155'}">
-                            <span>${label}</span>
-                            <span style="color:${color};font-weight:800;">${value}</span>
-                        </div>
-                        <div style="width:100%;height:8px;background:rgba(0,0,0,0.12);border-radius:4px;overflow:hidden">
-                            <div style="width:${ratio.toFixed(1)}%;height:100%;background:${color};transition:width 1s"></div>
-                        </div>
-                    </div>`;
-
-                widget.innerHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-                        <div style="text-align:left">
-                            <h3 style="margin:0;font-size:16px;color:${isDark ? '#38bdf8' : '#1e3a8a'};font-weight:900;display:flex;align-items:center;gap:4px;">🔥 27考研倒计时</h3>
-                            <div style="font-size:36px;font-weight:900;color:#e11d48;line-height:1.1;margin-top:2px;text-shadow:0 2px 8px rgba(225,29,72,0.15)">${daysLeft > 0 ? daysLeft : 0} <span style="font-size:15px;color:${isDark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></div>
-                        </div>
-                        <span style="font-size:11px;color:${isDark ? '#64748b' : '#94a3b8'};cursor:pointer;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,0.06)">收起 ➖</span>
-                    </div>
-                    <div style="font-size:12px;color:${isDark ? '#cbd5e1' : '#475569'};font-weight:700;margin-bottom:10px;">📅 ${todayDateStr}</div>
-                    <hr style="border:none;border-top:1px dashed ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'};margin:10px 0">
-                    ${bar('今日剩余', h+'时 '+m+'分 '+s+'秒', todayRemainingRatio, '#3b82f6')}
-                    ${bar('本周剩余', weekExactDays+' 天', weekRemainingRatio, '#10b981')}
-                    ${bar('本月剩余', monthExactDays+' 天', monthRemainingRatio, '#8b5cf6')}
-                `;
-            }
+            widget.innerHTML = `
+                <div style="text-align:left">
+                    <h3 style="margin:0;font-size:16px;color:${isDark ? '#38bdf8' : '#1e3a8a'};font-weight:900;display:flex;align-items:center;gap:4px;">🔥 27考研倒计时</h3>
+                    <div style="font-size:36px;font-weight:900;color:#e11d48;line-height:1.1;margin-top:2px;text-shadow:0 2px 8px rgba(225,29,72,0.15)">${daysLeft > 0 ? daysLeft : 0} <span style="font-size:15px;color:${isDark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></div>
+                </div>
+                <div style="font-size:12px;color:${isDark ? '#cbd5e1' : '#475569'};font-weight:700;margin-top:6px;margin-bottom:8px;">📅 ${todayDateStr}</div>
+                <hr style="border:none;border-top:1px dashed ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'};margin:10px 0">
+                ${bar('今日剩余', h+'时 '+m+'分 '+s+'秒', todayRemainingRatio, '#3b82f6')}
+                ${bar('本周剩余', weekExactDays+' 天', weekRemainingRatio, '#10b981')}
+                ${bar('本月剩余', monthExactDays+' 天', monthRemainingRatio, '#8b5cf6')}
+            `;
         }
 
         renderWidget();
         setInterval(renderWidget, 1000);
-        resetIdleTimer();
     }
 
     // ==========================================
@@ -1254,10 +1140,10 @@
 
         const checkAndUpdateButton = () => {
             const isDoing = document.documentElement.classList.contains('znx-doing-questions');
-            const existingBtn = document.getElementById(BUTTON_ID);
+            let toolsBar = document.getElementById('znx-problem-tools-bar');
 
             if (!isDoing) {
-                if (existingBtn) existingBtn.remove();
+                if (toolsBar) toolsBar.remove();
                 return;
             }
 
@@ -1268,70 +1154,165 @@
                                 document.querySelector('div[class*="_3WnwfR"]');
 
             if (!problemCard) {
-                if (existingBtn) existingBtn.remove();
+                if (toolsBar) toolsBar.remove();
                 return;
             }
 
-            if (existingBtn && problemCard.contains(existingBtn)) return;
-            if (existingBtn) existingBtn.remove();
+            // 倒计时信息获取函数
+            function getCountdownInfo() {
+                const targetDate = new Date('2026-12-19T00:00:00').getTime();
+                const now = new Date();
+                const diffMs = targetDate - now.getTime();
+                const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+                const todayMs = endOfDay - now;
+                const h = Math.floor(todayMs / (1000 * 60 * 60)).toString().padStart(2, '0');
+                const m = Math.floor((todayMs / (1000 * 60)) % 60).toString().padStart(2, '0');
+                const s = Math.floor((todayMs / 1000) % 60).toString().padStart(2, '0');
+                const todayRemainingRatio = Math.max(0, Math.min(100, (todayMs / (24 * 60 * 60 * 1000)) * 100));
 
-            const btn = document.createElement('button');
-            btn.id = BUTTON_ID;
-            btn.type = 'button';
-            btn.title = '一键纯净提取当前题目与 LaTeX 公式';
-            btn.innerHTML = '📋 复制题目';
-            btn.style.cssText = `
-                background: rgba(255, 255, 255, 0.18) !important;
-                backdrop-filter: blur(10px) saturate(160%) !important;
-                -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-                border-radius: 8px !important;
-                padding: 4px 12px !important;
-                font-size: 12px !important;
-                font-weight: 700 !important;
-                color: var(--znx-text-primary, #1e293b) !important;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-                cursor: pointer !important;
-                user-select: none !important;
-                transition: all 0.2s ease !important;
+                let dow = now.getDay(); if (dow === 0) dow = 7;
+                const weekLeft = 7 - dow;
+                const weekExactDays = (weekLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
+
+                const eom = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                const monthTotal = eom.getDate();
+                const monthLeft = monthTotal - now.getDate();
+                const monthExactDays = (monthLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
+
+                return { daysLeft, h, m, s, todayRemainingRatio, weekExactDays, monthExactDays };
+            }
+
+            function updateTimerCapsuleHTML() {
+                const info = getCountdownInfo();
+                const dark = isDarkModeActive();
+                const capsuleEl = document.getElementById('znx-doing-countdown-btn');
+                if (capsuleEl) {
+                    capsuleEl.innerHTML = `
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
+                            <span style="font-weight:900;color:#e11d48;font-size:12px;display:inline-flex;align-items:center;gap:2px;">🔥 ${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:11px;color:${dark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></span>
+                            <span style="font-size:10.5px;color:${dark ? '#38bdf8' : '#3b82f6'};font-weight:800;">${info.h}:${info.m}</span>
+                        </div>
+                        <div style="width:100%;height:3px;background:rgba(0,0,0,0.12);border-radius:2px;margin-top:2px;overflow:hidden">
+                            <div style="width:${info.todayRemainingRatio.toFixed(1)}%;height:100%;background:#3b82f6;transition:width 1s"></div>
+                        </div>
+                    `;
+                }
+            }
+
+            // 如果工具栏已经存在且归属于当前题目卡片，仅更新倒计时内容，绝不重新操作 DOM，防止 MutationObserver 死循环！
+            if (toolsBar && problemCard.contains(toolsBar)) {
+                updateTimerCapsuleHTML();
+                return;
+            }
+
+            if (toolsBar) toolsBar.remove();
+
+            toolsBar = document.createElement('div');
+            toolsBar.id = 'znx-problem-tools-bar';
+            toolsBar.style.cssText = `
                 display: inline-flex !important;
                 align-items: center !important;
-                gap: 5px !important;
+                gap: 10px !important;
+                margin-bottom: 10px !important;
                 margin-right: auto !important;
-                margin-bottom: 8px !important;
+                flex-wrap: wrap !important;
+                position: relative !important;
+                z-index: 1 !important;
             `;
 
-            btn.onmouseover = () => {
-                btn.style.setProperty('background', 'rgba(255, 255, 255, 0.35)', 'important');
-                btn.style.setProperty('border-color', 'rgba(56, 189, 248, 0.6)', 'important');
-                btn.style.setProperty('transform', 'translateY(-1px)', 'important');
-            };
-            btn.onmouseout = () => {
-                btn.style.setProperty('background', 'rgba(255, 255, 255, 0.18)', 'important');
-                btn.style.setProperty('border-color', 'rgba(56, 189, 248, 0.3)', 'important');
-                btn.style.setProperty('transform', 'none', 'important');
+            // 统一胶囊 2.0 材质 (与复制按钮和倒计时胶囊完全一致，与题目卡片在同一 DOM 层级)
+            const getCapsuleStyle = () => {
+                const dark = isDarkModeActive();
+                return `
+                    background: ${dark
+                        ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 41, 59, 0.72) 100%)'
+                        : 'linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.45) 100%)'} !important;
+                    backdrop-filter: blur(12px) saturate(180%) !important;
+                    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+                    border: 1px solid ${dark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.75)'} !important;
+                    border-radius: 12px !important;
+                    padding: 4px 12px !important;
+                    font-size: 12px !important;
+                    font-weight: 800 !important;
+                    color: ${dark ? '#38bdf8' : '#1e293b'} !important;
+                    box-shadow: ${dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'} !important;
+                    cursor: pointer !important;
+                    user-select: none !important;
+                    transition: all 0.2s ease !important;
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    height: 32px !important;
+                    box-sizing: border-box !important;
+                `;
             };
 
-            btn.onclick = (e) => {
+            // 1. 📋 复制题目 胶囊按钮
+            const copyBtn = document.createElement('button');
+            copyBtn.id = BUTTON_ID;
+            copyBtn.type = 'button';
+            copyBtn.title = '一键纯净提取当前题目与 LaTeX 公式';
+            copyBtn.innerHTML = '📋 复制题目';
+            copyBtn.style.cssText = getCapsuleStyle() + 'gap: 5px !important;';
+
+            copyBtn.onmouseover = () => {
+                const dark = isDarkModeActive();
+                copyBtn.style.setProperty('transform', 'translateY(-1px)', 'important');
+                copyBtn.style.setProperty('border-color', dark ? 'rgba(56, 189, 248, 0.8)' : 'rgba(56, 189, 248, 0.6)', 'important');
+            };
+            copyBtn.onmouseout = () => {
+                copyBtn.style.setProperty('transform', 'none', 'important');
+                copyBtn.style.setProperty('border-color', isDarkModeActive() ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.75)', 'important');
+            };
+
+            copyBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('[ZhiNengX Copy] 🖱️ 用户点击了 📋 复制题目 按钮');
                 const currentCard = document.querySelector('div[name="ProblemItemElement"]') ||
                                     document.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
-                                    btn.closest('.jumbotron') ||
-                                    btn.closest('div[class*="jumbotron"]') ||
-                                    btn.closest('div[class*="_3WnwfR"]') ||
+                                    copyBtn.closest('.jumbotron') ||
+                                    copyBtn.closest('div[class*="jumbotron"]') ||
+                                    copyBtn.closest('div[class*="_3WnwfR"]') ||
                                     document.querySelector('.jumbotron') ||
                                     problemCard;
                 const pureText = extractPureProblemMarkdown(currentCard);
                 copyToClipboard(pureText);
             };
 
+            // 2. 🔥 27考研倒计时 做题极简胶囊按钮 (与复制按钮同层级同材质，带微型进度条)
+            const timerBtn = document.createElement('div');
+            timerBtn.id = 'znx-doing-countdown-btn';
+            timerBtn.title = '点击查看考研倒计时详细分解';
+            timerBtn.style.cssText = getCapsuleStyle() + 'min-width: 120px !important; flex-direction: column !important; justify-content: center !important;';
+
+            timerBtn.onmouseover = () => {
+                const dark = isDarkModeActive();
+                timerBtn.style.setProperty('transform', 'translateY(-1px)', 'important');
+                timerBtn.style.setProperty('border-color', dark ? 'rgba(56, 189, 248, 0.8)' : 'rgba(56, 189, 248, 0.6)', 'important');
+            };
+            timerBtn.onmouseout = () => {
+                timerBtn.style.setProperty('transform', 'none', 'important');
+                timerBtn.style.setProperty('border-color', isDarkModeActive() ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.75)', 'important');
+            };
+
+            timerBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const info = getCountdownInfo();
+                showToast(`🔥 27考研倒计时：距考研 <b>${info.daysLeft}</b> 天 │ 今日还剩 ${info.h}时${info.m}分 │ 本周还剩 ${info.weekExactDays}天 │ 本月还剩 ${info.monthExactDays}天`);
+            };
+
+            toolsBar.appendChild(copyBtn);
+            toolsBar.appendChild(timerBtn);
+
+            updateTimerCapsuleHTML();
+
             const targetHeader = problemCard.querySelector('div[class*="_3r5idY"]') || problemCard.firstElementChild || problemCard;
             if (targetHeader !== problemCard) {
-                targetHeader.insertBefore(btn, targetHeader.firstChild);
+                targetHeader.insertBefore(toolsBar, targetHeader.firstChild);
             } else {
-                problemCard.insertBefore(btn, problemCard.firstChild);
+                problemCard.insertBefore(toolsBar, problemCard.firstChild);
             }
         };
 
