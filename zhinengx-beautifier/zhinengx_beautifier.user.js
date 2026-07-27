@@ -759,8 +759,27 @@
             let toast = document.getElementById('znx-copy-toast');
             if (toast) toast.remove();
 
+            const isDark = isDarkModeActive();
             toast = document.createElement('div');
             toast.id = 'znx-copy-toast';
+
+            // 浅色模式材质：与“📋 复制题目”按钮一致的透亮晶莹毛玻璃；深色模式材质：保存暗高斯毛玻璃与天蓝荧光
+            const toastBg = isError
+                ? (isDark ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.88) 0%, rgba(185, 28, 28, 0.78) 100%)' : 'linear-gradient(135deg, rgba(254, 226, 226, 0.95) 0%, rgba(252, 165, 165, 0.85) 100%)')
+                : (isDark ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 41, 59, 0.72) 100%)' : 'linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.35) 100%)');
+
+            const toastBorder = isError
+                ? (isDark ? 'rgba(252, 165, 165, 0.45)' : 'rgba(239, 68, 68, 0.4)')
+                : (isDark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.6)');
+
+            const toastColor = isError
+                ? (isDark ? '#ffffff' : '#991b1b')
+                : (isDark ? '#38bdf8' : '#1e293b');
+
+            const toastShadow = isDark
+                ? '0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25)'
+                : '0 10px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8)';
+
             toast.style.cssText = `
                 position: fixed;
                 top: 28px;
@@ -768,18 +787,16 @@
                 transform: translateX(-50%) translateY(-10px) scale(0.95);
                 opacity: 0;
                 z-index: 999999;
-                background: ${isError 
-                    ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.88) 0%, rgba(185, 28, 28, 0.78) 100%)' 
-                    : 'linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(30, 41, 59, 0.72) 100%)'};
+                background: ${toastBg};
                 backdrop-filter: blur(16px) saturate(200%);
                 -webkit-backdrop-filter: blur(16px) saturate(200%);
-                border: 1px solid ${isError ? 'rgba(252, 165, 165, 0.45)' : 'rgba(56, 189, 248, 0.45)'};
+                border: 1px solid ${toastBorder};
                 border-radius: 20px;
                 padding: 9px 22px;
                 font-size: 13px;
                 font-weight: 700;
-                color: ${isError ? '#ffffff' : '#38bdf8'};
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+                color: ${toastColor};
+                box-shadow: ${toastShadow};
                 transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
                 pointer-events: none;
                 display: flex;
@@ -845,17 +862,32 @@
             let modal = document.getElementById('znx-copy-modal');
             if (modal) modal.remove();
 
+            const isDark = isDarkModeActive();
             modal = document.createElement('div');
             modal.id = 'znx-copy-modal';
-            modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(15,23,42,0.65);backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity 0.25s ease;';
+
+            const maskBg = isDark ? 'rgba(15, 23, 42, 0.65)' : 'rgba(15, 23, 42, 0.35)';
+            const cardBg = isDark
+                ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(240, 244, 248, 0.75) 100%)';
+            const cardBorder = isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.6)';
+            const cardShadow = isDark
+                ? '0 24px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                : '0 24px 48px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)';
+            const titleColor = isDark ? '#38bdf8' : '#0f172a';
+            const areaBg = isDark ? 'rgba(2, 6, 23, 0.7)' : 'rgba(255, 255, 255, 0.6)';
+            const areaColor = isDark ? '#f8fafc' : '#0f172a';
+            const areaBorder = isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(0, 0, 0, 0.12)';
+
+            modal.style.cssText = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:${maskBg};backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity 0.25s ease;`;
 
             modal.innerHTML = `
-                <div style="background:linear-gradient(135deg, rgba(15,23,42,0.85) 0%, rgba(30,41,59,0.75) 100%);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(56,189,248,0.35);border-radius:20px;padding:24px;width:100%;max-width:560px;box-shadow:0 24px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2);color:#fff;">
+                <div style="background:${cardBg};backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid ${cardBorder};border-radius:20px;padding:24px;width:100%;max-width:560px;box-shadow:${cardShadow};color:${areaColor};">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                        <h4 style="margin:0;font-size:15px;font-weight:700;color:#38bdf8;display:flex;align-items:center;gap:6px;">📋 请按 Ctrl+C 复制题目内容</h4>
-                        <button id="znx-modal-close-btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:28px;height:28px;color:#94a3b8;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;">✕</button>
+                        <h4 style="margin:0;font-size:15px;font-weight:700;color:${titleColor};display:flex;align-items:center;gap:6px;">📋 请按 Ctrl+C 复制题目内容</h4>
+                        <button id="znx-modal-close-btn" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:28px;height:28px;color:${titleColor};font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;">✕</button>
                     </div>
-                    <textarea readonly style="width:100%;height:230px;background:rgba(2,6,23,0.7);border:1px solid rgba(56,189,248,0.2);border-radius:12px;color:#f8fafc;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.6;resize:none;outline:none;box-shadow:inset 0 2px 6px rgba(0,0,0,0.3);"></textarea>
+                    <textarea readonly style="width:100%;height:230px;background:${areaBg};border:1px solid ${areaBorder};border-radius:12px;color:${areaColor};padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.6;resize:none;outline:none;box-shadow:inset 0 2px 6px rgba(0,0,0,0.1);"></textarea>
                 </div>
             `;
             document.body.appendChild(modal);
