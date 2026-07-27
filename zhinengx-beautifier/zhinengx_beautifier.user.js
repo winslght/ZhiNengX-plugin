@@ -604,7 +604,102 @@
     const MAX_LIVE2D_RETRIES = 5;
     let live2dHealthGuardTimer = null;
 
+    // ==========================================
+    // 7.1 看板娘考研短精炼金句与交互提示 (移植自 v8.3.3)
+    // ==========================================
+    function showWaifuTip(text, timeout = 3000) {
+        if (typeof window.showMessage === 'function') {
+            window.showMessage(text, timeout, 5000);
+        } else {
+            const tips = document.getElementById('waifu-tips');
+            if (tips) {
+                tips.innerHTML = text;
+                tips.classList.add('waifu-tips-active');
+                setTimeout(() => tips.classList.remove('waifu-tips-active'), timeout);
+            }
+        }
+    }
+
+    let isKaoyanTipsSetup = false;
+    function setupKaoyanWaifuTips() {
+        if (isKaoyanTipsSetup) return;
+        isKaoyanTipsSetup = true;
+
+        const welcomeMsgs = [
+            "✨ 欢迎！今天也要元气满满哦！",
+            "🔥 坚持就是胜利，考研人加油！",
+            "🎯 开始消灭今天的突破口吧！",
+            "💡 保持专注，每一题都是进步！",
+            "🚀 乾坤未定，你我皆是黑马！"
+        ];
+        const getRandomWelcome = () => welcomeMsgs[Math.floor(Math.random() * welcomeMsgs.length)];
+
+        // 拦截并替换原脚本空的“欢迎阅读『』”与“欢迎阅读（）”提示
+        const observer = new MutationObserver(() => {
+            const tips = document.getElementById('waifu-tips');
+            if (tips) {
+                const text = (tips.innerText || tips.textContent || '').trim();
+                if (text.includes('欢迎阅读') || text.includes('『』') || text.includes('（）') || text.includes('()') || text === '欢迎阅读『』' || text.endsWith('『』')) {
+                    tips.innerHTML = getRandomWelcome();
+                }
+            }
+        });
+
+        const checkTipsInterval = setInterval(() => {
+            const tips = document.getElementById('waifu-tips');
+            if (tips) {
+                observer.observe(tips, { childList: true, characterData: true, subtree: true });
+                showWaifuTip(getRandomWelcome(), 4000);
+                clearInterval(checkTipsInterval);
+            }
+        }, 300);
+
+        const kaoyanQuotes = [
+            "消灭突破口，名校在等你！",
+            "遇到难题别慌，一步步来！",
+            "手写算一算，手感更棒！",
+            "适度休息，保持好心态！",
+            "熟能生巧，数学无捷径！",
+            "消灭小黄点，离高分更近！",
+            "保持节奏，27考研必胜！",
+            "错题是上岸的阶梯！加油！",
+            "相信自己，你远比想象中强大！",
+            "星光不问赶路人，加油！",
+            "越努力，越幸运！",
+            "每一分汗水，都在为高分加码！",
+            "今天高数刷了几题？加油！"
+        ];
+
+        document.addEventListener('mouseover', (e) => {
+            const target = e.target;
+            if (!target) return;
+            if (target.closest('input[type="text"], textarea')) {
+                showWaifuTip('✍️ 用心计算，按回车（Enter）直接提交！', 2500);
+            } else if (target.closest('#znx-time-manager, #znx-doing-countdown-btn')) {
+                showWaifuTip('🔥 每一秒都在为高分加码！', 2500);
+            } else if (target.closest('button, .btn, .MuiButtonBase-root')) {
+                const text = (target.innerText || target.textContent || '').trim();
+                if (text.includes('提交答案')) {
+                    showWaifuTip('🎯 准备好了吗？按回车提交答案！', 2000);
+                } else if (text.includes('查看题解')) {
+                    showWaifuTip('💡 搞懂错题逻辑就是进步！', 2000);
+                } else if (text.includes('继续') || text.includes('下一步')) {
+                    showWaifuTip('🚀 乘胜追击，下一题！', 2000);
+                }
+            }
+        });
+
+        // 点击看板娘触发精炼考研金句
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#waifu canvas, #live2d')) {
+                const randomQuote = kaoyanQuotes[Math.floor(Math.random() * kaoyanQuotes.length)];
+                showWaifuTip(randomQuote, 3000);
+            }
+        });
+    }
+
     function injectLive2D() {
+        setupKaoyanWaifuTips();
         const existingWaifu = document.getElementById('waifu');
         const existingCanvas = document.getElementById('live2d') || existingWaifu?.querySelector('canvas');
         if (existingWaifu && existingCanvas && (existingCanvas.offsetWidth > 0 || existingCanvas.offsetHeight > 0)) {
