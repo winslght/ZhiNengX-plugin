@@ -1213,23 +1213,36 @@
                 let dow = now.getDay(); if (dow === 0) dow = 7;
                 const weekLeft = 7 - dow;
                 const weekExactDays = (weekLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
+                const weekRemainingRatio = Math.max(0, Math.min(100, ((weekLeft + (todayMs / (24 * 60 * 60 * 1000))) / 7) * 100));
 
                 const eom = new Date(now.getFullYear(), now.getMonth() + 1, 0);
                 const monthTotal = eom.getDate();
                 const monthLeft = monthTotal - now.getDate();
                 const monthExactDays = (monthLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
+                const monthRemainingRatio = Math.max(0, Math.min(100, ((monthLeft + (todayMs / (24 * 60 * 60 * 1000))) / monthTotal) * 100));
 
-                return { daysLeft, h, m, s, todayRemainingRatio, weekExactDays, monthExactDays };
+                const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+                const todayDateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekDays[now.getDay()]}`;
+
+                return { daysLeft, h, m, s, todayRemainingRatio, weekExactDays, weekRemainingRatio, monthExactDays, monthRemainingRatio, todayDateStr };
             }
 
             function updateTimerCapsuleHTML() {
                 const info = getCountdownInfo();
                 const dark = isDarkModeActive();
                 const capsuleEl = document.getElementById('znx-doing-countdown-btn');
-                if (capsuleEl) {
-                    const renderKey = `${info.daysLeft}-${info.h}:${info.m}-${dark}`;
-                    if (capsuleEl.getAttribute('data-znx-render-key') === renderKey) return;
-                    capsuleEl.setAttribute('data-znx-render-key', renderKey);
+                if (!capsuleEl) return;
+
+                const renderKey = `${info.daysLeft}-${info.h}:${info.m}-${dark}-${isCapsuleExpanded}`;
+                if (capsuleEl.getAttribute('data-znx-render-key') === renderKey) return;
+                capsuleEl.setAttribute('data-znx-render-key', renderKey);
+
+                if (!isCapsuleExpanded) {
+                    // 1. 紧凑胶囊态
+                    capsuleEl.style.width = '135px';
+                    capsuleEl.style.height = '32px';
+                    capsuleEl.style.padding = '4px 12px';
+                    capsuleEl.style.borderRadius = '12px';
 
                     capsuleEl.innerHTML = `
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
@@ -1240,6 +1253,68 @@
                             <div style="width:${info.todayRemainingRatio.toFixed(1)}%;height:100%;background:#3b82f6;transition:width 1s"></div>
                         </div>
                     `;
+                } else {
+                    // 2. 就地形变放大态 (全量经典大卡片内容)
+                    capsuleEl.style.width = '250px';
+                    capsuleEl.style.height = 'auto';
+                    capsuleEl.style.padding = '16px';
+                    capsuleEl.style.borderRadius = '16px';
+
+                    const bar = (label, value, ratio, color) => `
+                        <div style="margin-top:10px">
+                            <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;margin-bottom:3px;color:${dark ? '#e2e8f0' : '#334155'}">
+                                <span>${label}</span>
+                                <span style="color:${color};font-weight:800;">${value}</span>
+                            </div>
+                            <div style="width:100%;height:6px;background:rgba(0,0,0,0.12);border-radius:3px;overflow:hidden">
+                                <div style="width:${ratio.toFixed(1)}%;height:100%;background:${color};transition:width 1s"></div>
+                            </div>
+                        </div>`;
+
+                    capsuleEl.innerHTML = `
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;width:100%;">
+                            <h4 style="margin:0;font-size:14px;color:${dark ? '#38bdf8' : '#1e3a8a'};font-weight:900;">🔥 27考研倒计时</h4>
+                            <span id="znx-close-capsule-btn" style="font-size:11px;color:${dark ? '#94a3b8' : '#64748b'};cursor:pointer;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,0.06)">收起 ➖</span>
+                        </div>
+                        <div style="font-size:28px;font-weight:900;color:#e11d48;line-height:1;margin-bottom:4px;">${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:13px;color:${dark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></div>
+                        <div style="font-size:11px;color:${dark ? '#cbd5e1' : '#475569'};font-weight:700;">📅 ${info.todayDateStr}</div>
+                        <hr style="border:none;border-top:1px dashed ${dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'};margin:8px 0;width:100%;">
+                        ${bar('今日剩余', info.h+'时 '+info.m+'分 '+info.s+'秒', info.todayRemainingRatio, '#3b82f6')}
+                        ${bar('本周剩余', info.weekExactDays+' 天', info.weekRemainingRatio, '#10b981')}
+                        ${bar('本月剩余', info.monthExactDays+' 天', info.monthRemainingRatio, '#8b5cf6')}
+                    `;
+
+                    const closeBtn = capsuleEl.querySelector('#znx-close-capsule-btn');
+                    if (closeBtn) {
+                        closeBtn.onclick = (ev) => {
+                            ev.stopPropagation();
+                            collapseCapsule();
+                        };
+                    }
+                }
+            }
+
+            function expandCapsule(durationMs = 5000) {
+                isCapsuleExpanded = true;
+                const timerEl = document.getElementById('znx-doing-countdown-btn');
+                if (timerEl) {
+                    timerEl.removeAttribute('data-znx-render-key');
+                    updateTimerCapsuleHTML();
+                }
+
+                if (capsuleTimer) clearTimeout(capsuleTimer);
+                capsuleTimer = setTimeout(() => {
+                    collapseCapsule();
+                }, durationMs);
+            }
+
+            function collapseCapsule() {
+                isCapsuleExpanded = false;
+                if (capsuleTimer) clearTimeout(capsuleTimer);
+                const timerEl = document.getElementById('znx-doing-countdown-btn');
+                if (timerEl) {
+                    timerEl.removeAttribute('data-znx-render-key');
+                    updateTimerCapsuleHTML();
                 }
             }
 
@@ -1255,7 +1330,7 @@
             toolsBar.id = 'znx-problem-tools-bar';
             toolsBar.style.cssText = `
                 display: inline-flex !important;
-                align-items: center !important;
+                align-items: flex-start !important;
                 gap: 10px !important;
                 margin-bottom: 10px !important;
                 margin-right: auto !important;
@@ -1282,11 +1357,10 @@
                     box-shadow: ${dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)'} !important;
                     cursor: pointer !important;
                     user-select: none !important;
-                    transition: all 0.2s ease !important;
+                    transition: width 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), padding 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), background 0.3s ease, border-color 0.3s ease, transform 0.2s ease !important;
                     display: inline-flex !important;
-                    align-items: center !important;
-                    height: 32px !important;
                     box-sizing: border-box !important;
+                    overflow: hidden !important;
                 `;
             };
 
@@ -1296,7 +1370,7 @@
             copyBtn.type = 'button';
             copyBtn.title = '一键纯净提取当前题目与 LaTeX 公式';
             copyBtn.innerHTML = '📋 复制题目';
-            copyBtn.style.cssText = getCapsuleStyle() + 'gap: 5px !important;';
+            copyBtn.style.cssText = getCapsuleStyle() + 'gap: 5px !important; align-items: center !important; height: 32px !important;';
 
             copyBtn.onmouseover = () => {
                 const dark = isDarkModeActive();
@@ -1323,27 +1397,39 @@
                 copyToClipboard(pureText);
             };
 
-            // 2. 🔥 27考研倒计时 做题极简胶囊按钮 (与复制按钮同层级同材质，带微型进度条)
+            // 2. 🔥 27考研倒计时 做题极简胶囊按钮 (与复制按钮同层级同材质，支持就地形变平滑放大/收缩)
             const timerBtn = document.createElement('div');
             timerBtn.id = 'znx-doing-countdown-btn';
-            timerBtn.title = '点击查看考研倒计时详细分解';
-            timerBtn.style.cssText = getCapsuleStyle() + 'min-width: 120px !important; flex-direction: column !important; justify-content: center !important;';
+            timerBtn.title = '点击展开/收起考研倒计时卡片 (闲置5秒自动收回)';
+            timerBtn.style.cssText = getCapsuleStyle() + 'flex-direction: column !important; justify-content: center !important;';
 
             timerBtn.onmouseover = () => {
-                const dark = isDarkModeActive();
-                timerBtn.style.setProperty('transform', 'translateY(-1px)', 'important');
-                timerBtn.style.setProperty('border-color', dark ? 'rgba(56, 189, 248, 0.8)' : 'rgba(56, 189, 248, 0.6)', 'important');
+                if (isCapsuleExpanded && capsuleTimer) {
+                    clearTimeout(capsuleTimer);
+                } else if (!isCapsuleExpanded) {
+                    const dark = isDarkModeActive();
+                    timerBtn.style.setProperty('transform', 'translateY(-1px)', 'important');
+                    timerBtn.style.setProperty('border-color', dark ? 'rgba(56, 189, 248, 0.8)' : 'rgba(56, 189, 248, 0.6)', 'important');
+                }
             };
+
             timerBtn.onmouseout = () => {
-                timerBtn.style.setProperty('transform', 'none', 'important');
-                timerBtn.style.setProperty('border-color', isDarkModeActive() ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.75)', 'important');
+                if (isCapsuleExpanded) {
+                    if (capsuleTimer) clearTimeout(capsuleTimer);
+                    capsuleTimer = setTimeout(() => collapseCapsule(), 3000);
+                } else {
+                    timerBtn.style.setProperty('transform', 'none', 'important');
+                    timerBtn.style.setProperty('border-color', isDarkModeActive() ? 'rgba(56, 189, 248, 0.45)' : 'rgba(255, 255, 255, 0.75)', 'important');
+                }
             };
 
             timerBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (window.showFullCountdownCard) {
-                    window.showFullCountdownCard(5000);
+                if (!isCapsuleExpanded) {
+                    expandCapsule(5000);
+                } else {
+                    collapseCapsule();
                 }
             };
 
