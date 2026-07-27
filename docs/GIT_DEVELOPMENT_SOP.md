@@ -58,12 +58,24 @@ git checkout -b feat/theme-presets  # 特性类任务分支命名: feat/xxxx
 
 ---
 
-## 🏁 3. 验证与合并
+## 🏁 3. 验证与合并 (Git Flow 标准流转)
 
-当 Task 分支在本地测试 100% 稳健后，合并入 `develop` 并清除任务分支：
+当 Task 分支在本地测试 100% 稳健后，遵循标准 Git Flow 汇聚流程：
 
-```bash
-git checkout develop
-git merge fix/stain-scope
-git branch -d fix/stain-scope
-```
+- **Feature 分支**：测试通过后合回 `develop` 并清除特性分支：
+  ```bash
+  git checkout develop
+  git merge feat/my-feature
+  git branch -d feat/my-feature
+  ```
+- **Hotfix 分支**：测试通过后，合回 `main` 打 Tag，同时合回 `develop`：
+  ```bash
+  git checkout main
+  git merge hotfix/v8.1.1
+  git tag -a v8.1.1 -m "hotfix: v8.1.1"
+  git checkout develop
+  git merge hotfix/v8.1.1
+  git branch -d hotfix/v8.1.1
+  ```
+
+> 详细生产线级规范请参阅架构文档：[GIT_FLOW_SPECIFICATION.md](file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/docs/GIT_FLOW_SPECIFICATION.md)
