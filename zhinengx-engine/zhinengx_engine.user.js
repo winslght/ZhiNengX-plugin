@@ -150,31 +150,38 @@
     } catch (e) {}
 
     // ==========================================
-    // 拦截 2：挂载 unsafeWindow.fetch
+    // 拦截 2：挂载 unsafeWindow.fetch (非阻塞式异步拦截)
     // ==========================================
     try {
         const originalFetch = win.fetch;
-        win.fetch = async function(...args) {
-            const response = await originalFetch.apply(this, args);
-            const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '');
+        if (originalFetch) {
+            win.fetch = function(...args) {
+                const fetchPromise = originalFetch.apply(this, args);
+                const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '');
 
-            if (url.includes('getUserProfileDiagramLast') || url.includes('getUserProfile')) {
-                try {
-                    const clone = response.clone();
-                    const parsed = await clone.json();
-                    if (parsed && (parsed.status || parsed.profile)) {
-                        rawFullJson = parsed;
-                        console.log('【知能行 AI 导出器】Fetch 捕获数据成功:', rawFullJson);
-                        updateBtnState(true);
-                    }
-                } catch (err) {}
-            }
-            return response;
-        };
+                if (url && (url.includes('getUserProfileDiagramLast') || url.includes('getUserProfile'))) {
+                    fetchPromise.then(response => {
+                        if (response && response.ok) {
+                            try {
+                                const clone = response.clone();
+                                clone.json().then(parsed => {
+                                    if (parsed && (parsed.status || parsed.profile)) {
+                                        rawFullJson = parsed;
+                                        console.log('【知能行 AI 导出器】Fetch 捕获数据成功:', rawFullJson);
+                                        updateBtnState(true);
+                                    }
+                                }).catch(() => {});
+                            } catch (err) {}
+                        }
+                    }).catch(() => {});
+                }
+                return fetchPromise;
+            };
+        }
     } catch (e) {}
 
     // ==========================================
-    // 主动接口请求机制
+    // 主动接口请求机制 (带 2.5 秒超时保护)
     // ==========================================
     async function fetchFullJsonActively() {
         const candidateUrls = [
@@ -189,8 +196,16 @@
 
         for (const url of candidateUrls) {
             try {
-                const res = await win.fetch(url, { credentials: 'include' });
-                if (res.ok) {
+                const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+                const timeoutId = controller ? setTimeout(() => controller.abort(), 2500) : null;
+
+                const fetchOptions = { credentials: 'include' };
+                if (controller) fetchOptions.signal = controller.signal;
+
+                const res = await win.fetch(url, fetchOptions);
+                if (timeoutId) clearTimeout(timeoutId);
+
+                if (res && res.ok) {
                     const data = await res.json();
                     if (data && (data.status || data.profile)) {
                         rawFullJson = data;
@@ -2243,7 +2258,7 @@
                     console.error('【知能行 AI 导出器】导出报告运行时异常:', err);
                     alert('导出报告时发生未捕获异常错误：' + (err.message || err));
                 } finally {
-                    if (textSpan && textSpan.innerText === '生成中...') {
+                    if (textSpan && textSpan.innerText !== '复制成功!') {
                         textSpan.innerText = originalText;
                     }
                 }
