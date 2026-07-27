@@ -19,12 +19,12 @@
 
     const SCRIPT_VERSION = '12.0.0-beta.1';
     const win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+    console.log('[ZhiNengX Suite] 知能行全能统一引擎 v' + SCRIPT_VERSION + ' 正在启动...');
 
-    console.log(`[ZhiNengX Suite] 知能行全能统一引擎 v${SCRIPT_VERSION} 正在启动...`);
+// ===== EXPORTER MODULE =====
 
-    // ============================================================
-    // 1. EXPORTER 导出器与诊断数据拦截器 (来自 zhinengx_exporter 原版)
-    // ============================================================
+    const win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+
     let rawFullJson = null;
 
     // 强行约束原生侧边栏顺序 (包含数一、数二、数三全模块)
@@ -141,6 +141,7 @@
                         if (parsed && (parsed.status || parsed.profile)) {
                             rawFullJson = parsed;
                             console.log('【知能行 AI 导出器】XHR 捕获数据成功:', rawFullJson);
+                            updateBtnState(true);
                         }
                     } catch (e) {}
                 }
@@ -165,6 +166,7 @@
                     if (parsed && (parsed.status || parsed.profile)) {
                         rawFullJson = parsed;
                         console.log('【知能行 AI 导出器】Fetch 捕获数据成功:', rawFullJson);
+                        updateBtnState(true);
                     }
                 } catch (err) {}
             }
@@ -453,10 +455,12 @@
 
         // 强行按照原生侧边栏的章节顺序遍历
         TOPIC_ORDER.forEach(k => {
+            // 如果用户不是数二，或者该章节不在数二黑名单中
             if (!excludeKeys.has(k)) {
                 const rates = levelsData[k] || [0, 0, 0, 0, 0];
                 const rawScoreVal = status.topic ? (status.topic[k] || 0) : 0;
                 
+                // 只有该章节至少有一级进度>0，或者总进度>0才展示
                 if (rates.some(r => r > 0) || rawScoreVal > 0) {
                     matrixHtml += `<tr style="border-bottom: 1px solid #f3f4f6;">`;
                     matrixHtml += `<td style="padding: 18px 10px; text-align: left; font-weight: bold; color: #111827; font-size: 16px;">${TOPIC_NAMES[k] || k}</td>`;
@@ -657,6 +661,7 @@
             const wrapper = document.createElement('span');
             wrapper.className = historyWrapper ? historyWrapper.className : 'MuiTab-wrapper';
 
+            // 数据图表图标 (Assessment Icon)
             wrapper.innerHTML = `
                 <svg class="MuiSvgIcon-root" focusable="false" viewBox="0 0 24 24" aria-hidden="true" id="chartIconSvg">
                     <path fill="none" d="M0 0h24v24H0V0z"></path>
@@ -684,30 +689,9 @@
         }
     }
 
-    const exporterObserver = new MutationObserver(() => {
-        if (!document.getElementById('modulePageTabs导出') && document.querySelector('.MuiTabs-flexContainer')) {
-            injectTabs();
-        }
-    });
 
-    // ============================================================
-    // 2. BEAUTIFIER 视觉美化与做题助手 (来自 zhinengx_beautifier 原版)
-    // ============================================================
-    // ==UserScript==
-// @name         知能行 UI 视觉美化与考研助手
-// @namespace    http://tampermonkey.net/
-// @version      8.3.0-dev.1
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)与考研倒计时(1位小数)辅助
-// @author       winslght
-// @license      MIT
-// @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
-// @match        *://*.bestzixue.com/*
-// @match        *://*.zhinengxing.com/*
-// @grant        none
-// ==/UserScript==
 
-(function() {
-    'use strict';
+// ===== BEAUTIFIER MODULE =====
 
     const SCRIPT_VERSION = '8.3.0-dev.1';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
@@ -2296,10 +2280,20 @@
         scheduleCheckAndUpdateButton();
     }
 
-    // ==========================================
-    // 启动
-    // ==========================================
-    function init() {
+
+
+    // ============================================================
+    // UNIFIED INITIALIZATION (统一唯一初始化入口)
+    // ============================================================
+    const exporterObserver = new MutationObserver(() => {
+        if (!document.getElementById('modulePageTabs导出') && document.querySelector('.MuiTabs-flexContainer')) {
+            injectTabs();
+        }
+    });
+
+    function unifiedInit() {
+        console.log('[ZhiNengX Suite] 触发 DOMContentLoaded 统一初始化流程...');
+        // 1. Beautifier 美化与做题助手初始化
         injectAnimeGlassTheme();
         injectTimeManager();
         loadConfettiScript();
@@ -2309,10 +2303,8 @@
         setupJumbotronFeedbackObserver();
         setupCopyProblemHandler();
         injectDevVersionBadge();
-    }
 
-    function unifiedInit() {
-        init();
+        // 2. Exporter 导出器初始化
         loadECharts();
         exporterObserver.observe(document.body, { childList: true, subtree: true });
         injectTabs();
