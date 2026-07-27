@@ -8,5 +8,5 @@
 // @run-at       document-start
 // @grant        GM_setClipboard
 // @grant        unsafeWindow
-// @require      file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/zhinengx-exporter/zhinengx_exporter.user.js
+// @require      file:///path/to/your/ZhiNengX/zhinengx-exporter/zhinengx_exporter.user.js
 // ==/UserScript==

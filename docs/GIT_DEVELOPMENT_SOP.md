@@ -87,4 +87,4 @@ git checkout -b feat/theme-presets  # 特性类任务分支命名: feat/xxxx
   git branch -d hotfix/v8.1.1
   ```
 
-> 详细生产线级规范请参阅架构文档：[GIT_FLOW_SPECIFICATION.md](file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/docs/GIT_FLOW_SPECIFICATION.md)
+> 详细生产线级规范请参阅架构文档：[GIT_FLOW_SPECIFICATION.md](./GIT_FLOW_SPECIFICATION.md)
