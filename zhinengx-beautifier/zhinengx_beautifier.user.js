@@ -364,19 +364,128 @@
     // ==========================================
     // 5. 考研倒计时悬浮窗
     // ==========================================
+    // ==========================================
+    // 5. 考研倒计时悬浮窗 (支持闲时 5 秒自动靠边收纳、点击展开、拖拽与位置记忆)
+    // ==========================================
     function injectTimeManager() {
         if (document.getElementById('znx-time-manager')) return;
+
+        const POS_KEY = 'znx_countdown_pos';
+        let savedPos = null;
+        try {
+            savedPos = JSON.parse(localStorage.getItem(POS_KEY));
+        } catch (e) {}
+
         const widget = document.createElement('div');
         widget.id = 'znx-time-manager';
-        widget.style.cssText = 'position:fixed;top:50%;right:20px;transform:translateY(-50%);width:260px;background:rgba(255,255,255,0.75);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.6);border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.1);z-index:999998;font-family:-apple-system,"PingFang SC",sans-serif;color:#333;transition:all 0.3s;';
+        widget.title = '考研倒计时 (点击展开/折叠，闲置5秒自动靠边收纳，可拖拽)';
 
-        widget.onmouseenter = () => widget.style.transform = 'translateY(-50%) scale(1.02)';
-        widget.onmouseleave = () => widget.style.transform = 'translateY(-50%) scale(1)';
+        let isFolded = true; // 默认做题界面极简靠边收纳
+        let idleTimer = null;
+
+        // 设置初始坐标与状态
+        const initialTop = savedPos && typeof savedPos.top === 'number' ? savedPos.top : Math.max(100, window.innerHeight / 2 - 100);
+        const initialLeft = savedPos && typeof savedPos.left === 'number' ? savedPos.left : (window.innerWidth - 180);
+
+        widget.style.cssText = `
+            position: fixed;
+            top: ${initialTop}px;
+            left: ${initialLeft}px;
+            z-index: 999998;
+            font-family: -apple-system, "PingFang SC", sans-serif;
+            cursor: move;
+            user-select: none;
+            transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        padding 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+        `;
+
         document.body.appendChild(widget);
+
+        // 拖拽逻辑
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let elemStartX = 0, elemStartY = 0;
+        let hasMoved = false;
+
+        widget.onmousedown = (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+            isDragging = true;
+            hasMoved = false;
+            startX = e.clientX;
+            startY = e.clientY;
+            elemStartX = widget.offsetLeft;
+            elemStartY = widget.offsetTop;
+
+            const onMouseMove = (moveEvent) => {
+                const dx = moveEvent.clientX - startX;
+                const dy = moveEvent.clientY - startY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+
+                let newLeft = elemStartX + dx;
+                let newTop = elemStartY + dy;
+
+                // 屏幕视口边界卡位限制
+                newLeft = Math.max(10, Math.min(window.innerWidth - widget.offsetWidth - 10, newLeft));
+                newTop = Math.max(10, Math.min(window.innerHeight - widget.offsetHeight - 10, newTop));
+
+                widget.style.left = `${newLeft}px`;
+                widget.style.top = `${newTop}px`;
+            };
+
+            const onMouseUp = () => {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+
+                // 保存位置记忆
+                try {
+                    localStorage.setItem(POS_KEY, JSON.stringify({
+                        top: widget.offsetTop,
+                        left: widget.offsetLeft
+                    }));
+                } catch (err) {}
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        };
+
+        const resetIdleTimer = () => {
+            if (idleTimer) clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                if (!isFolded) {
+                    isFolded = true;
+                    renderWidget();
+                }
+            }, 5000);
+        };
+
+        widget.onclick = (e) => {
+            if (hasMoved) return; // 拖拽结束不触发点击折叠/展开
+            isFolded = !isFolded;
+            renderWidget();
+            if (!isFolded) {
+                resetIdleTimer();
+            }
+        };
+
+        widget.onmouseenter = () => {
+            if (idleTimer) clearTimeout(idleTimer);
+            if (!isFolded) widget.style.transform = 'scale(1.02)';
+        };
+
+        widget.onmouseleave = () => {
+            widget.style.transform = 'scale(1)';
+            if (!isFolded) {
+                resetIdleTimer();
+            }
+        };
 
         const targetDate = new Date('2026-12-19T00:00:00').getTime();
 
-        function updateTime() {
+        function renderWidget() {
+            const isDark = isDarkModeActive();
             const now = new Date();
             const diffMs = targetDate - now.getTime();
             const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
@@ -386,29 +495,96 @@
             const h = Math.floor(todayMs / (1000 * 60 * 60)).toString().padStart(2, '0');
             const m = Math.floor((todayMs / (1000 * 60)) % 60).toString().padStart(2, '0');
             const s = Math.floor((todayMs / 1000) % 60).toString().padStart(2, '0');
-            const todayRemainingRatio = (todayMs / (24 * 60 * 60 * 1000)) * 100;
+            const todayRemainingRatio = Math.max(0, Math.min(100, (todayMs / (24 * 60 * 60 * 1000)) * 100));
 
             let dow = now.getDay(); if (dow === 0) dow = 7;
             const weekLeft = 7 - dow;
             const weekExactDays = (weekLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
-            const weekRemainingRatio = ((weekLeft + (todayMs / (24 * 60 * 60 * 1000))) / 7) * 100;
+            const weekRemainingRatio = Math.max(0, Math.min(100, ((weekLeft + (todayMs / (24 * 60 * 60 * 1000))) / 7) * 100));
 
             const eom = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             const monthTotal = eom.getDate();
             const monthLeft = monthTotal - now.getDate();
             const monthExactDays = (monthLeft + (todayMs / (24 * 60 * 60 * 1000))).toFixed(1);
-            const monthRemainingRatio = ((monthLeft + (todayMs / (24 * 60 * 60 * 1000))) / monthTotal) * 100;
+            const monthRemainingRatio = Math.max(0, Math.min(100, ((monthLeft + (todayMs / (24 * 60 * 60 * 1000))) / monthTotal) * 100));
 
             const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
             const todayDateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekDays[now.getDay()]}`;
 
-            const bar = (label, value, ratio, color) => `<div style="margin-top:15px"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:bold;margin-bottom:5px"><span>${label}</span><span style="color:${color}">${value}</span></div><div style="width:100%;height:8px;background:rgba(0,0,0,0.1);border-radius:4px;overflow:hidden"><div style="width:${ratio.toFixed(1)}%;height:100%;background:${color};transition:width 1s"></div></div></div>`;
+            if (isFolded) {
+                // 收缩态材质 (天数 + 今日剩余微型进度条)
+                widget.style.width = '145px';
+                widget.style.padding = '8px 14px';
+                widget.style.borderRadius = '20px';
+                widget.style.background = isDark
+                    ? 'rgba(15, 23, 42, 0.82)'
+                    : 'rgba(255, 255, 255, 0.75)';
+                widget.style.backdropFilter = 'blur(16px) saturate(180%)';
+                widget.style.webkitBackdropFilter = 'blur(16px)';
+                widget.style.border = isDark
+                    ? '1px solid rgba(56, 189, 248, 0.4)'
+                    : '1px solid rgba(255, 255, 255, 0.6)';
+                widget.style.boxShadow = isDark
+                    ? '0 8px 24px rgba(0, 0, 0, 0.35)'
+                    : '0 8px 24px rgba(0, 0, 0, 0.1)';
 
-            widget.innerHTML = `<div style="text-align:center;margin-bottom:15px"><h3 style="margin:0;font-size:18px;color:#1e3a8a;font-weight:900">🔥 27考研倒计时</h3><div style="font-size:42px;font-weight:900;color:#e11d48;line-height:1.2;text-shadow:2px 2px 4px rgba(0,0,0,0.1)">${daysLeft > 0 ? daysLeft : 0} <span style="font-size:16px;color:#666">天</span></div><div style="font-size:13px;color:#475569;font-weight:bold;margin-top:6px;letter-spacing:0.5px">📅 ${todayDateStr}</div></div><hr style="border:none;border-top:1px dashed rgba(0,0,0,0.2);margin:15px 0">${bar('今日剩余', h+'时 '+m+'分 '+s+'秒', todayRemainingRatio, '#3b82f6')}${bar('本周剩余', weekExactDays+' 天', weekRemainingRatio, '#10b981')}${bar('本月剩余', monthExactDays+' 天', monthRemainingRatio, '#8b5cf6')}`;
+                widget.innerHTML = `
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                        <span style="font-weight:900;color:#e11d48;font-size:15px;display:flex;align-items:center;gap:3px;">🔥 ${daysLeft > 0 ? daysLeft : 0} <span style="font-size:11px;color:${isDark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></span>
+                        <span style="font-size:10px;color:${isDark ? '#38bdf8' : '#3b82f6'};font-weight:800;">${h}:${m}</span>
+                    </div>
+                    <div style="width:100%;height:4px;background:rgba(0,0,0,0.12);border-radius:2px;margin-top:4px;overflow:hidden">
+                        <div style="width:${todayRemainingRatio.toFixed(1)}%;height:100%;background:#3b82f6;transition:width 1s"></div>
+                    </div>
+                `;
+            } else {
+                // 展开态材质 (完整面板)
+                widget.style.width = '260px';
+                widget.style.padding = '20px';
+                widget.style.borderRadius = '20px';
+                widget.style.background = isDark
+                    ? 'rgba(15, 23, 42, 0.88)'
+                    : 'rgba(255, 255, 255, 0.85)';
+                widget.style.backdropFilter = 'blur(20px) saturate(180%)';
+                widget.style.webkitBackdropFilter = 'blur(20px)';
+                widget.style.border = isDark
+                    ? '1px solid rgba(56, 189, 248, 0.45)'
+                    : '1px solid rgba(255, 255, 255, 0.7)';
+                widget.style.boxShadow = isDark
+                    ? '0 12px 36px rgba(0, 0, 0, 0.45)'
+                    : '0 12px 36px rgba(0, 0, 0, 0.12)';
+
+                const bar = (label, value, ratio, color) => `
+                    <div style="margin-top:14px">
+                        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;color:${isDark ? '#e2e8f0' : '#334155'}">
+                            <span>${label}</span>
+                            <span style="color:${color};font-weight:800;">${value}</span>
+                        </div>
+                        <div style="width:100%;height:8px;background:rgba(0,0,0,0.12);border-radius:4px;overflow:hidden">
+                            <div style="width:${ratio.toFixed(1)}%;height:100%;background:${color};transition:width 1s"></div>
+                        </div>
+                    </div>`;
+
+                widget.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+                        <div style="text-align:left">
+                            <h3 style="margin:0;font-size:16px;color:${isDark ? '#38bdf8' : '#1e3a8a'};font-weight:900;display:flex;align-items:center;gap:4px;">🔥 27考研倒计时</h3>
+                            <div style="font-size:36px;font-weight:900;color:#e11d48;line-height:1.1;margin-top:2px;text-shadow:0 2px 8px rgba(225,29,72,0.15)">${daysLeft > 0 ? daysLeft : 0} <span style="font-size:15px;color:${isDark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></div>
+                        </div>
+                        <span style="font-size:11px;color:${isDark ? '#64748b' : '#94a3b8'};cursor:pointer;padding:2px 6px;border-radius:10px;background:rgba(0,0,0,0.06)">收起 ➖</span>
+                    </div>
+                    <div style="font-size:12px;color:${isDark ? '#cbd5e1' : '#475569'};font-weight:700;margin-bottom:10px;">📅 ${todayDateStr}</div>
+                    <hr style="border:none;border-top:1px dashed ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'};margin:10px 0">
+                    ${bar('今日剩余', h+'时 '+m+'分 '+s+'秒', todayRemainingRatio, '#3b82f6')}
+                    ${bar('本周剩余', weekExactDays+' 天', weekRemainingRatio, '#10b981')}
+                    ${bar('本月剩余', monthExactDays+' 天', monthRemainingRatio, '#8b5cf6')}
+                `;
+            }
         }
 
-        updateTime();
-        setInterval(updateTime, 1000);
+        renderWidget();
+        setInterval(renderWidget, 1000);
+        resetIdleTimer();
     }
 
     // ==========================================
