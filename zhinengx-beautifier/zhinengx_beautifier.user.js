@@ -532,7 +532,6 @@
     function setupLive2DHealthGuard() {
         if (live2dHealthGuardTimer) clearTimeout(live2dHealthGuardTimer);
 
-        // 脚本插入 8 秒后检测 #waifu 节点是否存在
         live2dHealthGuardTimer = setTimeout(() => {
             const waifu = document.getElementById('waifu');
             if (!waifu) {
@@ -543,15 +542,13 @@
                 scheduleLive2DRetry(3000);
             } else {
                 console.log('[ZhiNengX Live2D] ✅ 看板娘健康校验通过 (#waifu 已渲染)');
-                live2dRetryCount = 0; // 校验成功，重置计数器
+                live2dRetryCount = 0;
             }
         }, 8000);
     }
 
     // ==========================================
     // 8. 键盘高效刷题交互代理
-    //    - 回车快捷提交/下一步
-    //    - 数字键 1-5 快速选中选择题选项 A-E (#choiceButtonA~E)
     // ==========================================
     function setupKeyboardShortcutsHandler() {
         document.addEventListener('keydown', (e) => {
@@ -563,7 +560,18 @@
             const ignoreKeys = ['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab', 'Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
             if (ignoreKeys.includes(e.key)) return;
 
-            // 3. 回车键代理逻辑 (提交答案 / 继续 / 下一步)
+            // 3. 检查当前焦点是否在可编辑文本输入框内
+            const activeEl = document.activeElement;
+            const isCurrentlyInInput = activeEl && (
+                activeEl.tagName === 'TEXTAREA' ||
+                activeEl.isContentEditable ||
+                activeEl.getAttribute('role') === 'textbox' ||
+                (activeEl.tagName === 'INPUT' && !['radio', 'checkbox', 'button', 'submit', 'hidden'].includes((activeEl.type || '').toLowerCase()))
+            );
+
+            if (isCurrentlyInInput) return;
+
+            // 4. 回车键代理逻辑
             if (e.key === 'Enter' || e.keyCode === 13) {
                 const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
                 const actionKeywords = ['提交答案', '继续', '下一步', '再试一次', '查看题解'];
@@ -585,21 +593,12 @@
                 return;
             }
 
-            // 检查当前焦点是否在可编辑文本输入框内 (排除 radio/checkbox)
-            const activeEl = document.activeElement;
-            const isCurrentlyInInput = activeEl && (
-                activeEl.tagName === 'TEXTAREA' ||
-                activeEl.isContentEditable ||
-                (activeEl.tagName === 'INPUT' && !['radio', 'checkbox', 'button', 'submit', 'hidden'].includes((activeEl.type || '').toLowerCase()))
-            );
-
-            // 4. 数字键 1~5 精准选择题选项绑定 (1->A, 2->B, 3->C, 4->D, 5->E)
+            // 5. 数字键 1~5 精准选择题选项绑定
             const numVal = parseInt(e.key, 10);
-            if (!isNaN(numVal) && numVal >= 1 && numVal <= 5 && !isCurrentlyInInput) {
+            if (!isNaN(numVal) && numVal >= 1 && numVal <= 5) {
                 const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
                 const letter = choiceLetters[numVal - 1];
 
-                // 精准匹配知能行选择题 DOM 元素 (优先匹配 id="choiceButtonA" ~ "choiceButtonE")
                 let targetOption = document.getElementById(`choiceButton${letter}`);
 
                 if (!targetOption) {
@@ -623,6 +622,7 @@
                     console.log(`⚡ [知能行小助手] 数字键 ${numVal} 选中选择题选项 ${letter}:`, targetOption);
                     return;
                 }
+            }
         });
     }
 
