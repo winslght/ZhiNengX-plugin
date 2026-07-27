@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.2.0-beta.2
+// @version      8.2.0-beta.3
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)与考研倒计时(1位小数)辅助
 // @author       winslght
 // @license      MIT
@@ -14,7 +14,7 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.2.0-beta.2';
+    const SCRIPT_VERSION = '8.2.0-beta.3';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -747,6 +747,325 @@
     }
 
     // ==========================================
+    // 12. 一键复制原排版题目 (Markdown + LaTeX)
+    //     - 仅在做题界面生效 (znx-doing-questions)
+    //     - 位于题目卡片左侧，毛玻璃风格深度融合
+    //     - 纯正则安全清洗 UI 杂质文本，绝对不因匹配文案销毁 DOM 节点
+    // ==========================================
+    function setupCopyProblemHandler() {
+        const BUTTON_ID = 'znx-copy-problem-btn';
+
+        const showToast = (message, isError = false) => {
+            let toast = document.getElementById('znx-copy-toast');
+            if (toast) toast.remove();
+
+            toast = document.createElement('div');
+            toast.id = 'znx-copy-toast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 999999;
+                background: ${isError ? 'rgba(239, 68, 68, 0.9)' : 'rgba(15, 23, 42, 0.88)'};
+                backdrop-filter: blur(12px) saturate(180%);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid ${isError ? 'rgba(248, 113, 113, 0.5)' : 'rgba(56, 189, 248, 0.4)'};
+                border-radius: 20px;
+                padding: 8px 18px;
+                font-size: 13px;
+                font-weight: 600;
+                color: ${isError ? '#fff' : '#38bdf8'};
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                pointer-events: none;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            `;
+            toast.innerHTML = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast && toast.parentNode) {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(-50%) translateY(-8px)';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 1800);
+        };
+
+        const copyToClipboard = (text) => {
+            if (!text || !text.trim()) {
+                showToast('⚠️ 未能提取到有效题目内容', true);
+                return;
+            }
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('✨ 题目与 LaTeX 公式已成功复制到剪贴板');
+                }).catch(() => fallbackCopy(text));
+            } else {
+                fallbackCopy(text);
+            }
+        };
+
+        const fallbackCopy = (text) => {
+            try {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                textArea.style.top = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+                if (successful) {
+                    showToast('✨ 题目与 LaTeX 公式已成功复制到剪贴板');
+                } else {
+                    showModalCopy(text);
+                }
+            } catch (err) {
+                showModalCopy(text);
+            }
+        };
+
+        const showModalCopy = (text) => {
+            let modal = document.getElementById('znx-copy-modal');
+            if (modal) modal.remove();
+
+            modal = document.createElement('div');
+            modal.id = 'znx-copy-modal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+            modal.innerHTML = `
+                <div style="background:rgba(15,23,42,0.95);border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:20px;width:100%;max-width:550px;box-shadow:0 20px 40px rgba(0,0,0,0.4);color:#fff;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <h4 style="margin:0;font-size:15px;color:#38bdf8;">📋 请按 Ctrl+C 复制题目内容</h4>
+                        <button id="znx-modal-close-btn" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;">✕</button>
+                    </div>
+                    <textarea readonly style="width:100%;height:220px;background:rgba(2,6,23,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#f8fafc;padding:10px;font-family:monospace;font-size:13px;resize:none;outline:none;"></textarea>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            const ta = modal.querySelector('textarea');
+            ta.value = text;
+            ta.select();
+
+            modal.querySelector('#znx-modal-close-btn').onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        };
+
+        const extractPureProblemMarkdown = (problemContainerEl) => {
+            console.log('[ZhiNengX Copy] 🚀 开始提取题目，目标容器:', problemContainerEl);
+            if (!problemContainerEl) {
+                console.warn('[ZhiNengX Copy] ⚠️ 未传入有效题目容器 DOM 节点！');
+                return '';
+            }
+
+            const clone = problemContainerEl.cloneNode(true);
+
+            // 1. 仅清理无用按钮与样式 (严格不根据文字内容删除任何 DOM 容器节点)
+            const itemsToRemove = clone.querySelectorAll(`
+                .MuiButton-root, button, style,
+                .znx-ignored, #${BUTTON_ID}
+            `);
+            console.log(`[ZhiNengX Copy] 🧹 清理交互/样式节点 ${itemsToRemove.length} 个`);
+            itemsToRemove.forEach(el => el.remove());
+
+            // 2. 选择题选项智能过滤与标号补全 (A. / B. / C. / D. / E.)
+            const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
+            let choiceLabels = Array.from(clone.querySelectorAll('label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label'));
+            if (choiceLabels.length === 0) {
+                choiceLabels = Array.from(clone.querySelectorAll('label')).filter(l => l.querySelector('input[type="radio"], input[type="checkbox"], input[name="choice"]'));
+            }
+
+            // 剔除包含“我没有思路”或“显示有问题”的假选项 (如 E 选项“我没有思路”)
+            choiceLabels = choiceLabels.filter(label => {
+                const txt = (label.textContent || '').trim();
+                if (txt.includes('我没有思路') || txt.includes('显示有问题')) {
+                    label.remove();
+                    return false;
+                }
+                return true;
+            });
+
+            console.log(`[ZhiNengX Copy] 📝 匹配到有效选择题选项 ${choiceLabels.length} 个`);
+            choiceLabels.forEach((label, idx) => {
+                const letter = choiceLetters[idx] || '';
+                const txt = (label.textContent || '').trim();
+                if (letter && !txt.startsWith(`${letter}.`) && !txt.startsWith(`${letter} `)) {
+                    label.prepend(document.createTextNode(`${letter}. `));
+                }
+                label.before(document.createTextNode('\n'));
+            });
+
+            // 3. 提取 KaTeX 公式源码并干净替换整个展示块
+            const katexEls = clone.querySelectorAll('.katex');
+            if (katexEls.length > 0) {
+                console.log(`[ZhiNengX Copy] 📐 匹配到 KaTeX 公式 ${katexEls.length} 个`);
+            }
+            katexEls.forEach(el => {
+                const texSource = el.querySelector('annotation[encoding="application/x-tex"]')?.textContent ||
+                                  el.querySelector('.katex-mathml')?.textContent;
+                if (texSource) {
+                    const displayParent = el.closest('.katex-display');
+                    const isBlock = !!displayParent;
+                    const mathMd = isBlock ? `\n$$\n${texSource.trim()}\n$$\n` : ` $${texSource.trim()}$ `;
+
+                    const targetToReplace = displayParent || el;
+                    targetToReplace.replaceWith(document.createTextNode(mathMd));
+                }
+            });
+
+            // 4. 提取 MathJax v2.7 (SVG / AsciiMath / TeX) 全模式公式源码
+            const mathjaxScripts = Array.from(clone.querySelectorAll('script[type^="math/"], script[type^="Math/"]'));
+            if (mathjaxScripts.length > 0) {
+                console.log(`[ZhiNengX Copy] 📐 匹配到 MathJax 脚本 ${mathjaxScripts.length} 个`);
+            }
+            mathjaxScripts.forEach(script => {
+                const rawFormula = (script.textContent || script.innerText || '').trim();
+                const scriptType = (script.getAttribute('type') || '').toLowerCase();
+                const scriptId = script.id || '';
+
+                if (rawFormula) {
+                    const isBlock = scriptType.includes('mode=display') || !!script.closest('.MathJax_Display');
+                    const mathMd = isBlock ? `\n$$\n${rawFormula}\n$$\n` : ` $${rawFormula}$ `;
+
+                    // 清理关联的 MathJax 渲染 Frame 节点
+                    if (scriptId) {
+                        const frame = clone.querySelector(`#${scriptId}-Frame`) || clone.querySelector(`[id^="${scriptId}-Frame"]`);
+                        if (frame) frame.remove();
+                    }
+
+                    // 清理紧邻的 MathJax_Preview 节点
+                    const prev = script.previousElementSibling;
+                    if (prev && (prev.classList.contains('MathJax_Preview') || prev.classList.contains('MathJax_SVG') || prev.classList.contains('MathJax'))) {
+                        prev.remove();
+                    }
+
+                    script.replaceWith(document.createTextNode(mathMd));
+                } else {
+                    script.remove();
+                }
+            });
+
+            // 5. 扫尾清理残存的 MathJax DOM 节点与所有剩余 script 标签
+            clone.querySelectorAll('.MathJax_SVG, .MathJax_Preview, .MathJax, .MathJax_Display, .MJX_Assistive_MathML, script').forEach(el => el.remove());
+
+            // 6. 提纯文本：纯正则洗涤 UI 杂质文本 (绝对安全，不销毁 DOM 节点)
+            let text = clone.innerText || clone.textContent || '';
+            let cleanedText = text
+                .replace(/小贴士：?[^\n]*/g, '')
+                .replace(/对界面不熟悉[^\n]*/g, '')
+                .replace(/使用教程也许会帮到你[^\n]*/g, '')
+                .replace(/请输入你的答案[^\n]*/g, '')
+                .replace(/答案为数值形式[^\n]*/g, '')
+                .replace(/不包含特殊字符[^\n]*/g, '')
+                .replace(/添加中间步骤[^\n]*/g, '')
+                .replace(/我没有思路[^\n]*/g, '')
+                .replace(/显示有问题[^\n]*/g, '')
+                .replace(/[ \t]+/g, ' ')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+
+            console.log(`[ZhiNengX Copy] ✅ 纯净题目提取完成，字符数: ${cleanedText.length}`);
+            console.log('[ZhiNengX Copy] 📄 最终提纯 Markdown 预览:\n' + cleanedText);
+
+            return cleanedText;
+        };
+
+        const checkAndUpdateButton = () => {
+            const isDoing = document.documentElement.classList.contains('znx-doing-questions');
+            const existingBtn = document.getElementById(BUTTON_ID);
+
+            if (!isDoing) {
+                if (existingBtn) existingBtn.remove();
+                return;
+            }
+
+            const problemCard = document.querySelector('div[name="ProblemItemElement"]') ||
+                                document.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
+                                document.querySelector('.jumbotron') ||
+                                document.querySelector('div[class*="jumbotron"]') ||
+                                document.querySelector('div[class*="_3WnwfR"]');
+
+            if (!problemCard) {
+                if (existingBtn) existingBtn.remove();
+                return;
+            }
+
+            if (existingBtn && problemCard.contains(existingBtn)) return;
+            if (existingBtn) existingBtn.remove();
+
+            const btn = document.createElement('button');
+            btn.id = BUTTON_ID;
+            btn.type = 'button';
+            btn.title = '一键纯净提取当前题目与 LaTeX 公式';
+            btn.innerHTML = '📋 复制题目';
+            btn.style.cssText = `
+                background: rgba(255, 255, 255, 0.18) !important;
+                backdrop-filter: blur(10px) saturate(160%) !important;
+                -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-radius: 8px !important;
+                padding: 4px 12px !important;
+                font-size: 12px !important;
+                font-weight: 700 !important;
+                color: var(--znx-text-primary, #1e293b) !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+                cursor: pointer !important;
+                user-select: none !important;
+                transition: all 0.2s ease !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 5px !important;
+                margin-right: auto !important;
+                margin-bottom: 8px !important;
+            `;
+
+            btn.onmouseover = () => {
+                btn.style.setProperty('background', 'rgba(255, 255, 255, 0.35)', 'important');
+                btn.style.setProperty('border-color', 'rgba(56, 189, 248, 0.6)', 'important');
+                btn.style.setProperty('transform', 'translateY(-1px)', 'important');
+            };
+            btn.onmouseout = () => {
+                btn.style.setProperty('background', 'rgba(255, 255, 255, 0.18)', 'important');
+                btn.style.setProperty('border-color', 'rgba(56, 189, 248, 0.3)', 'important');
+                btn.style.setProperty('transform', 'none', 'important');
+            };
+
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[ZhiNengX Copy] 🖱️ 用户点击了 📋 复制题目 按钮');
+                const currentCard = document.querySelector('div[name="ProblemItemElement"]') ||
+                                    document.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
+                                    btn.closest('.jumbotron') ||
+                                    btn.closest('div[class*="jumbotron"]') ||
+                                    btn.closest('div[class*="_3WnwfR"]') ||
+                                    document.querySelector('.jumbotron') ||
+                                    problemCard;
+                const pureText = extractPureProblemMarkdown(currentCard);
+                copyToClipboard(pureText);
+            };
+
+            const targetHeader = problemCard.querySelector('div[class*="_3r5idY"]') || problemCard.firstElementChild || problemCard;
+            if (targetHeader !== problemCard) {
+                targetHeader.insertBefore(btn, targetHeader.firstChild);
+            } else {
+                problemCard.insertBefore(btn, problemCard.firstChild);
+            }
+        };
+
+        new MutationObserver(checkAndUpdateButton).observe(document.body, { childList: true, subtree: true });
+        checkAndUpdateButton();
+    }
+
+    // ==========================================
     // 启动
     // ==========================================
     function init() {
@@ -757,6 +1076,7 @@
         setupKeyboardShortcutsHandler();
         setupQuestionModeObserver();
         setupJumbotronFeedbackObserver();
+        setupCopyProblemHandler();
         injectDevVersionBadge();
     }
 

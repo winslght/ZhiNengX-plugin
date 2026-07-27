@@ -21,6 +21,15 @@
 
 ## 🧪 专版公测 (Beta Branches)
 
+### 📌 [v8.2.0-beta.3] - 2026-07-27 (Beta 公测版)
+> **本版主要动机**：全量发布经过 5 轮本地对抗碎测无 BUG 的 **`📋 一键复制原排版题目 (Markdown + LaTeX)`** 核心功能。
+
+#### 🎨 知能行 UI 视觉美化与考研助手 (ZhiNengX Beautifier)
+- **Added**: 新增 `📋 复制题目` 按钮组件，纯粹提取当前题目全文与格式。
+- **Added**: 提纯 KaTeX 与 MathJax v2.7 (SVG/TeX/MathML) 源码，行内公式输出为 `$ ... $`，块级公式输出为 `$$ ... $$`。
+- **Added**: 三级降级剪贴板架构 (`navigator.clipboard` ➔ `execCommand` ➔ `Glassmorphism Modal` 弹框)，严格遵循 `@grant none` 沙盒安全机制。
+- **Added**: 针对无标号选项自动补充 `A. `, `B. `, `C. `, `D. `, `E. ` 标号前缀，剔除假选项与做题提示，纯正则二次强洗擦除 UI 杂质。
+
 ### 📌 [v8.2.0-beta.1 / v11.0.1-beta.1] - 2026-07-26 (Beta 公测版)
 > **本版主要动机**：全量修复三大已知 BUG（Live2D 容灾重试、导出报告卡死、倒计时精度）并发布公测。
 
