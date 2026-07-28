@@ -20,6 +20,14 @@
 
 ## 🧪 专版公测 (Beta Branches)
 
+### 📌 [v8.2.0-beta.4.1] - 2026-07-28 (Beta 公测版)
+> **本版主要动机**：在 8.2.0-beta.4 基础上新增右下角轻量级 ACG 壁纸显隐开关与状态记忆。
+
+#### 🎨 知能行 UI 视觉美化与考研助手 (ZhiNengX Beautifier)
+- **Added**: 新增右下角浮动开关 `🖼️ 壁纸 [ON/OFF]`，支持随时一键开启/关闭 ACG 背景壁纸。
+- **Added**: 壁纸显隐状态自动持久化至 `localStorage` (`znx_wallpaper_enabled`)。
+- **Added**: 开关面板适配 Glassmorphism 2.0 及 Dark Reader 浅色/深色主题。
+
 ### 📌 [v8.2.0-beta.4] - 2026-07-27 (Beta 公测版)
 > **本版主要动机**：全量发布做题端倒计时晶莹收纳胶囊、Glassmorphism 2.0 材质统一下沉、Live2D 动态金句与进度条全防护。
 
