@@ -14,6 +14,7 @@
   - **Reverted**: 彻底撤回 ESC/Space 快捷键与输入框虚空索敌对焦逻辑，仅保留极速 1~5 数字键秒选与 Enter 回车提交。
 
 ### 📌 下一版本重定义目标 (Architecture Refactor)
+- **Beautifier 题目复制引擎重构**：将题目复制从“全量卡片克隆+正则洗涤”升级为“题干与选项源头靶向提取”架构，彻底解决倒计时胶囊文本泄露与空行多余问题。
 - **ZhiNengX Unified Engine v8.3.0 / v11.1.0 目标**：全量合并 Beautifier 与 Exporter 两个脚本，去除冗余共享组件并实现轻量化模块架构。
 
 ---

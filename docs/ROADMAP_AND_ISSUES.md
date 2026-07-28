@@ -34,6 +34,7 @@
 
 ### 🎨 美化插件 (Beautifier) Roadmap
 
+- [ ] **[P1] 题目复制架构重构：源头精准靶向提取 (Targeted Extraction Architecture)**：彻底重构现有的“全卡片克隆+事后清洗”模式，升级为只精准靶向提取题干 DOM (`ProblemItemElement`) 与选项 DOM (`choiceButton`)。从源头 100% 隔绝对话框、倒计时胶囊 (`#znx-problem-tools-bar`) 干扰与多余空行，提升格式规范度。
 - [ ] **[P1] 一键复制原排版题目 (Markdown/LaTeX)**：自动解析 DOM 中的 KaTeX/MathJax 公式提取为 $...$ / $$...$$，纯净复制题目完整格式与排版至剪贴板（详见 [FEAT_COPY_PROBLEM_MARKDOWN.md](file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/docs/FEAT_COPY_PROBLEM_MARKDOWN.md)）。
 - [ ] **[P1] 自定义考研目标倒计时**：允许用户在设置面板中自定义目标考试日期（如 2027、2028 或自定义月/日）。
 - [ ] **[P1] 主题颜色预设一键切换**：内置【黑曜石】、【翡翠绿】、【深海蓝】、【紫罗兰】四套原生样式模板。
