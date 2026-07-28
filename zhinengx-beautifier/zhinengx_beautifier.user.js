@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.2.0-dev.3.1
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)与考研倒计时(1位小数)辅助
+// @version      8.2.0-beta.5-capsule
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)与考研倒计时(闲置5秒靠边收纳/拖拽/位置记忆)辅助
 // @author       winslght
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -14,7 +14,7 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.2.0-dev.3.1';
+    const SCRIPT_VERSION = '8.2.0-beta.5-capsule';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;

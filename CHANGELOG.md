@@ -21,6 +21,14 @@
 
 ## 🧪 专版公测 (Beta Branches)
 
+### 📌 [v8.2.0-beta.5-capsule] - 2026-07-28 (Beta 闲置收纳/拖拽倒计时胶囊公测版)
+> **本版主要动机**：发布支持 5 秒闲置自动靠边收纳、点击展开卡片、拖拽与位置记忆的极简考研倒计时胶囊（供与 `8.2.0-beta.4` 原位形变卡片做并行公测对比）。
+
+#### 🎨 知能行 UI 视觉美化与考研助手 (ZhiNengX Beautifier)
+- **Added**: 倒计时闲置 5 秒自动靠边收纳、点击展开卡片、拖拽移动与 `localStorage` 位置记忆 (`znx_countdown_pos`)。
+- **Added**: 支持 Light/Dark 模式及 Dark Reader 自适应毛玻璃配色。
+- **Added**: 集成 `📋 复制题目` (Markdown + LaTeX) 与 Live2D 看板娘健康探测与高频快捷键防护。
+
 ### 📌 [v8.2.0-beta.3] - 2026-07-27 (Beta 公测版)
 > **本版主要动机**：全量发布经过 5 轮本地对抗碎测无 BUG 的 **`📋 一键复制原排版题目 (Markdown + LaTeX)`** 核心功能。
 
