@@ -14,8 +14,10 @@
   - **Reverted**: 彻底撤回 ESC/Space 快捷键与输入框虚空索敌对焦逻辑，仅保留极速 1~5 数字键秒选与 Enter 回车提交。
 
 ### 📌 下一版本重定义目标 (Architecture Refactor)
+- **Beautifier 回车键 Primary Action 智能代理**：由文本白名单检索升级为基于 Material-UI 主色类 (`containedPrimary`) 与卡片右下角物理位置识别，确保盲操覆盖阶段过渡界面。
 - **Beautifier 选择题 1-5 快捷键映射重构**：由字母 ID 硬编码绑定升级为 DOM 屏幕物理纵向坐标 (`getBoundingClientRect().top`) 动态排序绑定，彻底解决知能行打乱选项顺序导致的 1-5 键位错位痛点。
 - **Beautifier 题目复制引擎重构**：将题目复制从“全量卡片克隆+正则洗涤”升级为“题干与选项源头靶向提取”架构，彻底解决倒计时胶囊文本泄露与空行多余问题。
+- **Beautifier 暗色过渡卡片毛玻璃覆盖**：扩充 CSS 匹配选择器，覆盖 `#212529` 等暗色行内背景节点，赋予全流程通透视觉。
 - **ZhiNengX Unified Engine v8.3.0 / v11.1.0 目标**：全量合并 Beautifier 与 Exporter 两个脚本，去除冗余共享组件并实现轻量化模块架构。
 
 ---

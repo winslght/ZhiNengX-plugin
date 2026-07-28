@@ -34,8 +34,10 @@
 
 ### 🎨 美化插件 (Beautifier) Roadmap
 
+- [ ] **[P1] 回车键快捷提交重构：主行动线 Primary Action 智能识别 (Primary Action Recognition)**：彻底废弃基于字符串白名单/黑名单（`['继续', '提交答案']`）的硬编码检索。升级为智能识别 Material-UI / Bootstrap 主色按键 (`.MuiButton-containedPrimary`, `.btn-primary`, `.btn-success`)，并在当前活跃卡片底部优先判定右下角物理位置主按键。确保在“突破口/开始复习/开始训练”等阶段过渡页面时按回车也能 100% 顺畅盲操通关。
 - [ ] **[P1] 选择题 1-5 快捷键架构重构：按屏幕 DOM 物理纵向位置自然绑定 (Visual Order Keyboard Mapping)**：彻底废弃基于字母 ID (`choiceButtonA~E`) 的硬编码映射。针对知能行乱序选项场景，改用 `querySelectorAll` 获取页面渲染的所有选项 DOM，按 `getBoundingClientRect().top` 纵向物理位置动态排序。数字键 `1~5` 严格 1:1 映射 `index 0~4`，确保不论底层 A/B/C/D 怎么打乱，数字键 `1~5` 始终 100% 对应屏幕上肉眼看到的第 1~5 行选项。
 - [ ] **[P1] 题目复制架构重构：源头精准靶向提取 (Targeted Extraction Architecture)**：彻底重构现有的“全卡片克隆+事后清洗”模式，升级为只精准靶向提取题干 DOM (`ProblemItemElement`) 与选项 DOM (`choiceButton`)。从源头 100% 隔绝对话框、倒计时胶囊 (`#znx-problem-tools-bar`) 干扰与多余空行，提升格式规范度。
+- [ ] **[P2] 阶段过渡卡片暗色毛玻璃支持 (Transitional Card Glassmorphism)**：扩充美化 CSS 匹配规则，涵盖暗色/深色行内背景容器（如 `#212529` / `rgb(33, 37, 41)`），赋予过渡阶段卡片与做题面板同等的 Glassmorphism 高斯模糊与通透视感。
 - [ ] **[P1] 一键复制原排版题目 (Markdown/LaTeX)**：自动解析 DOM 中的 KaTeX/MathJax 公式提取为 $...$ / $$...$$，纯净复制题目完整格式与排版至剪贴板（详见 [FEAT_COPY_PROBLEM_MARKDOWN.md](file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/docs/FEAT_COPY_PROBLEM_MARKDOWN.md)）。
 - [ ] **[P1] 自定义考研目标倒计时**：允许用户在设置面板中自定义目标考试日期（如 2027、2028 或自定义月/日）。
 - [ ] **[P1] 主题颜色预设一键切换**：内置【黑曜石】、【翡翠绿】、【深海蓝】、【紫罗兰】四套原生样式模板。
