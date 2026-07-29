@@ -34,6 +34,17 @@
 
 ### 🎨 美化插件 (Beautifier) Roadmap
 
+- [ ] **[P2] 做题顶栏单题计时器醒目高亮与 3 分钟动态霓虹发光预警 (Single Problem Timer Highlight & Glow)**：
+  - **常态高亮样式**：顶栏中间“测试”正下方的单题计时器，字号大小完全对齐旁侧 `[反馈]` 与 `[退出]` 按钮 (`14px~15px`)，字重加粗 (`font-weight: 900`)，数字设为高亮红 (`#e11d48` / `#ef4444`)，位置保持原位不变。
+  - **3 分钟动态发光预警**：当时间低于 3 分钟（或单题耗时达到 3 分钟阈值）时，动态触发边缘霓虹发光/光晕效果 (`text-shadow: 0 0 10px rgba(239, 68, 68, 0.85), 0 0 20px rgba(225, 29, 72, 0.6)`)，提升考场节奏感。
+- [ ] **[P2] 做题端倒计时胶囊 UI 排版与格式微调 (Countdown Capsule UI Refinement)**：
+  - **格式升级**：做题端收纳胶囊右侧显示时间由数字时钟 `05:22` 升级为 `今日剩余12h35m` 格式。
+  - **字体与配色对齐**：
+    - `"今日剩余"` 4 字：字体大小、字重 (`12px / 800`) 与颜色完全对齐旁边的 `📋 复制题目` 按钮文本。
+    - `"12h35m"` 数值：字体大小与字重 (`12px / 900`) 完全对齐 `🔥 X天`，颜色保持高亮蓝色 (`#38bdf8` / `#3b82f6`)。
+  - **水平基线对齐**：胶囊内所有文本与数字严格在同一水平基线上对齐，其余交互与 5 秒自动收纳逻辑保持不变。
+- [ ] **[P1] 美化功能开关控制面板 (Live2D 看板娘与 ACG 壁纸显隐开关)**：针对学员反馈，支持独立开启/关闭 Live2D 看板娘与 ACG 动漫背景壁纸，状态自动持久化至 `localStorage`。控制面板的具体放置位置、唤起方式与 Glassmorphism 2.0 交互样式待后续设计讨论定稿。
+- [ ] **[P1] Live2D 看板娘模型本地 IndexedDB 离线缓存架构 (IndexedDB Offline Model Cache)**：基于 `window.indexedDB` 实现二进制 Blob 离线缓存（模型体积约 1.5MB~3.5MB）。首次访问从 CDN 下载存入本地，后续访问 0ms 直接读取 `IndexedDB` 转换为 `URL.createObjectURL` 内存 URL 秒速离线加载（< 50ms 启动，100% 防断网/防 CDN 故障），清理浏览器缓存或卸载脚本时由浏览器自动回收，零垃圾残留。
 - [ ] **[P1] 回车键快捷提交重构：主行动线 Primary Action 智能识别 (Primary Action Recognition)**：彻底废弃基于字符串白名单/黑名单（`['继续', '提交答案']`）的硬编码检索。升级为智能识别 Material-UI / Bootstrap 主色按键 (`.MuiButton-containedPrimary`, `.btn-primary`, `.btn-success`)，并在当前活跃卡片底部优先判定右下角物理位置主按键。确保在“突破口/开始复习/开始训练”等阶段过渡页面时按回车也能 100% 顺畅盲操通关。
 - [ ] **[P1] 选择题 1-5 快捷键架构重构：按屏幕 DOM 物理纵向位置自然绑定 (Visual Order Keyboard Mapping)**：彻底废弃基于字母 ID (`choiceButtonA~E`) 的硬编码映射。针对知能行乱序选项场景，改用 `querySelectorAll` 获取页面渲染的所有选项 DOM，按 `getBoundingClientRect().top` 纵向物理位置动态排序。数字键 `1~5` 严格 1:1 映射 `index 0~4`，确保不论底层 A/B/C/D 怎么打乱，数字键 `1~5` 始终 100% 对应屏幕上肉眼看到的第 1~5 行选项。
 - [ ] **[P1] 题目复制架构重构：源头精准靶向提取 (Targeted Extraction Architecture)**：彻底重构现有的“全卡片克隆+事后清洗”模式，升级为只精准靶向提取题干 DOM (`ProblemItemElement`) 与选项 DOM (`choiceButton`)。从源头 100% 隔绝对话框、倒计时胶囊 (`#znx-problem-tools-bar`) 干扰与多余空行，提升格式规范度。

@@ -59,7 +59,7 @@ All git commits MUST strictly follow the **Bilingual Commit Format**:
 
 ## 🧠 5. Clean Architecture & High-Cohesion Low-Coupling Principles (高内聚低耦合与 Clean Code 原则)
 
-To prevent monolithic/spaghetti code ("屎山代码") and breaking unexpected global regressions ("牵一发而动全身"), all code written for ZhiNengX MUST strictly follow these 6 Clean Code principles:
+To prevent monolithic/spaghetti code ("屎山代码") and breaking unexpected global regressions ("牵一发而动全身"), all code written for ZhiNengX MUST strictly follow these 8 Clean Code principles (Full Spec: [`clean-architecture-spec.md`](file:///.agents/rules/clean-architecture-spec.md)):
 
 1. **High Cohesion & Low Coupling (高内聚、低耦合)**: Modules must be tightly focused on their inner domain while staying decoupled from external modules. Modifying feature A must NEVER break feature B.
 2. **Single Responsibility Principle (单一职责原则 / SRP)**: One module/function only does ONE thing well. Separate DOM extraction, CSS injection, state management, event listening, and API fallback into decoupled helper functions.
@@ -67,6 +67,8 @@ To prevent monolithic/spaghetti code ("屎山代码") and breaking unexpected gl
 4. **Composition Over Inheritance (少用继承，多用组合)**: Prefer small, composable utility functions and component factories over heavy OOP classes or prototype inheritance chains.
 5. **Incremental Feature Addition & Per-Step Verification (渐进式增量开发与每步验证)**: Implement features step-by-step in small, verifiable increments. Validate each increment thoroughly before proceeding to the next.
 6. **Minimize Global State, Favor Pure Functions (少写全局状态，多写无副作用纯函数)**: Minimize global mutable variables. Data parsing, TeX extraction, and Markdown formatting MUST be written as deterministic pure functions (inputs ➔ outputs without side-effects).
+7. **Positive Feature Matching Over Negative Exclusion (正向特征精准定位，严禁黑名单/排除法逻辑)**: Always locate target elements or data by matching their intrinsic features (whitelist matching). NEVER use "exclude all other items to leave target" logic, as introducing new elements later will break isolation.
+8. **Generic Algorithmic Abstraction Over Hardcoded Hacks (通用算法抽象，严禁硬编码与凑数补丁)**: Implement scalable mathematical/logical algorithms. NEVER hardcode precomputed combinations or apply superficial symptom patches just to pass specific sample inputs.
 
 ---
 
@@ -82,6 +84,7 @@ All agents executing tasks in this codebase MUST incorporate the following opera
 ### 6.2 Surgical Precision & Root Cause Remediation (外科手术式精准度与根因修复)
 - **Surgical Precision**: When operating in existing code, make minimal, surgical changes that strictly fulfill requirements. Do not rename variables, alter unrelated formatting, or modify out-of-scope files.
 - **Root Cause Remediation**: Fix issues at their root cause rather than applying superficial symptom patches or swallowing exceptions.
+- **Zero Collateral Damage**: NEVER take destructive shortcuts to achieve a prompt goal (e.g. deleting failing tests, altering global states, or destroying surrounding UI/shortcuts). Achieving the target must preserve surrounding architecture and legacy features intact ("like walking safely through a market, not driving a car through it").
 - **Strict Scope Discipline**: Do not fix unrelated broken tests or out-of-scope code. Focus only on the task at hand.
 
 ### 6.3 Task Planning & Step-by-Step Execution (计划驱动与逐步验证)

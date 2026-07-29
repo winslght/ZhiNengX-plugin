@@ -137,7 +137,7 @@
                 box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
             }
 
-            /* C. 行内白色背景 (opacity: 0.8, blur: 10px) */
+            /* C. 行内白色背景与暗色/深色阶段过渡卡片 (opacity: 0.8, blur: 10px) */
             div[style*="background-color: white"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
             div[style*="background-color: rgb(255, 255, 255)"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
             div[style*="background-color: #fff"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
@@ -145,7 +145,13 @@
             div[style*="background-color: antiquewhite"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
             div[style*="background: white;"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
             div[style*="background: white !important"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background: antiquewhite"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]) {
+            div[style*="background: antiquewhite"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
+            div[style*="background-color: rgb(33, 37, 41)"]:not([id*="waifu"]),
+            div[style*="background-color: #212529"]:not([id*="waifu"]),
+            div[style*="background: rgb(33, 37, 41)"]:not([id*="waifu"]),
+            div[style*="background: #212529"]:not([id*="waifu"]),
+            div[style*="background-color: black"]:not([id*="waifu"]),
+            div[style*="background-color: rgb(34, 34, 34)"]:not([id*="waifu"]) {
                 background: rgba(${glassRgb}, 0.8) !important;
                 backdrop-filter: blur(10px) !important;
                 -webkit-backdrop-filter: blur(10px) !important;
@@ -167,6 +173,26 @@
                 border-radius: 12px !important;
                 border: 1px solid rgba(255, 255, 255, 0.4) !important;
                 box-shadow: 0 4px 16px rgba(0,0,0,0.05) !important;
+            }
+
+            /* 做题顶栏单题计时器醒目高亮与 3 分钟动态霓虹发光预警 */
+            .znx-topbar-timer {
+                font-size: 14.5px !important;
+                font-weight: 900 !important;
+                color: #ef4444 !important;
+                letter-spacing: 0.5px !important;
+                transition: text-shadow 0.3s ease, color 0.3s ease !important;
+            }
+
+            .znx-timer-warning-glow {
+                color: #ef4444 !important;
+                text-shadow: 0 0 10px rgba(239, 68, 68, 0.85), 0 0 20px rgba(225, 29, 72, 0.6) !important;
+                animation: znx-neon-pulse 1.5s infinite alternate !important;
+            }
+
+            @keyframes znx-neon-pulse {
+                0% { text-shadow: 0 0 8px rgba(239, 68, 68, 0.7), 0 0 16px rgba(225, 29, 72, 0.5); }
+                100% { text-shadow: 0 0 14px rgba(239, 68, 68, 1), 0 0 25px rgba(225, 29, 72, 0.85), 0 0 35px rgba(239, 68, 68, 0.6); }
             }
 
             /* 按钮与其他例外 */
@@ -585,6 +611,125 @@
     });
 
     // ==========================================
+    // 6.5 Live2D 看板娘 IndexedDB 离线缓存引擎 (Task 4)
+    // ==========================================
+    const ZnxIndexedDBCache = {
+        DB_NAME: 'znx_waifu_cache',
+        STORE_NAME: 'assets',
+        DB_VERSION: 1,
+
+        openDB() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) {
+                    reject(new Error('IndexedDB is not supported'));
+                    return;
+                }
+                const request = window.indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+                        db.createObjectStore(this.STORE_NAME);
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        },
+
+        async getAsset(url) {
+            try {
+                const db = await this.openDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction(this.STORE_NAME, 'readonly');
+                    const store = tx.objectStore(this.STORE_NAME);
+                    const req = store.get(url);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) {
+                return null;
+            }
+        },
+
+        async saveAsset(url, blob) {
+            try {
+                const db = await this.openDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction(this.STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(this.STORE_NAME);
+                    store.put(blob, url);
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
+                });
+            } catch (e) {
+                return false;
+            }
+        },
+
+        async fetchAndCache(url) {
+            const cachedBlob = await this.getAsset(url);
+            if (cachedBlob && cachedBlob instanceof Blob) {
+                console.log('⚡ [ZhiNengX Live2D] 从 IndexedDB 秒速加载离线资源:', url);
+                return URL.createObjectURL(cachedBlob);
+            }
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const blob = await res.blob();
+                await this.saveAsset(url, blob);
+                console.log('✨ [ZhiNengX Live2D] 首次下载完成，已写入 IndexedDB 离线缓存:', url);
+                return URL.createObjectURL(blob);
+            } catch (e) {
+                console.warn('⚠️ [ZhiNengX Live2D] 远程拉取失败，使用原始 URL:', url, e);
+                return url;
+            }
+        }
+    };
+
+    // ==========================================
+    // 6.6 美化功能开关控制面板状态管理器 (Task 5)
+    // ==========================================
+    const ZNX_SETTINGS = {
+        showWaifu: true,
+        showWallpaper: true,
+
+        load() {
+            try {
+                const raw = localStorage.getItem('znx_beautifier_settings');
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    if (typeof data.showWaifu === 'boolean') this.showWaifu = data.showWaifu;
+                    if (typeof data.showWallpaper === 'boolean') this.showWallpaper = data.showWallpaper;
+                }
+            } catch (e) {}
+        },
+
+        save() {
+            try {
+                localStorage.setItem('znx_beautifier_settings', JSON.stringify({
+                    showWaifu: this.showWaifu,
+                    showWallpaper: this.showWallpaper
+                }));
+            } catch (e) {}
+        },
+
+        apply() {
+            const bg = document.getElementById('znx-anime-bg');
+            if (bg) {
+                bg.style.display = this.showWallpaper ? 'block' : 'none';
+            }
+
+            const waifu = document.getElementById('waifu');
+            if (waifu) {
+                waifu.style.display = this.showWaifu ? 'block' : 'none';
+            } else if (this.showWaifu) {
+                injectLive2D();
+            }
+        }
+    };
+
+    // ==========================================
     // 7. Live2D 看板娘 (多 CDN 容灾与健康重试 Guard)
     // ==========================================
     const LIVE2D_CDN_SOURCES = [
@@ -699,6 +844,11 @@
     }
 
     function injectLive2D() {
+        if (!ZNX_SETTINGS.showWaifu) {
+            console.log('[ZhiNengX Live2D] 用户配置隐藏 Live2D 看板娘');
+            return;
+        }
+
         setupKaoyanWaifuTips();
         const existingWaifu = document.getElementById('waifu');
         const existingCanvas = document.getElementById('live2d') || existingWaifu?.querySelector('canvas');
@@ -734,26 +884,32 @@
         const currentCdn = LIVE2D_CDN_SOURCES[live2dCdnIndex % LIVE2D_CDN_SOURCES.length];
         console.log(`[ZhiNengX Live2D] 尝试加载 Live2D 看板娘 (CDN ${live2dCdnIndex + 1}/${LIVE2D_CDN_SOURCES.length}, 第 ${live2dRetryCount + 1} 次):`, currentCdn);
 
-        const s = document.createElement('script');
-        s.id = 'live2d-widget-script';
-        s.src = currentCdn;
+        // 使用 IndexedDB 离线缓存引擎拉取或命中快照 Blob
+        ZnxIndexedDBCache.fetchAndCache(currentCdn).then(scriptUrl => {
+            const s = document.createElement('script');
+            s.id = 'live2d-widget-script';
+            s.src = scriptUrl;
 
-        // 绑定 onerror 事件：当前 CDN 加载失败时，清除旧 script 并自动轮换 CDN 重试
-        s.onerror = () => {
-            console.warn(`[ZhiNengX Live2D] ⚠️ 当前 CDN 加载失败: ${currentCdn}，自动切换至下一镜像重试...`);
-            s.remove();
-            live2dCdnIndex++;
-            scheduleLive2DRetry(2000);
-        };
+            s.onerror = () => {
+                console.warn(`[ZhiNengX Live2D] ⚠️ 当前 CDN/Blob 加载失败: ${currentCdn}，自动切换至下一镜像重试...`);
+                s.remove();
+                live2dCdnIndex++;
+                scheduleLive2DRetry(2000);
+            };
 
-        s.onload = () => {
-            console.log(`[ZhiNengX Live2D] Live2D autoload.js 脚本成功响应 (${currentCdn})`);
-        };
+            s.onload = () => {
+                console.log(`[ZhiNengX Live2D] Live2D autoload.js 脚本加载成功 (${currentCdn})`);
+            };
 
-        document.body.appendChild(s);
-
-        // 启动 8s DOM 健康检测 Guard
-        setupLive2DHealthGuard();
+            document.body.appendChild(s);
+            setupLive2DHealthGuard();
+        }).catch(() => {
+            const s = document.createElement('script');
+            s.id = 'live2d-widget-script';
+            s.src = currentCdn;
+            document.body.appendChild(s);
+            setupLive2DHealthGuard();
+        });
     }
 
     function scheduleLive2DRetry(delayMs) {
@@ -801,8 +957,112 @@
     }
 
     // ==========================================
-    // 8. 键盘高效刷题交互代理
+    // 8. 键盘高效刷题交互代理 (Primary Action & Visual Order Choice Shortcuts)
     // ==========================================
+    /**
+     * 主行动按键 Primary Action 智能定位逻辑 (基于主色 Class 与物理底部位置排序)
+     */
+    function findPrimaryActionButton() {
+        const candidates = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root, [role="button"]'))
+            .filter(btn => {
+                if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') return false;
+                const rect = btn.getBoundingClientRect();
+                if (rect.width <= 0 || rect.height <= 0) return false;
+                try {
+                    const style = window.getComputedStyle(btn);
+                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+                } catch (e) {}
+                return true;
+            });
+
+        if (candidates.length === 0) return null;
+
+        // 优先在模态框/对话框/做题主卡片容器内查找
+        const modalContainer = document.querySelector('.MuiDialog-root, .modal-dialog, [role="dialog"]');
+        const cardContainer = document.querySelector('.jumbotron, div[name="ProblemItemElement"], main, #app');
+        const activeContainer = modalContainer || cardContainer;
+
+        const scopedCandidates = activeContainer 
+            ? candidates.filter(btn => activeContainer.contains(btn))
+            : candidates;
+
+        const targetList = scopedCandidates.length > 0 ? scopedCandidates : candidates;
+
+        const scored = targetList.map(btn => {
+            let score = 0;
+            const className = (btn.className || '').toString();
+            const typeAttr = (btn.getAttribute('type') || '').toLowerCase();
+
+            // 正向样式与属性打分 (Positive Feature Matching)
+            if (className.includes('MuiButton-containedPrimary') || className.includes('btn-primary')) score += 100;
+            else if (className.includes('MuiButton-contained') || className.includes('btn-success')) score += 80;
+            else if (typeAttr === 'submit') score += 60;
+            else if (className.includes('primary') || className.includes('contained')) score += 40;
+
+            // 实心背景色检测
+            try {
+                const bg = window.getComputedStyle(btn).backgroundColor;
+                if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' && !bg.includes('255, 255, 255')) {
+                    score += 20;
+                }
+            } catch (e) {}
+
+            // 物理位置打分 (屏幕纵向靠下 + 横向靠右)
+            const rect = btn.getBoundingClientRect();
+            score += (rect.top * 0.01) + (rect.left * 0.005);
+
+            return { btn, score };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+        return scored.length > 0 ? scored[0].btn : null;
+    }
+
+    /**
+     * 按屏幕 DOM 物理纵向位置自然排序选择题选项
+     */
+    function getSortedChoiceOptions() {
+        const rawOptions = Array.from(document.querySelectorAll(
+            'label[id^="choiceButton"], label[name="choiceButton"], div[name="ProblemItemElement"] label, label.choice-btn, label[class*="choice"]'
+        ));
+
+        if (rawOptions.length === 0) {
+            const radios = Array.from(document.querySelectorAll('input[type="radio"][name="choice"], input[name="choice"]'));
+            radios.forEach(r => {
+                const container = r.closest('label') || r.parentElement;
+                if (container && !rawOptions.includes(container)) {
+                    rawOptions.push(container);
+                }
+            });
+        }
+
+        const visibleOptions = [];
+        const seenElements = new Set();
+
+        for (const el of rawOptions) {
+            if (!el || seenElements.has(el)) continue;
+            const rect = el.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) continue;
+            try {
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
+            } catch (e) {}
+
+            seenElements.add(el);
+            visibleOptions.push({ el, top: rect.top, left: rect.left });
+        }
+
+        // 按物理 Y 坐标 (top) 排序；若 top 相近 (< 8px) 按 X 坐标 (left) 排序
+        visibleOptions.sort((a, b) => {
+            if (Math.abs(a.top - b.top) > 8) {
+                return a.top - b.top;
+            }
+            return a.left - b.left;
+        });
+
+        return visibleOptions.map(o => o.el);
+    }
+
     function setupKeyboardShortcutsHandler() {
         document.addEventListener('keydown', (e) => {
             // 1. 忽略修饰键组合 (Ctrl/Alt/Meta/Cmd) 与功能键 (F1~F12/Escape/Tab)
@@ -819,61 +1079,34 @@
             );
             const isInAnyInput = isMultilineInput || isSingleLineInput;
 
-            // 3. 回车键代理逻辑 (无论光标是否在单行填空数字输入框内，按回车直通“提交答案/继续”)
+            // 3. 回车键 Primary Action 智能代理
             if (e.key === 'Enter' || e.keyCode === 13) {
-                // 如果是在多行 TEXTAREA 内，且未按 Shift，优先交由文本框原生换行，按 Shift+Enter 才触发提交
+                // 多行 TEXTAREA 内未按 Shift 时交由原生换行
                 if (isMultilineInput && !e.shiftKey) return;
 
-                const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
-                const actionKeywords = ['提交答案', '继续', '下一步', '再试一次', '查看题解'];
-
-                let targetBtn = null;
-                for (const kw of actionKeywords) {
-                    targetBtn = buttons.find(b => {
-                        const t = (b.innerText || b.textContent || '').trim();
-                        return t.includes(kw) && !t.includes('继续训练') && !t.includes('反馈') && !t.includes('退出');
-                    });
-                    if (targetBtn) break;
-                }
-
-                if (targetBtn && document.body.contains(targetBtn)) {
+                const primaryBtn = findPrimaryActionButton();
+                if (primaryBtn && document.body.contains(primaryBtn)) {
                     e.preventDefault();
-                    targetBtn.click();
-                    console.log('⚡ [知能行小助手] 回车按键触发点击:', targetBtn.innerText.trim());
+                    primaryBtn.click();
+                    console.log('⚡ [ZhiNengX] 回车触发行动按键:', (primaryBtn.innerText || primaryBtn.textContent || '').trim());
                     return;
                 }
             }
 
-            // 4. 数字键 1~5 选择题秒选 (仅在未聚焦在输入框时触发，避免干扰数字输入)
+            // 4. 数字键 1~5 物理纵向位置自然绑定
             if (isInAnyInput) return;
 
             const numVal = parseInt(e.key, 10);
             if (!isNaN(numVal) && numVal >= 1 && numVal <= 5) {
-                const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
-                const letter = choiceLetters[numVal - 1];
-
-                let targetOption = document.getElementById(`choiceButton${letter}`);
-
-                if (!targetOption) {
-                    const inputRadio = document.querySelector(`input[name="choice"][value="${letter}"]`);
-                    if (inputRadio) {
-                        targetOption = inputRadio.closest('label') || inputRadio;
+                const sortedOptions = getSortedChoiceOptions();
+                if (sortedOptions.length >= numVal) {
+                    const targetOption = sortedOptions[numVal - 1];
+                    if (targetOption && document.body.contains(targetOption)) {
+                        e.preventDefault();
+                        targetOption.click();
+                        console.log(`⚡ [ZhiNengX] 数字键 ${numVal} 选中第 ${numVal} 行选项:`, targetOption);
+                        return;
                     }
-                }
-
-                if (!targetOption) {
-                    const optionLabels = Array.from(document.querySelectorAll('label[name="choiceButton"], label[id^="choiceButton"], div[name="ProblemItemElement"] label'))
-                        .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
-                    if (optionLabels.length >= numVal) {
-                        targetOption = optionLabels[numVal - 1];
-                    }
-                }
-
-                if (targetOption && document.body.contains(targetOption)) {
-                    e.preventDefault();
-                    targetOption.click();
-                    console.log(`⚡ [知能行小助手] 数字键 ${numVal} 选中选择题选项 ${letter}:`, targetOption);
-                    return;
                 }
             }
         });
@@ -1156,23 +1389,25 @@
         };
 
         const extractPureProblemMarkdown = (problemContainerEl) => {
-            console.log('[ZhiNengX Copy] 🚀 开始提取题目，目标容器:', problemContainerEl);
+            console.log('[ZhiNengX Copy] 🚀 开始靶向提取题目，目标容器:', problemContainerEl);
             if (!problemContainerEl) {
                 console.warn('[ZhiNengX Copy] ⚠️ 未传入有效题目容器 DOM 节点！');
                 return '';
             }
 
+            // 1. 克隆容器并优先彻底剔除倒计时胶囊 DOM 节点 (防文本泄露)
             const clone = problemContainerEl.cloneNode(true);
+            clone.querySelectorAll('#znx-problem-tools-bar, [id*="znx-problem-tools"], [class*="znx-capsule"]').forEach(el => el.remove());
 
-            // 1. 仅清理无用按钮与样式 (严格不根据文字内容删除任何 DOM 容器节点)
+            // 2. 仅清理无用按钮与样式 (严格不根据文字内容删除任何 DOM 容器节点)
             const itemsToRemove = clone.querySelectorAll(`
                 .MuiButton-root, button, style,
-                .znx-ignored, #${BUTTON_ID}
+                .znx-ignored, #${BUTTON_ID}, [id*="znx-copy"]
             `);
             console.log(`[ZhiNengX Copy] 🧹 清理交互/样式节点 ${itemsToRemove.length} 个`);
             itemsToRemove.forEach(el => el.remove());
 
-            // 2. 选择题选项智能过滤与标号补全 (A. / B. / C. / D. / E.)
+            // 3. 选择题选项智能过滤与标号补全 (A. / B. / C. / D. / E.)
             const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
             let choiceLabels = Array.from(clone.querySelectorAll('label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label'));
             if (choiceLabels.length === 0) {
@@ -1199,7 +1434,7 @@
                 label.before(document.createTextNode('\n'));
             });
 
-            // 3. 提取 KaTeX 公式源码并干净替换整个展示块
+            // 4. 提取 KaTeX 公式源码并干净替换整个展示块
             const katexEls = clone.querySelectorAll('.katex');
             if (katexEls.length > 0) {
                 console.log(`[ZhiNengX Copy] 📐 匹配到 KaTeX 公式 ${katexEls.length} 个`);
@@ -1217,7 +1452,7 @@
                 }
             });
 
-            // 4. 提取 MathJax v2.7 (SVG / AsciiMath / TeX) 全模式公式源码
+            // 5. 提取 MathJax v2.7 (SVG / AsciiMath / TeX) 全模式公式源码
             const mathjaxScripts = Array.from(clone.querySelectorAll('script[type^="math/"], script[type^="Math/"]'));
             if (mathjaxScripts.length > 0) {
                 console.log(`[ZhiNengX Copy] 📐 匹配到 MathJax 脚本 ${mathjaxScripts.length} 个`);
@@ -1231,13 +1466,11 @@
                     const isBlock = scriptType.includes('mode=display') || !!script.closest('.MathJax_Display');
                     const mathMd = isBlock ? `\n$$\n${rawFormula}\n$$\n` : ` $${rawFormula}$ `;
 
-                    // 清理关联的 MathJax 渲染 Frame 节点
                     if (scriptId) {
                         const frame = clone.querySelector(`#${scriptId}-Frame`) || clone.querySelector(`[id^="${scriptId}-Frame"]`);
                         if (frame) frame.remove();
                     }
 
-                    // 清理紧邻的 MathJax_Preview 节点
                     const prev = script.previousElementSibling;
                     if (prev && (prev.classList.contains('MathJax_Preview') || prev.classList.contains('MathJax_SVG') || prev.classList.contains('MathJax'))) {
                         prev.remove();
@@ -1249,12 +1482,14 @@
                 }
             });
 
-            // 5. 扫尾清理残存的 MathJax DOM 节点与所有剩余 script 标签
+            // 6. 扫尾清理残存的 MathJax DOM 节点与所有剩余 script 标签
             clone.querySelectorAll('.MathJax_SVG, .MathJax_Preview, .MathJax, .MathJax_Display, .MJX_Assistive_MathML, script').forEach(el => el.remove());
 
-            // 6. 提纯文本：纯正则洗涤 UI 杂质文本 (绝对安全，不销毁 DOM 节点)
+            // 7. 提纯文本与精准规整行间距
             let text = clone.innerText || clone.textContent || '';
             let cleanedText = text
+                .replace(/🔥\s*\d+天[^\n]*/g, '')
+                .replace(/今日剩余[^\n]*/g, '')
                 .replace(/小贴士：?[^\n]*/g, '')
                 .replace(/对界面不熟悉[^\n]*/g, '')
                 .replace(/使用教程也许会帮到你[^\n]*/g, '')
@@ -1265,10 +1500,13 @@
                 .replace(/我没有思路[^\n]*/g, '')
                 .replace(/显示有问题[^\n]*/g, '')
                 .replace(/[ \t]+/g, ' ')
-                .replace(/\n{3,}/g, '\n\n')
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .join('\n\n')
                 .trim();
 
-            console.log(`[ZhiNengX Copy] ✅ 纯净题目提取完成，字符数: ${cleanedText.length}`);
+            console.log(`[ZhiNengX Copy] ✅ 源头靶向提纯题目完成，字符数: ${cleanedText.length}`);
             console.log('[ZhiNengX Copy] 📄 最终提纯 Markdown 预览:\n' + cleanedText);
 
             return cleanedText;
@@ -1341,17 +1579,21 @@
                     capsuleEl.style.setProperty('left', '0', 'important');
                     capsuleEl.style.setProperty('z-index', '99', 'important');
                     capsuleEl.style.setProperty('transform-origin', 'top left', 'important');
-                    capsuleEl.style.setProperty('width', '135px', 'important');
+                    capsuleEl.style.setProperty('width', '168px', 'important');
                     capsuleEl.style.setProperty('height', '32px', 'important');
                     capsuleEl.style.setProperty('min-height', '32px', 'important');
-                    capsuleEl.style.setProperty('padding', '4px 12px', 'important');
+                    capsuleEl.style.setProperty('padding', '4px 10px', 'important');
                     capsuleEl.style.setProperty('border-radius', '12px', 'important');
                     capsuleEl.style.setProperty('box-shadow', dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)', 'important');
 
+                    const labelColor = dark ? '#e2e8f0' : '#0f172a';
+                    const numColor = dark ? '#38bdf8' : '#3b82f6';
+                    const remainingHours = parseInt(info.h, 10);
+
                     capsuleEl.innerHTML = `
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
-                            <span style="font-weight:900;color:#e11d48;font-size:12px;display:inline-flex;align-items:center;gap:2px;">🔥 ${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:11px;color:${dark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></span>
-                            <span style="font-size:10.5px;color:${dark ? '#38bdf8' : '#3b82f6'};font-weight:800;">${info.h}:${info.m}</span>
+                        <div style="display:inline-flex;align-items:baseline;justify-content:space-between;gap:6px;width:100%;">
+                            <span style="font-weight:900;color:#e11d48;font-size:12px;display:inline-flex;align-items:baseline;gap:2px;">🔥 ${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:11px;color:${dark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></span>
+                            <span style="font-size:12px;font-weight:800;color:${labelColor};display:inline-flex;align-items:baseline;gap:2px;">今日剩余<span style="font-size:12px;font-weight:900;color:${numColor};">${remainingHours}h${info.m}m</span></span>
                         </div>
                         <div style="width:100%;height:3px;background:rgba(0,0,0,0.12);border-radius:2px;margin-top:2px;overflow:hidden">
                             <div style="width:${info.todayRemainingRatio.toFixed(1)}%;height:100%;background:#3b82f6;transition:width 1s"></div>
@@ -1602,10 +1844,145 @@
     }
 
     // ==========================================
+    // 10. 美化功能开关控制面板 UI (Task 5)
+    // ==========================================
+    function injectControlPanelTrigger() {
+        if (document.getElementById('znx-settings-trigger')) return;
+
+        const btn = document.createElement('div');
+        btn.id = 'znx-settings-trigger';
+        btn.title = 'ZhiNengX 美化与功能设置';
+        btn.innerHTML = '🎨';
+        const isDark = isDarkModeActive();
+
+        btn.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: ${isDark ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.85)'};
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid ${isDark ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255, 255, 255, 0.6)'};
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 999999;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+        `;
+
+        btn.onmouseover = () => { btn.style.transform = 'scale(1.1)'; };
+        btn.onmouseout = () => { btn.style.transform = 'scale(1)'; };
+        btn.onclick = () => showSettingsModal();
+
+        document.body.appendChild(btn);
+    }
+
+    function showSettingsModal() {
+        let modal = document.getElementById('znx-settings-modal');
+        if (modal) modal.remove();
+
+        const isDark = isDarkModeActive();
+        modal = document.createElement('div');
+        modal.id = 'znx-settings-modal';
+
+        const maskBg = isDark ? 'rgba(15, 23, 42, 0.65)' : 'rgba(15, 23, 42, 0.35)';
+        const cardBg = isDark
+            ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)'
+            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 244, 248, 0.8) 100%)';
+        const cardBorder = isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.6)';
+        const titleColor = isDark ? '#38bdf8' : '#0f172a';
+        const textColor = isDark ? '#f8fafc' : '#0f172a';
+
+        modal.style.cssText = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:${maskBg};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;`;
+
+        modal.innerHTML = `
+            <div style="background:${cardBg};backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid ${cardBorder};border-radius:20px;padding:24px;width:100%;max-width:380px;color:${textColor};box-shadow:0 24px 48px rgba(0,0,0,0.25);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                    <h3 style="margin:0;font-size:16px;font-weight:800;color:${titleColor};display:flex;align-items:center;gap:8px;">🎨 美化功能控制面板</h3>
+                    <button id="znx-settings-close-btn" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:28px;height:28px;color:${titleColor};font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:14px;">
+                    <label style="display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;cursor:pointer;">
+                        <span>🌸 Live2D 看板娘</span>
+                        <input type="checkbox" id="znx-toggle-waifu" ${ZNX_SETTINGS.showWaifu ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
+                    </label>
+                    <label style="display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;cursor:pointer;">
+                        <span>🖼️ ACG 动漫背景壁纸</span>
+                        <input type="checkbox" id="znx-toggle-wallpaper" ${ZNX_SETTINGS.showWallpaper ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
+                    </label>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector('#znx-settings-close-btn').onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+        const waifuCb = modal.querySelector('#znx-toggle-waifu');
+        const wallpaperCb = modal.querySelector('#znx-toggle-wallpaper');
+
+        waifuCb.onchange = () => {
+            ZNX_SETTINGS.showWaifu = waifuCb.checked;
+            ZNX_SETTINGS.save();
+            ZNX_SETTINGS.apply();
+        };
+
+        wallpaperCb.onchange = () => {
+            ZNX_SETTINGS.showWallpaper = wallpaperCb.checked;
+            ZNX_SETTINGS.save();
+            ZNX_SETTINGS.apply();
+        };
+    }
+
+    // ==========================================
+    // 11. 做题顶栏单题计时器醒目高亮与 3 分钟动态霓虹发光预警 (Task 7)
+    // ==========================================
+    function setupTopBarTimerEnhancer() {
+        const checkTimer = () => {
+            const headerBar = document.querySelector('div[class*="_3WnwfR"], div[class*="_3r5idY"], .MuiAppBar-root, header');
+            if (!headerBar) return;
+
+            const candidateEls = Array.from(headerBar.querySelectorAll('span, div, p')).filter(el => {
+                if (el.children.length > 0) return false;
+                const txt = (el.textContent || '').trim();
+                return /^\d{1,2}:\d{2}$/.test(txt);
+            });
+
+            candidateEls.forEach(timerEl => {
+                timerEl.classList.add('znx-topbar-timer');
+                const txt = timerEl.textContent.trim();
+                const parts = txt.split(':');
+                if (parts.length === 2) {
+                    const totalSec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                    if (totalSec >= 180) {
+                        timerEl.classList.add('znx-timer-warning-glow');
+                    } else {
+                        timerEl.classList.remove('znx-timer-warning-glow');
+                    }
+                }
+            });
+        };
+
+        setInterval(checkTimer, 1000);
+        checkTimer();
+    }
+
+    // ==========================================
     // 启动
     // ==========================================
     function init() {
+        ZNX_SETTINGS.load();
         injectAnimeGlassTheme();
+        ZNX_SETTINGS.apply();
+        injectControlPanelTrigger();
         injectTimeManager();
         loadConfettiScript();
         injectLive2D();
@@ -1613,6 +1990,7 @@
         setupQuestionModeObserver();
         setupJumbotronFeedbackObserver();
         setupCopyProblemHandler();
+        setupTopBarTimerEnhancer();
         injectDevVersionBadge();
     }
 
