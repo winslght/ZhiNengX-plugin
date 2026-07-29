@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.2.0-beta.4.1
-// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)、右下角ACG壁纸显隐开关与考研倒计时辅助
+// @version      8.3.0-beta.1
+// @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)与考研倒计时(1位小数)辅助
 // @author       winslght
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/icon.png
@@ -14,7 +14,7 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.2.0-beta.4.1';
+    const SCRIPT_VERSION = '8.3.0-beta.1';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -33,7 +33,7 @@
     // ==========================================
     function generateBaseCSS() {
         const isDark = isDarkModeActive();
-        const glassRgb = isDark ? '20, 22, 28' : '255, 255, 255';
+        const glassRgb = isDark ? '14, 14, 14' : '255, 255, 255';
         const tabText = isDark ? '#eee' : '#444';
 
         return `
@@ -48,7 +48,7 @@
 
             /* A. 顶部导航栏 (opacity: 0.35, blur: 10px) */
             html body #root .MuiAppBar-root {
-                background: rgba(${glassRgb}, 0.35) !important;
+                background: rgba(${glassRgb}, ${isDark ? '0.5' : '0.35'}) !important;
                 backdrop-filter: blur(10px) saturate(140%) !important;
                 -webkit-backdrop-filter: blur(10px) saturate(140%) !important;
                 border: none !important;
@@ -102,9 +102,9 @@
             /* F. 做题界面顶部工具栏 (opacity: 0.85, blur: 15px) */
             div[class*="_3WnwfR"],
             div[class*="_3r5idY"] {
-                background: rgba(${isDark ? '20, 20, 35' : '255, 255, 255'}, 0.85) !important;
-                backdrop-filter: blur(15px) !important;
-                -webkit-backdrop-filter: blur(15px) !important;
+                background: rgba(${isDark ? '14, 14, 14' : '255, 255, 255'}, ${isDark ? '0.5' : '0.85'}) !important;
+                backdrop-filter: blur(${isDark ? '10px' : '15px'}) !important;
+                -webkit-backdrop-filter: blur(${isDark ? '10px' : '15px'}) !important;
                 border: none !important;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
             }
@@ -128,28 +128,38 @@
                 will-change: backdrop-filter, transform;
             }
 
-            /* B. 所有卡片面板 (opacity: 0.35, blur: 10px) */
-            .MuiPaper-root:not(.MuiAppBar-root):not(.MuiDialog-paper) {
-                background: rgba(${glassRgb}, 0.35) !important;
-                backdrop-filter: blur(10px) saturate(140%) !important;
-                -webkit-backdrop-filter: blur(10px) saturate(140%) !important;
+            /* B. 全站内容卡片 Surface 统一毛玻璃 Token (透光度 0.5, 高斯模糊 10px) */
+            .jumbotron,
+            div[class*="jumbotron"],
+            .MuiPaper-root:not(.MuiAppBar-root):not(.MuiDialog-paper):not(.MuiPopover-paper),
+            div[id*="weaknessDisplayContainer"],
+            div[id*="DisplayContainer"],
+            div[id*="displayContainer"],
+            div[style*="background-color: white"]:not([style*="url"]):not([id^="znx-anime"]):not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height: 14px"]):not([style*="height: 12px"]):not([style*="height: 10px"]):not([style*="height: 8px"]),
+            div[style*="background-color: rgb(255, 255, 255)"]:not([style*="url"]):not([id^="znx-anime"]):not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height: 14px"]):not([style*="height: 12px"]):not([style*="height: 10px"]):not([style*="height: 8px"]),
+            div[style*="background-color: antiquewhite"]:not([style*="url"]):not([id^="znx-anime"]):not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height: 14px"]):not([style*="height: 12px"]):not([style*="height: 10px"]):not([style*="height: 8px"]),
+            div[style*="background: antiquewhite"]:not([style*="url"]):not([id^="znx-anime"]):not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height: 14px"]):not([style*="height: 12px"]):not([style*="height: 10px"]):not([style*="height: 8px"]) {
+                background: rgba(${glassRgb}, 0.5) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                border-radius: 12px !important;
                 border: 1px solid rgba(255, 255, 255, 0.3) !important;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
             }
 
-            /* C. 行内白色背景 (opacity: 0.8, blur: 10px) */
-            div[style*="background-color: white"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background-color: rgb(255, 255, 255)"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background-color: #fff"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background-color:#fff"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background-color: antiquewhite"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background: white;"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background: white !important"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background: antiquewhite"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]) {
-                background: rgba(${glassRgb}, 0.8) !important;
+            /* C. 复习提要与弹窗内卡片/标题块专属 0.3 通透度 Token */
+            div[class*="_1WPKAzobBNGZO4ntJOK2Fy"],
+            .MuiDialogContent-root h2[style*="background-color"],
+            .MuiDialogContent-root div[style*="background-color"],
+            div[style*="background-color: rgb(235, 235, 235)"],
+            div[style*="background-color: #ebebeb"],
+            h2[style*="background-color: rgb(235, 235, 235)"],
+            h2[style*="background-color: #ebebeb"] {
+                background: rgba(${glassRgb}, 0.3) !important;
                 backdrop-filter: blur(10px) !important;
                 -webkit-backdrop-filter: blur(10px) !important;
-                border-radius: 10px !important;
+                border-radius: 8px !important;
+                border: 1px solid rgba(255, 255, 255, 0.25) !important;
             }
 
             /* D. 弹窗/对话框 (opacity: 0.8, blur: 20px) */
@@ -159,14 +169,43 @@
                 -webkit-backdrop-filter: blur(20px) !important;
             }
 
-            /* E. 做题面板 Bootstrap (opacity: 0.6, blur: 5px) */
+            /* E. 做题面板 Bootstrap (opacity: 0.5, blur: 10px) */
             .jumbotron {
-                background: rgba(${glassRgb}, 0.6) !important;
-                backdrop-filter: blur(5px) !important;
-                -webkit-backdrop-filter: blur(5px) !important;
+                background: rgba(${glassRgb}, 0.5) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
                 border-radius: 12px !important;
-                border: 1px solid rgba(255, 255, 255, 0.4) !important;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.05) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
+            }
+
+            /* 做题顶栏单题倒计时：霸气 24px 红色加粗、无背景盒、代码等宽抗抖动 */
+            .znx-topbar-timer {
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Roboto Mono", monospace !important;
+                font-variant-numeric: tabular-nums !important;
+                -webkit-font-feature-settings: "tnum" 1 !important;
+                font-feature-settings: "tnum" 1 !important;
+                font-size: 24px !important;
+                font-weight: 900 !important;
+                color: #ff3344 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 2px !important;
+                letter-spacing: 0.5px !important;
+                transition: text-shadow 0.3s ease, color 0.3s ease !important;
+                display: inline-block !important;
+            }
+
+            /* 时间少于 3 分钟 (< 180s)：字体边缘红色光极清高亮 (4层叠加高饱和立体常亮红光) */
+            .znx-timer-warning-glow {
+                color: #ff3344 !important;
+                background: transparent !important;
+                text-shadow: 
+                    0 0 3px #ff0033,
+                    0 0 8px #ff0033,
+                    0 0 16px rgba(255, 0, 51, 0.95),
+                    0 0 26px rgba(255, 0, 51, 0.75) !important;
             }
 
             /* 按钮与其他例外 */
@@ -237,6 +276,41 @@
                 background: transparent !important;
                 box-shadow: none !important;
             }
+
+            /* 做题工具栏与倒计时胶囊全设备多端 (PC / 平板 / 手机端) 响应式适配 */
+            #znx-problem-tools-bar {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 10px !important;
+                margin-bottom: 10px !important;
+                margin-right: auto !important;
+                flex-wrap: wrap !important;
+                position: relative !important;
+                min-height: 32px !important;
+                z-index: 1 !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            @media (max-width: 600px) {
+                #znx-problem-tools-bar {
+                    width: 100% !important;
+                    justify-content: space-between !important;
+                    gap: 8px !important;
+                }
+                #znx-problem-tools-bar > button,
+                #znx-doing-countdown-wrapper {
+                    flex: 1 1 calc(50% - 4px) !important;
+                    min-width: 140px !important;
+                    box-sizing: border-box !important;
+                }
+                #znx-doing-countdown-btn {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    font-size: 11px !important;
+                    padding: 4px 6px !important;
+                }
+            }
         `;
     }
 
@@ -271,7 +345,7 @@
         const candidateDivs = root.querySelectorAll('div[class*="jss"]:not(.MuiPaper-root):not([data-znx-checked]), div[class^="_"]:not(.MuiPaper-root):not([data-znx-checked]), div[class*=" _"]:not(.MuiPaper-root):not([data-znx-checked])');
 
         const isDark = isDarkModeActive();
-        const glassRgb = isDark ? '20, 22, 28' : '255, 255, 255';
+        const glassRgb = isDark ? '14, 14, 14' : '255, 255, 255';
 
         candidateDivs.forEach(el => {
             el.setAttribute('data-znx-checked', '1');
@@ -298,21 +372,30 @@
                 return;
             }
 
+            // 凡带有背景壁纸图片或尺寸接近全屏的大容器，绝对不加毛玻璃，防止挡屏遮遮壁纸
+            if (
+                getComputedStyle(el).backgroundImage.includes('url') ||
+                (el.clientWidth > window.innerWidth * 0.85 && el.clientHeight > window.innerHeight * 0.85)
+            ) {
+                targetClasses.forEach(c => excludedClasses.add(c));
+                return;
+            }
+
             const bg = getComputedStyle(el).backgroundColor;
-            if (bg === 'rgb(255, 255, 255)' || bg === 'rgb(250, 235, 215)' || bg === '#fff') {
+            if (bg === 'rgb(255, 255, 255)' || bg === 'rgb(250, 235, 215)' || bg === 'rgb(235, 235, 235)' || bg === '#fff' || bg === '#ebebeb' || bg === 'rgb(35, 38, 40)') {
                 const targetClass = targetClasses.find(c => !processedClasses.has(c) && !excludedClasses.has(c));
                 if (targetClass) {
                     processedClasses.add(targetClass);
 
                     const text = el.innerText || '';
                     const isHeaderBar = text.includes('反馈') || text.includes('退出') || text.includes('复习');
-                    const bgVal = isHeaderBar ? `rgba(${glassRgb}, 0.35)` : `rgba(${glassRgb}, 0.8)`;
+                    const bgVal = isHeaderBar ? `rgba(${glassRgb}, 0.35)` : `rgba(${glassRgb}, 0.5)`;
                     const blurVal = isHeaderBar ? 'blur(10px) saturate(140%)' : 'blur(10px)';
-                    const borderRadius = isHeaderBar ? '0' : '10px';
+                    const borderRadius = isHeaderBar ? '0' : '12px';
 
                     const style = document.createElement('style');
                     style.className = 'znx-dynamic-glass';
-                    style.innerHTML = `.${targetClass} { background: ${bgVal} !important; backdrop-filter: ${blurVal} !important; -webkit-backdrop-filter: ${blurVal} !important; border-radius: ${borderRadius} !important; transform: translateZ(0); }`;
+                    style.innerHTML = `.${targetClass} { background: ${bgVal} !important; backdrop-filter: ${blurVal} !important; -webkit-backdrop-filter: ${blurVal} !important; border-radius: ${borderRadius} !important; border: 1px solid rgba(255, 255, 255, 0.3) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important; transform: translateZ(0); }`;
                     document.head.appendChild(style);
                 }
             } else {
@@ -324,10 +407,14 @@
     function scheduleProcessing() {
         if (!isProcessingScheduled) {
             isProcessingScheduled = true;
+            const task = () => {
+                processDynamicJssClasses();
+                injectMainTabButton();
+            };
             if (window.requestIdleCallback) {
-                window.requestIdleCallback(() => processDynamicJssClasses(), { timeout: 150 });
+                window.requestIdleCallback(task, { timeout: 150 });
             } else {
-                requestAnimationFrame(() => processDynamicJssClasses());
+                requestAnimationFrame(task);
             }
         }
     }
@@ -380,24 +467,128 @@
         widget.id = 'znx-time-manager';
         widget.title = '27考研倒计时';
 
-        widget.style.cssText = `
-            position: fixed;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%);
-            width: 260px;
-            z-index: 999998;
-            font-family: -apple-system, "PingFang SC", sans-serif;
-            user-select: none;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        `;
+        const CARD_POS_KEY = 'znx_countdown_card_pos';
+
+        // 1. 恢复历史拖拽位置记忆
+        let hasCustomPos = false;
+        try {
+            const savedPos = localStorage.getItem(CARD_POS_KEY);
+            if (savedPos) {
+                const pos = JSON.parse(savedPos);
+                if (typeof pos.top === 'number' && typeof pos.left === 'number') {
+                    const maxLeft = Math.max(10, window.innerWidth - 280);
+                    const maxTop = Math.max(10, window.innerHeight - 280);
+                    const safeLeft = Math.max(10, Math.min(maxLeft, pos.left));
+                    const safeTop = Math.max(10, Math.min(maxTop, pos.top));
+                    widget.style.top = `${safeTop}px`;
+                    widget.style.left = `${safeLeft}px`;
+                    widget.style.right = 'auto';
+                    widget.style.transform = 'none';
+                    hasCustomPos = true;
+                }
+            }
+        } catch (e) {}
+
+        if (!hasCustomPos) {
+            widget.style.cssText = `
+                position: fixed;
+                top: 50%;
+                right: 20px;
+                transform: translateY(-50%);
+                width: 260px;
+                z-index: 999998;
+                font-family: -apple-system, "PingFang SC", sans-serif;
+                user-select: none;
+                transition: opacity 0.3s ease;
+                cursor: grab;
+            `;
+        } else {
+            widget.style.cssText += `
+                position: fixed;
+                width: 260px;
+                z-index: 999998;
+                font-family: -apple-system, "PingFang SC", sans-serif;
+                user-select: none;
+                transition: opacity 0.3s ease;
+                cursor: grab;
+            `;
+        }
+
+        // 3. 增加窗口 Resize 视口边界动态 Clamp 纠偏
+        window.addEventListener('resize', () => {
+            if (widget && widget.offsetLeft > 0) {
+                const maxLeft = Math.max(10, window.innerWidth - widget.offsetWidth - 10);
+                const maxTop = Math.max(10, window.innerHeight - widget.offsetHeight - 10);
+                if (widget.offsetLeft > maxLeft) widget.style.left = `${maxLeft}px`;
+                if (widget.offsetTop > maxTop) widget.style.top = `${maxTop}px`;
+            }
+        });
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let elemStartX = 0, elemStartY = 0;
+        let hasMoved = false;
+
+        widget.onmousedown = (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'A') return;
+            isDragging = true;
+            hasMoved = false;
+            startX = e.clientX;
+            startY = e.clientY;
+            elemStartX = widget.offsetLeft;
+            elemStartY = widget.offsetTop;
+            widget.style.cursor = 'grabbing';
+
+            const onMouseMove = (moveEvent) => {
+                if (!isDragging) return;
+                const dx = moveEvent.clientX - startX;
+                const dy = moveEvent.clientY - startY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+
+                let newLeft = elemStartX + dx;
+                let newTop = elemStartY + dy;
+
+                // 视口边界卡位碰撞防护
+                newLeft = Math.max(10, Math.min(window.innerWidth - widget.offsetWidth - 10, newLeft));
+                newTop = Math.max(10, Math.min(window.innerHeight - widget.offsetHeight - 10, newTop));
+
+                widget.style.left = `${newLeft}px`;
+                widget.style.top = `${newTop}px`;
+                widget.style.right = 'auto';
+                widget.style.transform = 'none';
+                hasCustomPos = true;
+            };
+
+            const onMouseUp = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                widget.style.cursor = 'grab';
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+
+                if (hasMoved) {
+                    try {
+                        localStorage.setItem(CARD_POS_KEY, JSON.stringify({
+                            top: widget.offsetTop,
+                            left: widget.offsetLeft
+                        }));
+                    } catch (err) {}
+                }
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        };
 
         window.showFullCountdownCard = (durationMs = 5000) => {
             isTempExpanded = true;
             widget.style.display = 'block';
             requestAnimationFrame(() => {
                 widget.style.opacity = '1';
-                widget.style.transform = 'translateY(-50%) scale(1)';
+                if (!hasCustomPos) {
+                    widget.style.transform = 'translateY(-50%) scale(1)';
+                } else {
+                    widget.style.transform = 'none';
+                }
             });
 
             if (expandTimer) clearTimeout(expandTimer);
@@ -406,7 +597,11 @@
                 if (isDoing) {
                     isTempExpanded = false;
                     widget.style.opacity = '0';
-                    widget.style.transform = 'translateY(-50%) scale(0.95)';
+                    if (!hasCustomPos) {
+                        widget.style.transform = 'translateY(-50%) scale(0.95)';
+                    } else {
+                        widget.style.transform = 'none';
+                    }
                     setTimeout(() => {
                         if (!isTempExpanded && document.documentElement.classList.contains('znx-doing-questions')) {
                             widget.style.display = 'none';
@@ -473,12 +668,12 @@
             widget.style.padding = '20px';
             widget.style.borderRadius = '20px';
             widget.style.background = isDark
-                ? 'rgba(15, 23, 42, 0.88)'
+                ? 'rgba(14, 14, 14, 0.6)'
                 : 'rgba(255, 255, 255, 0.85)';
             widget.style.backdropFilter = 'blur(20px) saturate(180%)';
             widget.style.webkitBackdropFilter = 'blur(20px)';
             widget.style.border = isDark
-                ? '1px solid rgba(56, 189, 248, 0.45)'
+                ? '1px solid rgba(255, 255, 255, 0.3)'
                 : '1px solid rgba(255, 255, 255, 0.7)';
             widget.style.boxShadow = isDark
                 ? '0 12px 36px rgba(0, 0, 0, 0.45)'
@@ -585,6 +780,221 @@
     });
 
     // ==========================================
+    // 6.5 Live2D 看板娘 IndexedDB 离线缓存引擎 (Task 4)
+    // ==========================================
+    const ZnxIndexedDBCache = {
+        DB_NAME: 'znx_waifu_cache',
+        STORE_NAME: 'assets',
+        DB_VERSION: 1,
+
+        openDB() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) {
+                    reject(new Error('IndexedDB is not supported'));
+                    return;
+                }
+                const request = window.indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+                        db.createObjectStore(this.STORE_NAME);
+                    }
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        },
+
+        async getAsset(url) {
+            try {
+                const db = await this.openDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction(this.STORE_NAME, 'readonly');
+                    const store = tx.objectStore(this.STORE_NAME);
+                    const req = store.get(url);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) {
+                return null;
+            }
+        },
+
+        async saveAsset(url, blob) {
+            try {
+                const db = await this.openDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction(this.STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(this.STORE_NAME);
+                    store.put(blob, url);
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
+                });
+            } catch (e) {
+                return false;
+            }
+        },
+
+        async fetchAndCache(url) {
+            const cachedBlob = await this.getAsset(url);
+            if (cachedBlob && cachedBlob instanceof Blob) {
+                console.log('⚡ [ZhiNengX Live2D] 从 IndexedDB 秒速加载离线资源:', url);
+                return URL.createObjectURL(cachedBlob);
+            }
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const blob = await res.blob();
+                await this.saveAsset(url, blob);
+                console.log('✨ [ZhiNengX Live2D] 首次下载完成，已写入 IndexedDB 离线缓存:', url);
+                return URL.createObjectURL(blob);
+            } catch (e) {
+                console.warn('⚠️ [ZhiNengX Live2D] 远程拉取失败，使用原始 URL:', url, e);
+                return url;
+            }
+        }
+    };
+
+    // ==========================================
+    // 6.6 美化功能开关控制面板状态管理器 (Task 5)
+    // ==========================================
+    const ZNX_SETTINGS = {
+        showWaifu: true,
+        showWallpaper: true,
+
+        load() {
+            try {
+                const raw = localStorage.getItem('znx_beautifier_settings');
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    if (typeof data.showWaifu === 'boolean') this.showWaifu = data.showWaifu;
+                    if (typeof data.showWallpaper === 'boolean') this.showWallpaper = data.showWallpaper;
+                }
+            } catch (e) {}
+        },
+
+        save() {
+            try {
+                localStorage.setItem('znx_beautifier_settings', JSON.stringify({
+                    showWaifu: this.showWaifu,
+                    showWallpaper: this.showWallpaper
+                }));
+            } catch (e) {}
+        },
+
+        apply() {
+            const bg = document.getElementById('znx-anime-bg');
+            if (bg) {
+                bg.style.display = this.showWallpaper ? 'block' : 'none';
+            }
+
+            const toggle = document.getElementById('waifu-toggle');
+            if (toggle) toggle.remove();
+
+            if (this.showWaifu) {
+                triggerWaifuNativeSlideShow();
+            } else {
+                triggerWaifuNativeSlideHide(false);
+            }
+        }
+    };
+
+    // ==========================================
+    // 6.7 Live2D 看板娘原生平移出场/入场与挂件状态同步管理器
+    // ==========================================
+    function triggerWaifuNativeSlideHide(syncSettings = true) {
+        const waifu = document.getElementById('waifu');
+        if (waifu) {
+            // 完全使用原版 waifu.css 的 bottom 动画下沉退场
+            waifu.style.bottom = '-1000px';
+            setTimeout(() => {
+                if (!ZNX_SETTINGS.showWaifu) {
+                    waifu.style.display = 'none';
+                }
+            }, 500);
+        }
+
+        // 物理彻底销毁 DOM 节点
+        const toggle = document.getElementById('waifu-toggle');
+        if (toggle) toggle.remove();
+
+        if (syncSettings) {
+            ZNX_SETTINGS.showWaifu = false;
+            ZNX_SETTINGS.save();
+            try {
+                localStorage.setItem('waifu-display', Date.now().toString());
+            } catch (e) {}
+
+            const modalWaifuCb = document.getElementById('znx-toggle-waifu');
+            if (modalWaifuCb) modalWaifuCb.checked = false;
+        }
+    }
+
+    function triggerWaifuNativeSlideShow() {
+        try {
+            localStorage.removeItem('waifu-display');
+            sessionStorage.removeItem('waifu-display');
+        } catch (e) {}
+
+        // 物理彻底销毁 DOM 节点
+        const toggle = document.getElementById('waifu-toggle');
+        if (toggle) toggle.remove();
+
+        let waifu = document.getElementById('waifu');
+        if (!waifu) {
+            if (typeof injectLive2D === 'function') injectLive2D();
+            return;
+        }
+
+        // 完全使用原版 waifu.css 的 bottom 0 平滑上升进场
+        waifu.style.display = 'block';
+        waifu.style.bottom = '-1000px';
+        void waifu.offsetWidth;
+
+        requestAnimationFrame(() => {
+            waifu.style.bottom = '0';
+        });
+    }
+
+    let isWaifuCloseListenerBound = false;
+    function setupWaifuNativeCloseSync() {
+        if (isWaifuCloseListenerBound) return;
+        isWaifuCloseListenerBound = true;
+
+        // 物理监视 DOM 树，若 live2d-widget 生成了 #waifu-toggle，立刻物理删除
+        const toggleObserver = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                for (const node of m.addedNodes) {
+                    if (node.nodeType === 1 && (node.id === 'waifu-toggle' || node.querySelector?.('#waifu-toggle'))) {
+                        const el = node.id === 'waifu-toggle' ? node : node.querySelector('#waifu-toggle');
+                        el?.remove();
+                    }
+                }
+            }
+        });
+        toggleObserver.observe(document.body, { childList: true, subtree: true });
+
+        // 捕获看板娘原生右下角 ✕ 退出按钮点击
+        document.addEventListener('click', (e) => {
+            const target = e.target;
+            if (!target) return;
+            const waifuTool = target.closest('#waifu-tool');
+            if (!waifuTool) return;
+
+            const isQuitBtn = target.closest('#waifu-tool-quit, .fa-times, .fa-close, [class*="times"], [class*="close"], [id*="quit"]') ||
+                              target === waifuTool.lastElementChild ||
+                              target.closest('span') === waifuTool.lastElementChild ||
+                              target.closest('svg') === waifuTool.lastElementChild;
+
+            if (isQuitBtn) {
+                console.log('[ZhiNengX Live2D] 🖱️ 捕获看板娘原生 ✕ 关闭事件，调取原版 bottom 下沉退场');
+                triggerWaifuNativeSlideHide(true);
+            }
+        }, true);
+    }
+
+    // ==========================================
     // 7. Live2D 看板娘 (多 CDN 容灾与健康重试 Guard)
     // ==========================================
     const LIVE2D_CDN_SOURCES = [
@@ -689,8 +1099,18 @@
             }
         });
 
-        // 点击看板娘触发精炼考研金句
+        // 点击看板娘触发精炼考研金句，或点击原生关闭按键 (✕) 联动设置面板
         document.addEventListener('click', (e) => {
+            if (e.target.closest('#waifu-tool .fa-times, #waifu-tool .fa-close, #waifu-tool [class*="times"], #waifu-tool [class*="close"]')) {
+                console.log('[ZhiNengX Live2D] 🖱️ 用户点击了看板娘原生关闭按键 (✕)，已自动同步控制面板状态并清理挂件');
+                ZNX_SETTINGS.showWaifu = false;
+                ZNX_SETTINGS.save();
+                ZNX_SETTINGS.apply();
+                const toggle = document.getElementById('waifu-toggle');
+                if (toggle) toggle.remove();
+                return;
+            }
+
             if (e.target.closest('#waifu canvas, #live2d')) {
                 const randomQuote = kaoyanQuotes[Math.floor(Math.random() * kaoyanQuotes.length)];
                 showWaifuTip(randomQuote, 3000);
@@ -699,15 +1119,29 @@
     }
 
     function injectLive2D() {
-        setupKaoyanWaifuTips();
-        const existingWaifu = document.getElementById('waifu');
-        const existingCanvas = document.getElementById('live2d') || existingWaifu?.querySelector('canvas');
-        if (existingWaifu && existingCanvas && (existingCanvas.offsetWidth > 0 || existingCanvas.offsetHeight > 0)) {
-            // 看板娘与 Canvas 画布已真实健康渲染，无需重复注入
+        setupWaifuNativeCloseSync();
+
+        if (!ZNX_SETTINGS.showWaifu) {
+            console.log('[ZhiNengX Live2D] 用户配置隐藏 Live2D 看板娘，跳过载入与初始化');
+            const waifu = document.getElementById('waifu');
+            if (waifu) waifu.style.display = 'none';
+            const toggle = document.getElementById('waifu-toggle');
+            if (toggle) toggle.remove();
             return;
         }
 
-        // 清除可能残留的失败/空壳 waifu 与 script 节点
+        setupKaoyanWaifuTips();
+        const existingWaifu = document.getElementById('waifu');
+        const existingCanvas = document.getElementById('live2d') || existingWaifu?.querySelector('canvas');
+        if ((existingWaifu && existingCanvas && (existingCanvas.offsetWidth > 0 || existingCanvas.offsetHeight > 0)) || window.Live2D || window.loadlive2d) {
+            // 看板娘引擎与 Canvas 画布或 Live2D 全局变量已存在，禁止重复 append script 触发 Identifier 'Live2D' has already been declared 报错
+            if (existingWaifu && existingWaifu.style.display === 'none') {
+                existingWaifu.style.display = '';
+            }
+            return;
+        }
+
+        // 清除可能残留的旧节点
         if (existingWaifu) {
             existingWaifu.remove();
         }
@@ -716,95 +1150,211 @@
             oldScript.remove();
         }
 
-        localStorage.removeItem('waifu-display');
-        sessionStorage.removeItem('waifu-display');
+        try {
+            localStorage.removeItem('waifu-display');
+            sessionStorage.removeItem('waifu-display');
+        } catch (e) {}
 
-        // 注入 Font Awesome CSS (带容灾)
+        // 注入 Font Awesome CSS (优先从 IndexedDB 本地 Blob 秒载)
+        const faCdn = FA_CDN_SOURCES[0];
         if (!document.getElementById('live2d-fa-css')) {
-            const fa = document.createElement('link');
-            fa.id = 'live2d-fa-css';
-            fa.rel = 'stylesheet';
-            fa.href = FA_CDN_SOURCES[0];
-            fa.onerror = () => {
-                fa.href = FA_CDN_SOURCES[1] || FA_CDN_SOURCES[2];
-            };
-            document.head.appendChild(fa);
+            ZnxIndexedDBCache.fetchAndCache(faCdn).then(cssUrl => {
+                if (document.getElementById('live2d-fa-css')) return;
+                const fa = document.createElement('link');
+                fa.id = 'live2d-fa-css';
+                fa.rel = 'stylesheet';
+                fa.href = cssUrl;
+                document.head.appendChild(fa);
+            }).catch(() => {
+                if (document.getElementById('live2d-fa-css')) return;
+                const fa = document.createElement('link');
+                fa.id = 'live2d-fa-css';
+                fa.rel = 'stylesheet';
+                fa.href = faCdn;
+                document.head.appendChild(fa);
+            });
         }
 
         const currentCdn = LIVE2D_CDN_SOURCES[live2dCdnIndex % LIVE2D_CDN_SOURCES.length];
-        console.log(`[ZhiNengX Live2D] 尝试加载 Live2D 看板娘 (CDN ${live2dCdnIndex + 1}/${LIVE2D_CDN_SOURCES.length}, 第 ${live2dRetryCount + 1} 次):`, currentCdn);
+        console.log(`[ZhiNengX Live2D] 驱动 IndexedDB 离线缓存引擎挂载 Live2D 资源 (${currentCdn})`);
 
-        const s = document.createElement('script');
-        s.id = 'live2d-widget-script';
-        s.src = currentCdn;
+        // 使用 IndexedDB 离线缓存引擎拉取或命中快照 Blob 秒速加载
+        ZnxIndexedDBCache.fetchAndCache(currentCdn).then(scriptUrl => {
+            const s = document.createElement('script');
+            s.id = 'live2d-widget-script';
+            s.src = scriptUrl;
 
-        // 绑定 onerror 事件：当前 CDN 加载失败时，清除旧 script 并自动轮换 CDN 重试
-        s.onerror = () => {
-            console.warn(`[ZhiNengX Live2D] ⚠️ 当前 CDN 加载失败: ${currentCdn}，自动切换至下一镜像重试...`);
-            s.remove();
-            live2dCdnIndex++;
-            scheduleLive2DRetry(2000);
-        };
+            s.onerror = () => {
+                console.warn(`[ZhiNengX Live2D] ⚠️ 当前资源加载失败 (${currentCdn})，降级直接使用原始 CDN 挂载...`);
+                s.remove();
+                const fallbackScript = document.createElement('script');
+                fallbackScript.id = 'live2d-widget-script';
+                fallbackScript.src = currentCdn;
+                document.body.appendChild(fallbackScript);
+            };
 
-        s.onload = () => {
-            console.log(`[ZhiNengX Live2D] Live2D autoload.js 脚本成功响应 (${currentCdn})`);
-        };
+            s.onload = () => {
+                console.log(`[ZhiNengX Live2D] ✅ Live2D 脚本装载完成 (${currentCdn})`);
+            };
 
-        document.body.appendChild(s);
-
-        // 启动 8s DOM 健康检测 Guard
-        setupLive2DHealthGuard();
+            document.body.appendChild(s);
+        }).catch(() => {
+            const s = document.createElement('script');
+            s.id = 'live2d-widget-script';
+            s.src = currentCdn;
+            document.body.appendChild(s);
+        });
     }
 
-    function scheduleLive2DRetry(delayMs) {
-        if (live2dRetryCount >= MAX_LIVE2D_RETRIES) {
-            console.warn(`[ZhiNengX Live2D] 🛑 已达最大重试次数 (${MAX_LIVE2D_RETRIES} 次)，看板娘暂无法加载。`);
-            return;
+    // ==========================================
+    // 8. 键盘高效刷题交互代理 (Primary Action & Visual Order Choice Shortcuts)
+    // ==========================================
+    /**
+     * 主行动按键 Primary Action 智能定位逻辑 (基于主色 Class 与物理底部位置排序)
+     */
+    function findPrimaryActionButton() {
+        const candidates = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root, [role="button"]'))
+            .filter(btn => {
+                if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') return false;
+                const rect = btn.getBoundingClientRect();
+                if (rect.width <= 0 || rect.height <= 0) return false;
+                try {
+                    const style = window.getComputedStyle(btn);
+                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+                } catch (e) {}
+                return true;
+            });
+
+        if (candidates.length === 0) return null;
+
+        // 优先在模态框/对话框/做题主卡片容器内查找
+        const modalContainer = document.querySelector('.MuiDialog-root, .modal-dialog, [role="dialog"]');
+        const cardContainer = document.querySelector('.jumbotron, div[name="ProblemItemElement"], main, #app');
+        const activeContainer = modalContainer || cardContainer;
+
+        const scopedCandidates = activeContainer 
+            ? candidates.filter(btn => activeContainer.contains(btn))
+            : candidates;
+
+        const targetList = scopedCandidates.length > 0 ? scopedCandidates : candidates;
+
+        const scored = targetList.map(btn => {
+            let score = 0;
+            const className = (btn.className || '').toString();
+            const typeAttr = (btn.getAttribute('type') || '').toLowerCase();
+
+            // 正向样式与属性打分 (Positive Feature Matching)
+            if (className.includes('MuiButton-containedPrimary') || className.includes('btn-primary')) score += 100;
+            else if (className.includes('MuiButton-contained') || className.includes('btn-success')) score += 80;
+            else if (typeAttr === 'submit') score += 60;
+            else if (className.includes('primary') || className.includes('contained')) score += 40;
+
+            // 实心背景色检测
+            try {
+                const bg = window.getComputedStyle(btn).backgroundColor;
+                if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' && !bg.includes('255, 255, 255')) {
+                    score += 20;
+                }
+            } catch (e) {}
+
+            // 物理位置打分 (屏幕纵向靠下 + 横向靠右)
+            const rect = btn.getBoundingClientRect();
+            score += (rect.top * 0.01) + (rect.left * 0.005);
+
+            return { btn, score };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+        return scored.length > 0 ? scored[0].btn : null;
+    }
+
+    /**
+     * 按屏幕 DOM 物理纵向位置自然排序选择题选项
+     */
+    /**
+     * 按屏幕 DOM 物理纵向位置自然排序选择题选项 (卡片作用域限定 + 双轴坐标排序)
+     */
+    function getSortedChoiceOptions() {
+        const modalContainer = document.querySelector('.MuiDialog-root, .modal-dialog, [role="dialog"]');
+        const cardContainer = document.querySelector('div[name="ProblemItemElement"]') ||
+                              document.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
+                              document.querySelector('.jumbotron') ||
+                              document.querySelector('div[class*="jumbotron"]') ||
+                              document.querySelector('div[class*="_3WnwfR"]');
+        const activeScope = modalContainer || cardContainer || document;
+
+        // 1. 优先以 dev 6b93b89 原生 ID 顺序查找 (A, B, C, D, E 选项)
+        const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
+        const idOptions = [];
+        for (const letter of choiceLetters) {
+            let el = activeScope.querySelector(`#choiceButton${letter}`) ||
+                     document.getElementById(`choiceButton${letter}`) ||
+                     activeScope.querySelector(`input[name="choice"][value="${letter}"]`)?.closest('label') ||
+                     document.querySelector(`input[value="${letter}"]`)?.closest('label');
+            if (el && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0)) {
+                idOptions.push(el);
+            }
+        }
+        if (idOptions.length >= 2) {
+            return idOptions;
         }
 
-        live2dRetryCount++;
-        const backoffDelay = delayMs || Math.min(3000 * Math.pow(2, live2dRetryCount - 1), 30000);
-        console.log(`[ZhiNengX Live2D] 🔄 计划在 ${(backoffDelay / 1000).toFixed(1)} 秒后触发下一次重试...`);
+        // 2. 降级检索 DOM 中全样式选择题选项节点 (兼容 label, MUI GridList, ButtonGroup, Radio)
+        let rawOptions = Array.from(activeScope.querySelectorAll(
+            'label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label, .MuiGridListTile-root, .MuiGridListTile-tile, div[class*="MuiGridListTile"], div[role="group"] button, button[class*="choice"], div[id*="choiceButton"], button[id*="choice"]'
+        ));
 
-        setTimeout(() => {
-            const waifu = document.getElementById('waifu');
-            const canvas = document.getElementById('live2d') || waifu?.querySelector('canvas');
-            if (!waifu || !canvas || canvas.offsetWidth === 0) {
-                injectLive2D();
+        if (rawOptions.length === 0) {
+            const radios = Array.from(activeScope.querySelectorAll('input[type="radio"], input[type="checkbox"], input[name="choice"], button'));
+            radios.forEach(r => {
+                const container = r.closest('label') || r.closest('.MuiGridListTile-root') || r.parentElement;
+                if (container && !rawOptions.includes(container)) {
+                    rawOptions.push(container);
+                }
+            });
+        }
+
+        // 3. 过滤可见性与假选项
+        const visibleOptions = [];
+        const seenElements = new Set();
+
+        for (const el of rawOptions) {
+            if (!el || seenElements.has(el)) continue;
+
+            const txt = (el.textContent || el.innerText || '').trim();
+            // 剔除功能性辅助按钮 (如“我没有思路”、“显示有问题”)
+            if (txt.includes('我没有思路') || txt.includes('显示有问题')) continue;
+
+            const rect = el.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) continue;
+
+            try {
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
+            } catch (e) {}
+
+            seenElements.add(el);
+            visibleOptions.push({ el, top: rect.top, left: rect.left });
+        }
+
+        // 4. 按物理 Y 坐标 (top) 升序排列；若在同一行 (top 差值 <= 10px) 按 X 坐标 (left) 升序排列
+        visibleOptions.sort((a, b) => {
+            if (Math.abs(a.top - b.top) > 10) {
+                return a.top - b.top;
             }
-        }, backoffDelay);
+            return a.left - b.left;
+        });
+
+        return visibleOptions.map(o => o.el);
     }
 
-    function setupLive2DHealthGuard() {
-        if (live2dHealthGuardTimer) clearTimeout(live2dHealthGuardTimer);
-
-        live2dHealthGuardTimer = setTimeout(() => {
-            const waifu = document.getElementById('waifu');
-            const canvas = document.getElementById('live2d') || waifu?.querySelector('canvas');
-            const isCanvasVisible = canvas && (canvas.offsetWidth > 0 || canvas.offsetHeight > 0);
-            const isWaifuVisible = waifu && (waifu.offsetWidth > 0 || waifu.offsetHeight > 0) && getComputedStyle(waifu).display !== 'none';
-
-            const isHealthy = waifu && canvas && isCanvasVisible && isWaifuVisible;
-
-            if (!isHealthy) {
-                console.warn('[ZhiNengX Live2D] ⚠️ 8 秒内未检测到有效的 #waifu 画布渲染 (模型可能加载失败)，自动清理无效节点并轮换 CDN 重试...');
-                if (waifu) waifu.remove();
-                const oldScript = document.getElementById('live2d-widget-script');
-                if (oldScript) oldScript.remove();
-                live2dCdnIndex++;
-                scheduleLive2DRetry(2000);
-            } else {
-                console.log('[ZhiNengX Live2D] ✅ 看板娘健康校验通过 (#waifu 与 Canvas 画布已正常渲染)');
-                live2dRetryCount = 0;
-            }
-        }, 8000);
-    }
-
-    // ==========================================
-    // 8. 键盘高效刷题交互代理
-    // ==========================================
     function setupKeyboardShortcutsHandler() {
         document.addEventListener('keydown', (e) => {
+            // 0. 环境隔离判断：如果处于非做题界面，或有 Modal 弹窗处于打开状态，彻底放行原生按键
+            const isDoingMode = document.documentElement.classList.contains('znx-doing-questions');
+            const hasOpenModal = !!document.querySelector('.MuiDialog-root, [role="dialog"], .modal-dialog');
+            if (!isDoingMode || hasOpenModal) return;
+
             // 1. 忽略修饰键组合 (Ctrl/Alt/Meta/Cmd) 与功能键 (F1~F12/Escape/Tab)
             if (e.ctrlKey || e.altKey || e.metaKey) return;
             const ignoreKeys = ['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab', 'Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
@@ -819,61 +1369,38 @@
             );
             const isInAnyInput = isMultilineInput || isSingleLineInput;
 
-            // 3. 回车键代理逻辑 (无论光标是否在单行填空数字输入框内，按回车直通“提交答案/继续”)
+            // 3. 回车键 Primary Action 智能代理
             if (e.key === 'Enter' || e.keyCode === 13) {
-                // 如果是在多行 TEXTAREA 内，且未按 Shift，优先交由文本框原生换行，按 Shift+Enter 才触发提交
+                // 多行 TEXTAREA 内未按 Shift 时交由原生换行
                 if (isMultilineInput && !e.shiftKey) return;
 
-                const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
-                const actionKeywords = ['提交答案', '继续', '下一步', '再试一次', '查看题解'];
-
-                let targetBtn = null;
-                for (const kw of actionKeywords) {
-                    targetBtn = buttons.find(b => {
-                        const t = (b.innerText || b.textContent || '').trim();
-                        return t.includes(kw) && !t.includes('继续训练') && !t.includes('反馈') && !t.includes('退出');
-                    });
-                    if (targetBtn) break;
-                }
-
-                if (targetBtn && document.body.contains(targetBtn)) {
+                const primaryBtn = findPrimaryActionButton();
+                if (primaryBtn && document.body.contains(primaryBtn)) {
                     e.preventDefault();
-                    targetBtn.click();
-                    console.log('⚡ [知能行小助手] 回车按键触发点击:', targetBtn.innerText.trim());
+                    primaryBtn.click();
+                    console.log('⚡ [ZhiNengX] 回车触发行动按键:', (primaryBtn.innerText || primaryBtn.textContent || '').trim());
                     return;
                 }
             }
 
-            // 4. 数字键 1~5 选择题秒选 (仅在未聚焦在输入框时触发，避免干扰数字输入)
+            // 4. 数字键 1~5 物理纵向位置自然绑定
             if (isInAnyInput) return;
 
             const numVal = parseInt(e.key, 10);
             if (!isNaN(numVal) && numVal >= 1 && numVal <= 5) {
-                const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
-                const letter = choiceLetters[numVal - 1];
-
-                let targetOption = document.getElementById(`choiceButton${letter}`);
-
-                if (!targetOption) {
-                    const inputRadio = document.querySelector(`input[name="choice"][value="${letter}"]`);
-                    if (inputRadio) {
-                        targetOption = inputRadio.closest('label') || inputRadio;
+                const sortedOptions = getSortedChoiceOptions();
+                if (sortedOptions.length >= numVal) {
+                    const targetOption = sortedOptions[numVal - 1];
+                    if (targetOption && document.body.contains(targetOption)) {
+                        e.preventDefault();
+                        const innerInput = targetOption.querySelector('input[type="radio"], input[type="checkbox"]');
+                        if (innerInput && typeof innerInput.click === 'function') {
+                            innerInput.click();
+                        }
+                        targetOption.click();
+                        console.log(`⚡ [ZhiNengX] 数字键 ${numVal} 选中肉眼第 ${numVal} 行选项:`, (targetOption.innerText || targetOption.textContent || '').trim());
+                        return;
                     }
-                }
-
-                if (!targetOption) {
-                    const optionLabels = Array.from(document.querySelectorAll('label[name="choiceButton"], label[id^="choiceButton"], div[name="ProblemItemElement"] label'))
-                        .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
-                    if (optionLabels.length >= numVal) {
-                        targetOption = optionLabels[numVal - 1];
-                    }
-                }
-
-                if (targetOption && document.body.contains(targetOption)) {
-                    e.preventDefault();
-                    targetOption.click();
-                    console.log(`⚡ [知能行小助手] 数字键 ${numVal} 选中选择题选项 ${letter}:`, targetOption);
-                    return;
                 }
             }
         });
@@ -939,8 +1466,6 @@
                 (fullPageText.includes('继续') && !fullPageText.includes('继续训练') && !fullPageText.includes('点击继续'))
             );
 
-            const children = targetJumbotron.querySelectorAll('div');
-
             if (isCorrect) {
                 targetJumbotron.setAttribute('data-znx-result', 'correct');
                 targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.4)', 'important');
@@ -948,7 +1473,6 @@
                 targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
                 targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(34, 197, 94, 0.8)', 'important');
                 targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(34, 197, 94, 0.25)', 'important');
-                children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else if (isWrong) {
                 targetJumbotron.setAttribute('data-znx-result', 'wrong');
                 targetJumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.4)', 'important');
@@ -956,11 +1480,9 @@
                 targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
                 targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(239, 68, 68, 0.8)', 'important');
                 targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(239, 68, 68, 0.25)', 'important');
-                children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else {
                 targetJumbotron.removeAttribute('data-znx-result');
                 ['background', 'backdrop-filter', '-webkit-backdrop-filter', 'border-top', 'box-shadow'].forEach(p => targetJumbotron.style.removeProperty(p));
-                children.forEach(c => c.style.removeProperty('background'));
             }
         };
 
@@ -1155,55 +1677,12 @@
             modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
         };
 
-        const extractPureProblemMarkdown = (problemContainerEl) => {
-            console.log('[ZhiNengX Copy] 🚀 开始提取题目，目标容器:', problemContainerEl);
-            if (!problemContainerEl) {
-                console.warn('[ZhiNengX Copy] ⚠️ 未传入有效题目容器 DOM 节点！');
-                return '';
-            }
+        const processNodeMathAndText = (node) => {
+            if (!node) return '';
+            const clone = node.cloneNode(true);
 
-            const clone = problemContainerEl.cloneNode(true);
-
-            // 1. 仅清理无用按钮与样式 (严格不根据文字内容删除任何 DOM 容器节点)
-            const itemsToRemove = clone.querySelectorAll(`
-                .MuiButton-root, button, style,
-                .znx-ignored, #${BUTTON_ID}
-            `);
-            console.log(`[ZhiNengX Copy] 🧹 清理交互/样式节点 ${itemsToRemove.length} 个`);
-            itemsToRemove.forEach(el => el.remove());
-
-            // 2. 选择题选项智能过滤与标号补全 (A. / B. / C. / D. / E.)
-            const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
-            let choiceLabels = Array.from(clone.querySelectorAll('label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label'));
-            if (choiceLabels.length === 0) {
-                choiceLabels = Array.from(clone.querySelectorAll('label')).filter(l => l.querySelector('input[type="radio"], input[type="checkbox"], input[name="choice"]'));
-            }
-
-            // 剔除包含“我没有思路”或“显示有问题”的假选项 (如 E 选项“我没有思路”)
-            choiceLabels = choiceLabels.filter(label => {
-                const txt = (label.textContent || '').trim();
-                if (txt.includes('我没有思路') || txt.includes('显示有问题')) {
-                    label.remove();
-                    return false;
-                }
-                return true;
-            });
-
-            console.log(`[ZhiNengX Copy] 📝 匹配到有效选择题选项 ${choiceLabels.length} 个`);
-            choiceLabels.forEach((label, idx) => {
-                const letter = choiceLetters[idx] || '';
-                const txt = (label.textContent || '').trim();
-                if (letter && !txt.startsWith(`${letter}.`) && !txt.startsWith(`${letter} `)) {
-                    label.prepend(document.createTextNode(`${letter}. `));
-                }
-                label.before(document.createTextNode('\n'));
-            });
-
-            // 3. 提取 KaTeX 公式源码并干净替换整个展示块
+            // 1. 提取 KaTeX 公式
             const katexEls = clone.querySelectorAll('.katex');
-            if (katexEls.length > 0) {
-                console.log(`[ZhiNengX Copy] 📐 匹配到 KaTeX 公式 ${katexEls.length} 个`);
-            }
             katexEls.forEach(el => {
                 const texSource = el.querySelector('annotation[encoding="application/x-tex"]')?.textContent ||
                                   el.querySelector('.katex-mathml')?.textContent;
@@ -1211,17 +1690,13 @@
                     const displayParent = el.closest('.katex-display');
                     const isBlock = !!displayParent;
                     const mathMd = isBlock ? `\n$$\n${texSource.trim()}\n$$\n` : ` $${texSource.trim()}$ `;
-
                     const targetToReplace = displayParent || el;
                     targetToReplace.replaceWith(document.createTextNode(mathMd));
                 }
             });
 
-            // 4. 提取 MathJax v2.7 (SVG / AsciiMath / TeX) 全模式公式源码
+            // 2. 提取 MathJax 公式
             const mathjaxScripts = Array.from(clone.querySelectorAll('script[type^="math/"], script[type^="Math/"]'));
-            if (mathjaxScripts.length > 0) {
-                console.log(`[ZhiNengX Copy] 📐 匹配到 MathJax 脚本 ${mathjaxScripts.length} 个`);
-            }
             mathjaxScripts.forEach(script => {
                 const rawFormula = (script.textContent || script.innerText || '').trim();
                 const scriptType = (script.getAttribute('type') || '').toLowerCase();
@@ -1230,46 +1705,82 @@
                 if (rawFormula) {
                     const isBlock = scriptType.includes('mode=display') || !!script.closest('.MathJax_Display');
                     const mathMd = isBlock ? `\n$$\n${rawFormula}\n$$\n` : ` $${rawFormula}$ `;
-
-                    // 清理关联的 MathJax 渲染 Frame 节点
                     if (scriptId) {
                         const frame = clone.querySelector(`#${scriptId}-Frame`) || clone.querySelector(`[id^="${scriptId}-Frame"]`);
                         if (frame) frame.remove();
                     }
-
-                    // 清理紧邻的 MathJax_Preview 节点
                     const prev = script.previousElementSibling;
                     if (prev && (prev.classList.contains('MathJax_Preview') || prev.classList.contains('MathJax_SVG') || prev.classList.contains('MathJax'))) {
                         prev.remove();
                     }
-
                     script.replaceWith(document.createTextNode(mathMd));
                 } else {
                     script.remove();
                 }
             });
 
-            // 5. 扫尾清理残存的 MathJax DOM 节点与所有剩余 script 标签
-            clone.querySelectorAll('.MathJax_SVG, .MathJax_Preview, .MathJax, .MathJax_Display, .MJX_Assistive_MathML, script').forEach(el => el.remove());
+            // 3. 清理残存辅助 script 与样式节点
+            clone.querySelectorAll('.MathJax_SVG, .MathJax_Preview, .MathJax, .MathJax_Display, .MJX_Assistive_MathML, script, style, button, .znx-ignored').forEach(el => el.remove());
 
-            // 6. 提纯文本：纯正则洗涤 UI 杂质文本 (绝对安全，不销毁 DOM 节点)
-            let text = clone.innerText || clone.textContent || '';
-            let cleanedText = text
-                .replace(/小贴士：?[^\n]*/g, '')
-                .replace(/对界面不熟悉[^\n]*/g, '')
-                .replace(/使用教程也许会帮到你[^\n]*/g, '')
-                .replace(/请输入你的答案[^\n]*/g, '')
-                .replace(/答案为数值形式[^\n]*/g, '')
-                .replace(/不包含特殊字符[^\n]*/g, '')
-                .replace(/添加中间步骤[^\n]*/g, '')
-                .replace(/我没有思路[^\n]*/g, '')
-                .replace(/显示有问题[^\n]*/g, '')
+            // 4. 提取纯文本
+            const rawText = clone.innerText || clone.textContent || '';
+            return rawText
                 .replace(/[ \t]+/g, ' ')
-                .replace(/\n{3,}/g, '\n\n')
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .join('\n')
                 .trim();
+        };
 
-            console.log(`[ZhiNengX Copy] ✅ 纯净题目提取完成，字符数: ${cleanedText.length}`);
-            console.log('[ZhiNengX Copy] 📄 最终提纯 Markdown 预览:\n' + cleanedText);
+        const extractPureProblemMarkdown = (problemContainerEl) => {
+            console.log('[ZhiNengX Copy] 🚀 开始正向靶向提取题目，目标容器:', problemContainerEl);
+            if (!problemContainerEl) {
+                console.warn('[ZhiNengX Copy] ⚠️ 未传入有效题目容器 DOM 节点！');
+                return '';
+            }
+
+            // 1. 正向靶向定位【题干 DOM】
+            const stemEl = problemContainerEl.querySelector('div[name="ProblemItemElement"]') ||
+                           problemContainerEl.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
+                           problemContainerEl.querySelector('div[class*="ProblemItem"]');
+
+            const stemText = stemEl ? processNodeMathAndText(stemEl) : processNodeMathAndText(problemContainerEl);
+
+            // 2. 正向靶向定位【选择题选项 DOM】按物理 Y 轴位置升序排列
+            const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
+            let optionEls = Array.from(problemContainerEl.querySelectorAll('label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label'));
+            if (optionEls.length === 0) {
+                optionEls = Array.from(problemContainerEl.querySelectorAll('label')).filter(l => l.querySelector('input[type="radio"], input[type="checkbox"], input[name="choice"]'));
+            }
+
+            // 正向过滤掉纯功能性辅助标签（如“我没有思路”或“显示有问题”）
+            optionEls = optionEls.filter(label => {
+                const txt = (label.textContent || '').trim();
+                return !txt.includes('我没有思路') && !txt.includes('显示有问题');
+            });
+
+            // 按纵向物理位置升序排列
+            optionEls.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+
+            const optionTexts = optionEls.map((label, idx) => {
+                const letter = choiceLetters[idx] || '';
+                let txt = processNodeMathAndText(label);
+                if (letter && !txt.startsWith(`${letter}.`) && !txt.startsWith(`${letter} `)) {
+                    txt = `${letter}. ${txt}`;
+                }
+                return txt;
+            }).filter(Boolean);
+
+            // 3. 正向组装 Markdown (彻底零正则黑名单剔除)
+            const parts = [];
+            if (stemText) parts.push(stemText);
+            if (optionTexts.length > 0) parts.push(optionTexts.join('\n'));
+
+            const cleanedText = parts.join('\n\n').trim();
+
+            console.log(`[ZhiNengX Copy] ✅ 正向靶向提纯题目完成，字符数: ${cleanedText.length}`);
+            console.log('[ZhiNengX Copy] 📄 最终纯净 Markdown:\n' + cleanedText);
 
             return cleanedText;
         };
@@ -1325,13 +1836,20 @@
             }
 
             function updateTimerCapsuleHTML() {
+                if (copyObserver) copyObserver.disconnect();
                 const info = getCountdownInfo();
                 const dark = isDarkModeActive();
                 const capsuleEl = document.getElementById('znx-doing-countdown-btn');
-                if (!capsuleEl) return;
+                if (!capsuleEl) {
+                    if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
+                    return;
+                }
 
                 const renderKey = `${info.daysLeft}-${info.h}:${info.m}-${dark}-${isCapsuleExpanded}`;
-                if (capsuleEl.getAttribute('data-znx-render-key') === renderKey) return;
+                if (capsuleEl.getAttribute('data-znx-render-key') === renderKey) {
+                    if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
+                    return;
+                }
                 capsuleEl.setAttribute('data-znx-render-key', renderKey);
 
                 if (!isCapsuleExpanded) {
@@ -1341,20 +1859,26 @@
                     capsuleEl.style.setProperty('left', '0', 'important');
                     capsuleEl.style.setProperty('z-index', '99', 'important');
                     capsuleEl.style.setProperty('transform-origin', 'top left', 'important');
-                    capsuleEl.style.setProperty('width', '135px', 'important');
+                    capsuleEl.style.setProperty('width', '176px', 'important');
                     capsuleEl.style.setProperty('height', '32px', 'important');
                     capsuleEl.style.setProperty('min-height', '32px', 'important');
-                    capsuleEl.style.setProperty('padding', '4px 12px', 'important');
+                    capsuleEl.style.setProperty('padding', '4px 10px', 'important');
                     capsuleEl.style.setProperty('border-radius', '12px', 'important');
                     capsuleEl.style.setProperty('box-shadow', dark ? '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)', 'important');
 
+                    const labelColor = dark ? '#e2e8f0' : '#0f172a';
+                    const numColor = dark ? '#38bdf8' : '#3b82f6';
+                    const remainingHours = parseInt(info.h, 10);
+
                     capsuleEl.innerHTML = `
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
-                            <span style="font-weight:900;color:#e11d48;font-size:12px;display:inline-flex;align-items:center;gap:2px;">🔥 ${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:11px;color:${dark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></span>
-                            <span style="font-size:10.5px;color:${dark ? '#38bdf8' : '#3b82f6'};font-weight:800;">${info.h}:${info.m}</span>
-                        </div>
-                        <div style="width:100%;height:3px;background:rgba(0,0,0,0.12);border-radius:2px;margin-top:2px;overflow:hidden">
-                            <div style="width:${info.todayRemainingRatio.toFixed(1)}%;height:100%;background:#3b82f6;transition:width 1s"></div>
+                        <div style="display:flex;flex-direction:column;justify-content:space-between;width:100%;height:100%;box-sizing:border-box;">
+                            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px;width:100%;line-height:1.2;margin-top:1px;">
+                                <span style="font-weight:900;color:#e11d48;font-size:12px;display:inline-flex;align-items:baseline;gap:2px;white-space:nowrap;font-variant-numeric:tabular-nums;">🔥 ${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:12px;color:${dark ? '#cbd5e1' : '#475569'};font-weight:700">天</span></span>
+                                <span style="font-size:12px;font-weight:700;color:${labelColor};display:inline-flex;align-items:baseline;gap:2px;white-space:nowrap;">今日剩余 <span style="font-size:12px;font-weight:900;color:${numColor};font-variant-numeric:tabular-nums;">${remainingHours}h${info.m}m</span></span>
+                            </div>
+                            <div style="width:100%;height:3px;background:${dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'};border-radius:2px;overflow:hidden;margin-bottom:1px;">
+                                <div style="width:${info.todayRemainingRatio.toFixed(1)}%;height:100%;background:linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);border-radius:2px;transition:width 0.8s ease-in-out;"></div>
+                            </div>
                         </div>
                     `;
                 } else {
@@ -1403,6 +1927,8 @@
                         };
                     }
                 }
+
+                if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
             }
 
             function expandCapsule(durationMs = 5000) {
@@ -1510,14 +2036,16 @@
                 copyToClipboard(pureText);
             };
 
-            // 2. 🔥 27考研倒计时 做题极简胶囊按钮 Wrapper (固定 135px x 32px 占位，防止拉下下方题目文本)
+            // 2. 🔥 27考研倒计时 做题极简胶囊按钮 Wrapper (自适应弹性 Wrapper)
             const timerWrapper = document.createElement('div');
             timerWrapper.id = 'znx-doing-countdown-wrapper';
             timerWrapper.style.cssText = `
                 position: relative !important;
-                width: 135px !important;
+                min-width: 168px !important;
                 height: 32px !important;
-                flex-shrink: 0 !important;
+                flex: 1 1 auto !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
             `;
 
             const timerBtn = document.createElement('div');
@@ -1589,23 +2117,173 @@
                 if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
             };
 
-            if (window.requestIdleCallback) {
-                window.requestIdleCallback(runTask, { timeout: 100 });
-            } else {
-                requestAnimationFrame(runTask);
-            }
+            // 使用 16ms requestAnimationFrame 极速优先响应替代 requestIdleCallback
+            requestAnimationFrame(runTask);
         };
 
         copyObserver = new MutationObserver(() => scheduleCheckAndUpdateButton());
         copyObserver.observe(document.body, { childList: true, subtree: true });
         scheduleCheckAndUpdateButton();
+
+        // 引入 React 异步渲染补打兜底微重试 (100ms / 300ms)
+        setTimeout(() => scheduleCheckAndUpdateButton(), 100);
+        setTimeout(() => scheduleCheckAndUpdateButton(), 300);
+    }
+
+    // ==========================================
+    // 10. 美化功能开关控制面板 UI & 顶栏主导航【美化面板】按钮
+    // ==========================================
+    function injectMainTabButton() {
+        if (document.getElementById('modulePageTabs美化')) return;
+
+        const mainNavTab = document.getElementById('modulePageTabs历史') || 
+                           document.getElementById('modulePageTabs训练') || 
+                           document.getElementById('modulePageTabs进度') ||
+                           document.getElementById('modulePageTabs导出') ||
+                           document.getElementById('modulePageTabs图表') ||
+                           document.querySelector('.MuiAppBar-root button[id*="modulePageTabs"]');
+        
+        if (!mainNavTab) return;
+        const tabContainer = mainNavTab.parentElement;
+        if (!tabContainer) return;
+
+        const beautifyBtn = document.createElement('button');
+        beautifyBtn.className = mainNavTab.className.replace('Mui-selected', '').trim();
+        beautifyBtn.tabIndex = -1;
+        beautifyBtn.type = 'button';
+        beautifyBtn.role = 'tab';
+        beautifyBtn.setAttribute('aria-selected', 'false');
+        beautifyBtn.id = 'modulePageTabs美化';
+        
+        const mainWrapper = mainNavTab.querySelector('.MuiTab-wrapper');
+        const wrapper = document.createElement('span');
+        wrapper.className = mainWrapper ? mainWrapper.className : 'MuiTab-wrapper';
+
+        wrapper.innerHTML = `
+            <svg class="MuiSvgIcon-root" focusable="false" viewBox="0 0 24 24" aria-hidden="true" id="beautifyIconSvg" style="font-size: 20px; margin-right: 4px;">
+                <path fill="none" d="M0 0h24v24H0V0z"></path>
+                <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61.43.53 1.03 1.39 1.03 2.39 0 .55.45 1 1 1h5.5c.55 0 1-.45 1-1v-.5c0-.55.45-1 1-1h.5c3.86 0 7-3.14 7-7 0-4.97-4.03-9-9-9zm-4 6c.83 0 1.5.67 1.5 1.5S8.83 12 8 12s-1.5-.67-1.5-1.5S7.17 9 8 9zm3-3c.83 0 1.5.67 1.5 1.5S11.83 9 11 9s-1.5-.67-1.5-1.5S10.17 6 11 6zm4 3c.83 0 1.5.67 1.5 1.5S15.83 12 15 12s-1.5-.67-1.5-1.5S14.17 9 15 9z"></path>
+            </svg>
+            <span id="beautifyTabText">美化面板</span>
+        `;
+        
+        const ripple = document.createElement('span');
+        ripple.className = 'MuiTouchRipple-root';
+        beautifyBtn.appendChild(wrapper);
+        beautifyBtn.appendChild(ripple);
+
+        beautifyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showSettingsModal();
+        });
+
+        tabContainer.appendChild(beautifyBtn);
+    }
+
+    function showSettingsModal() {
+        let modal = document.getElementById('znx-settings-modal');
+        if (modal) modal.remove();
+
+        const isDark = isDarkModeActive();
+        modal = document.createElement('div');
+        modal.id = 'znx-settings-modal';
+
+        const maskBg = isDark ? 'rgba(15, 23, 42, 0.65)' : 'rgba(15, 23, 42, 0.35)';
+        const cardBg = isDark
+            ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)'
+            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 244, 248, 0.8) 100%)';
+        const cardBorder = isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.6)';
+        const titleColor = isDark ? '#38bdf8' : '#0f172a';
+        const textColor = isDark ? '#f8fafc' : '#0f172a';
+
+        modal.style.cssText = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:${maskBg};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;`;
+
+        modal.innerHTML = `
+            <div style="background:${cardBg};backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid ${cardBorder};border-radius:20px;padding:24px;width:100%;max-width:380px;color:${textColor};box-shadow:0 24px 48px rgba(0,0,0,0.25);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                    <h3 style="margin:0;font-size:16px;font-weight:800;color:${titleColor};display:flex;align-items:center;gap:8px;">🎨 美化功能控制面板</h3>
+                    <button id="znx-settings-close-btn" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:28px;height:28px;color:${titleColor};font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:14px;">
+                    <label style="display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;cursor:pointer;">
+                        <span>🌸 Live2D 看板娘</span>
+                        <input type="checkbox" id="znx-toggle-waifu" ${ZNX_SETTINGS.showWaifu ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
+                    </label>
+                    <label style="display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;cursor:pointer;">
+                        <span>🖼️ ACG 动漫背景壁纸</span>
+                        <input type="checkbox" id="znx-toggle-wallpaper" ${ZNX_SETTINGS.showWallpaper ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
+                    </label>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector('#znx-settings-close-btn').onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+        const waifuCb = modal.querySelector('#znx-toggle-waifu');
+        const wallpaperCb = modal.querySelector('#znx-toggle-wallpaper');
+
+        waifuCb.onchange = () => {
+            ZNX_SETTINGS.showWaifu = waifuCb.checked;
+            ZNX_SETTINGS.save();
+            ZNX_SETTINGS.apply();
+        };
+
+        wallpaperCb.onchange = () => {
+            ZNX_SETTINGS.showWallpaper = wallpaperCb.checked;
+            ZNX_SETTINGS.save();
+            ZNX_SETTINGS.apply();
+        };
+    }
+
+    // ==========================================
+    // 11. 做题顶栏单题计时器醒目高亮与 3 分钟动态霓虹发光预警 (Task 7)
+    // ==========================================
+    function setupTopBarTimerEnhancer() {
+        const checkTimer = () => {
+            // 在全页面范围内扫描形如 "7:06" / "01:45" 的时间数字节点 (全域防漏)
+            const candidateEls = Array.from(document.querySelectorAll('body *')).filter(el => {
+                if (el.children.length > 1) return false;
+                const txt = (el.textContent || el.innerText || '').trim();
+                return /^\d{1,2}:\d{2}$/.test(txt);
+            });
+
+            candidateEls.forEach(timerEl => {
+                // 顶部 250px 范围内的节点才是顶栏倒计时，防止误伤做题卡片内部节点
+                const rect = timerEl.getBoundingClientRect();
+                if (rect.top > 250) return;
+
+                timerEl.classList.add('znx-topbar-timer');
+                
+                const txt = (timerEl.textContent || timerEl.innerText || '').trim();
+                const parts = txt.split(':');
+                if (parts.length === 2) {
+                    const totalSec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                    // 倒计时剩余时间少于 3 分钟 (180 秒) 自动触发平稳常亮式边缘红光高亮预警
+                    if (totalSec < 180) {
+                        timerEl.classList.add('znx-timer-warning-glow');
+                    } else {
+                        timerEl.classList.remove('znx-timer-warning-glow');
+                    }
+                }
+            });
+        };
+
+        setInterval(checkTimer, 500);
+        checkTimer();
     }
 
     // ==========================================
     // 启动
     // ==========================================
     function init() {
+        ZNX_SETTINGS.load();
         injectAnimeGlassTheme();
+        ZNX_SETTINGS.apply();
+        injectMainTabButton();
         injectTimeManager();
         loadConfettiScript();
         injectLive2D();
@@ -1613,6 +2291,7 @@
         setupQuestionModeObserver();
         setupJumbotronFeedbackObserver();
         setupCopyProblemHandler();
+        setupTopBarTimerEnhancer();
         injectDevVersionBadge();
     }
 

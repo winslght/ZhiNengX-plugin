@@ -2,11 +2,37 @@
 
 本文档遵守 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 规范，记录 **知能行 UI 视觉美化与考研助手 (Beautifier)** 与 **知能行通用诊断报告导出器 (Exporter)** 的全量更新历史、前版痛点修复归因、当前已知 BUG 及下一版本 Roadmap 规划。
 
+## 🚀 [8.3.0-beta.1] - 2026-07-29
+
+### 🎨 知能行 UI 视觉美化与考研助手 (Beautifier)
+- **Feat (新增功能)**:
+  - **题目一键纯净复制**：做题页面新增 `📋 复制题目` 按钮，一键快速提取题干与选项，方便整理错题与复习笔记。
+  - **做题端倒计时胶囊与自由拖拽**：做题顶栏新增极简倒计时胶囊，悬浮不占地方；支持随时点击展开大卡片、屏幕自由拖拽，并能自动记住您习惯停放的位置。
+  - **萌系看板娘秒级加载与个性化控制**：优化看板娘加载速度，实现秒速呈现与离线免等待；新增设置面板，壁纸和看板娘开关一键随心掌控。
+- **Fix (修复内容)**:
+  - **快捷键体验修复**：修复了部分题型下数字键 `1`~`5` 选不上答案的问题，并解决了在弹窗或非做题页面下误触快捷键的隐患。
+  - **答案反馈与卡顿修复**：修复了提交答案后题目内部分代码块颜色被误擦除的问题；消除了后台重复刷新的隐患，长时间做题更流畅不卡顿。
+- **Perf (优化内容)**:
+  - **全站毛玻璃质感升级**：全面提升界面通透度与层次感，无论是复习提要还是大屏面板都更加晶莹好看，同时完美展现您的自定义背景壁纸。
+  - **顶栏细节美化**：重新对齐了做题顶栏倒计时胶囊内的文字与数字排版，视觉呈现更加精细美观。
+
 ---
 
 ## 🚀 [Unreleased / 下一版本 Roadmap 规划]
 
 ### 🧪 本地开发碎版本履历 (Dev History)
+- **Beautifier v8.3.0-dev.5** (2026-07-29):
+  - **Refactored**: 单题倒计时视觉重构：保持顶栏原有背景，不给数字追加新背景盒；字号对齐旁边的“反馈”、“退出”按钮；数字采用高亮红色 `#ef4444` 加粗，并注入 `tabular-nums` 及 `ui-monospace` 代码等宽字体（秒数跳动零抖动）；倒计时少于 3 分钟（< 180 秒）时自动开启平稳常亮式字体边缘红光高亮 (`text-shadow`)，彻底取消闪烁/呼吸脉冲动画。
+- **Beautifier v8.3.0-dev.4** (2026-07-29):
+  - **Refactored**: 选择题 1-5 快捷键重构（用户实测通过 ✅）：重构 `getSortedChoiceOptions` 增加做题卡片作用域限定 (Card Scoping)，过滤非题目假选项，基于 `getBoundingClientRect()` 实现 `top` 升序与 `left` 辅助双轴空间排序算法，确保数字键 1~5 100% 对应屏幕上肉眼看到的第 1~5 行选项，彻底解决知能行打乱选项字母 ID 导致的键位错位痛点。
+  - **Refactored**: 做题端倒计时胶囊 UI 排版重构：收缩态上层采用单水平线展示 `🔥 N天` 与 `今日剩余 XhYm` 明确文本，彻底消除像钟表时刻的认知歧义；底端全面恢复 3px 柔光蓝调晶莹进度条，与 `📋 复制题目` 按钮 176px 完美同框并列对齐。
+  - **Refactored**: 全设备多端响应式与 16ms 稳固装载重构：彻底解决快速切题时工具栏模块加载失败/消失痛点。解绑死板 `135px` 硬编码限制为自适应 flex 容器，注入 `@media (max-width: 600px)` 手机端和平板竖屏适配规则（按钮 5:5 弹性等分、响应式字号、100% 防溢出截断），废弃 `requestIdleCallback` 全面换用 16ms `requestAnimationFrame` + React 异步补打锁，实现极速稳定挂载。
+- **Beautifier v8.3.0-dev.3** (2026-07-29):
+  - **Refactored**: 看板娘 `waifu-toggle` 原版底层机制：彻底废弃 CSS 遮罩代码，使用 `MutationObserver` 结合 `element.remove()` 从 DOM 树中物理彻底销毁节点；退场与进场 100% 调取原版 `waifu.css` 内置的 `bottom: -1000px` 与 `bottom: 0` 0.5s 平滑动画。
+  - **Added**: 看板娘 IndexedDB 离线 Blob 缓存引擎 (`ZnxIndexedDBCache`)：首次下载自动存入 `znx_waifu_cache`，后续访问 0ms 从 IndexedDB 秒速离线加载（`< 10ms` 启动，100% 防断网与 CDN 故障）。彻底删除了旧版 8 秒定时器与频繁网络轮询重试。
+  - **Refactored**: 题目一键复制模块：贯彻 Clean Architecture 原则 #7，彻底废弃长串字符串黑名单正则，升级为正向 DOM 节点靶向提取 (`ProblemItemElement` 题干 + `choiceButton` 选项)，源头 100% 物理隔离倒计时胶囊与 UI 辅助按钮杂音。
+- **Beautifier v8.3.0-dev.2** (2026-07-29):
+  - **Added**: 恢复主导航栏【美化面板】Tab 入口（`modulePageTabs美化`），提供 Glassmorphism 控制面板统一管理 Live2D 看板娘与 ACG 壁纸开关。
 - **Beautifier v8.2.0-dev.1** (2026-07-27):
   - **Fixed**: 修复 `setupKeyboardShortcutsHandler` 中的致命 `ReferenceError: targetOption is not defined` 异常与缺失 `}` 导致的 `SyntaxError` 阻断级 Bug。
   - **Fixed**: 提前 `isCurrentlyInInput` 输入框判定顺序，防止主观题 `TEXTAREA` 多行换行与富文本框 `role="textbox"` 按回车被错误劫持为“提交答案”。
@@ -14,6 +40,10 @@
   - **Reverted**: 彻底撤回 ESC/Space 快捷键与输入框虚空索敌对焦逻辑，仅保留极速 1~5 数字键秒选与 Enter 回车提交。
 
 ### 📌 下一版本重定义目标 (Architecture Refactor)
+- **Beautifier 回车键 Primary Action 智能代理**：由文本白名单检索升级为基于 Material-UI 主色类 (`containedPrimary`) 与卡片右下角物理位置识别，确保盲操覆盖阶段过渡界面。
+- **Beautifier 选择题 1-5 快捷键映射重构**：由字母 ID 硬编码绑定升级为 DOM 屏幕物理纵向坐标 (`getBoundingClientRect().top`) 动态排序绑定，彻底解决知能行打乱选项顺序导致的 1-5 键位错位痛点。
+- **Beautifier 题目复制引擎重构**：将题目复制从“全量卡片克隆+正则洗涤”升级为“题干与选项源头靶向提取”架构，彻底解决倒计时胶囊文本泄露与空行多余问题。
+- **Beautifier 暗色过渡卡片毛玻璃覆盖**：扩充 CSS 匹配选择器，覆盖 `#212529` 等暗色行内背景节点，赋予全流程通透视觉。
 - **ZhiNengX Unified Engine v8.3.0 / v11.1.0 目标**：全量合并 Beautifier 与 Exporter 两个脚本，去除冗余共享组件并实现轻量化模块架构。
 
 ---
