@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.3.0-dev.5
+// @version      8.3.0-dev.6
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)与考研倒计时(1位小数)辅助
 // @author       winslght
 // @license      MIT
@@ -14,7 +14,7 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.3.0-dev.5';
+    const SCRIPT_VERSION = '8.3.0-dev.6';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -128,36 +128,38 @@
                 will-change: backdrop-filter, transform;
             }
 
-            /* B. 所有卡片面板 (opacity: 0.35, blur: 10px) */
-            .MuiPaper-root:not(.MuiAppBar-root):not(.MuiDialog-paper) {
-                background: rgba(${glassRgb}, 0.35) !important;
-                backdrop-filter: blur(10px) saturate(140%) !important;
-                -webkit-backdrop-filter: blur(10px) saturate(140%) !important;
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
-            }
-
-            /* C. 行内白色背景与暗色/深色阶段过渡卡片 (opacity: 0.8, blur: 10px) */
-            div[style*="background-color: white"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background-color: rgb(255, 255, 255)"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background-color: #fff"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background-color:#fff"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background-color: antiquewhite"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background: white;"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background: white !important"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background: antiquewhite"]:not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height:16px"]):not([style*="rgb(69, 101, 155)"]),
-            div[style*="background-color: rgb(33, 37, 41)"]:not([id*="waifu"]),
-            div[style*="background-color: #212529"]:not([id*="waifu"]),
-            div[style*="background: rgb(33, 37, 41)"]:not([id*="waifu"]),
-            div[style*="background: #212529"]:not([id*="waifu"]),
-            div[style*="background-color: black"]:not([id*="waifu"]),
-            div[style*="background-color: rgb(34, 34, 34)"]:not([id*="waifu"]) {
+            /* B. 全站内容卡片 Surface 统一毛玻璃 Token (透光度 0.5, 高斯模糊 10px) */
+            .jumbotron,
+            div[class*="jumbotron"],
+            .MuiPaper-root:not(.MuiAppBar-root):not(.MuiDialog-paper):not(.MuiPopover-paper),
+            div[id*="weaknessDisplayContainer"],
+            div[id*="DisplayContainer"],
+            div[id*="displayContainer"],
+            div[style*="background-color: white"]:not([style*="url"]):not([id^="znx-anime"]):not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height: 14px"]):not([style*="height: 12px"]):not([style*="height: 10px"]):not([style*="height: 8px"]),
+            div[style*="background-color: rgb(255, 255, 255)"]:not([style*="url"]):not([id^="znx-anime"]):not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height: 14px"]):not([style*="height: 12px"]):not([style*="height: 10px"]):not([style*="height: 8px"]),
+            div[style*="background-color: antiquewhite"]:not([style*="url"]):not([id^="znx-anime"]):not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height: 14px"]):not([style*="height: 12px"]):not([style*="height: 10px"]):not([style*="height: 8px"]),
+            div[style*="background: antiquewhite"]:not([style*="url"]):not([id^="znx-anime"]):not([id*="waifu"]):not([id*="live2d"]):not([style*="height: 16px"]):not([style*="height: 14px"]):not([style*="height: 12px"]):not([style*="height: 10px"]):not([style*="height: 8px"]) {
                 background: rgba(${glassRgb}, 0.5) !important;
                 backdrop-filter: blur(10px) !important;
                 -webkit-backdrop-filter: blur(10px) !important;
                 border-radius: 12px !important;
                 border: 1px solid rgba(255, 255, 255, 0.3) !important;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
+            }
+
+            /* C. 复习提要与弹窗内卡片/标题块专属 0.3 通透度 Token */
+            div[class*="_1WPKAzobBNGZO4ntJOK2Fy"],
+            .MuiDialogContent-root h2[style*="background-color"],
+            .MuiDialogContent-root div[style*="background-color"],
+            div[style*="background-color: rgb(235, 235, 235)"],
+            div[style*="background-color: #ebebeb"],
+            h2[style*="background-color: rgb(235, 235, 235)"],
+            h2[style*="background-color: #ebebeb"] {
+                background: rgba(${glassRgb}, 0.3) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                border-radius: 8px !important;
+                border: 1px solid rgba(255, 255, 255, 0.25) !important;
             }
 
             /* D. 弹窗/对话框 (opacity: 0.8, blur: 20px) */
@@ -370,8 +372,17 @@
                 return;
             }
 
+            // 凡带有背景壁纸图片或尺寸接近全屏的大容器，绝对不加毛玻璃，防止挡屏遮遮壁纸
+            if (
+                getComputedStyle(el).backgroundImage.includes('url') ||
+                (el.clientWidth > window.innerWidth * 0.85 && el.clientHeight > window.innerHeight * 0.85)
+            ) {
+                targetClasses.forEach(c => excludedClasses.add(c));
+                return;
+            }
+
             const bg = getComputedStyle(el).backgroundColor;
-            if (bg === 'rgb(255, 255, 255)' || bg === 'rgb(250, 235, 215)' || bg === '#fff') {
+            if (bg === 'rgb(255, 255, 255)' || bg === 'rgb(250, 235, 215)' || bg === 'rgb(235, 235, 235)' || bg === '#fff' || bg === '#ebebeb' || bg === 'rgb(35, 38, 40)') {
                 const targetClass = targetClasses.find(c => !processedClasses.has(c) && !excludedClasses.has(c));
                 if (targetClass) {
                     processedClasses.add(targetClass);
@@ -456,24 +467,128 @@
         widget.id = 'znx-time-manager';
         widget.title = '27考研倒计时';
 
-        widget.style.cssText = `
-            position: fixed;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%);
-            width: 260px;
-            z-index: 999998;
-            font-family: -apple-system, "PingFang SC", sans-serif;
-            user-select: none;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        `;
+        const CARD_POS_KEY = 'znx_countdown_card_pos';
+
+        // 1. 恢复历史拖拽位置记忆
+        let hasCustomPos = false;
+        try {
+            const savedPos = localStorage.getItem(CARD_POS_KEY);
+            if (savedPos) {
+                const pos = JSON.parse(savedPos);
+                if (typeof pos.top === 'number' && typeof pos.left === 'number') {
+                    const maxLeft = Math.max(10, window.innerWidth - 280);
+                    const maxTop = Math.max(10, window.innerHeight - 280);
+                    const safeLeft = Math.max(10, Math.min(maxLeft, pos.left));
+                    const safeTop = Math.max(10, Math.min(maxTop, pos.top));
+                    widget.style.top = `${safeTop}px`;
+                    widget.style.left = `${safeLeft}px`;
+                    widget.style.right = 'auto';
+                    widget.style.transform = 'none';
+                    hasCustomPos = true;
+                }
+            }
+        } catch (e) {}
+
+        if (!hasCustomPos) {
+            widget.style.cssText = `
+                position: fixed;
+                top: 50%;
+                right: 20px;
+                transform: translateY(-50%);
+                width: 260px;
+                z-index: 999998;
+                font-family: -apple-system, "PingFang SC", sans-serif;
+                user-select: none;
+                transition: opacity 0.3s ease;
+                cursor: grab;
+            `;
+        } else {
+            widget.style.cssText += `
+                position: fixed;
+                width: 260px;
+                z-index: 999998;
+                font-family: -apple-system, "PingFang SC", sans-serif;
+                user-select: none;
+                transition: opacity 0.3s ease;
+                cursor: grab;
+            `;
+        }
+
+        // 3. 增加窗口 Resize 视口边界动态 Clamp 纠偏
+        window.addEventListener('resize', () => {
+            if (widget && widget.offsetLeft > 0) {
+                const maxLeft = Math.max(10, window.innerWidth - widget.offsetWidth - 10);
+                const maxTop = Math.max(10, window.innerHeight - widget.offsetHeight - 10);
+                if (widget.offsetLeft > maxLeft) widget.style.left = `${maxLeft}px`;
+                if (widget.offsetTop > maxTop) widget.style.top = `${maxTop}px`;
+            }
+        });
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let elemStartX = 0, elemStartY = 0;
+        let hasMoved = false;
+
+        widget.onmousedown = (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'A') return;
+            isDragging = true;
+            hasMoved = false;
+            startX = e.clientX;
+            startY = e.clientY;
+            elemStartX = widget.offsetLeft;
+            elemStartY = widget.offsetTop;
+            widget.style.cursor = 'grabbing';
+
+            const onMouseMove = (moveEvent) => {
+                if (!isDragging) return;
+                const dx = moveEvent.clientX - startX;
+                const dy = moveEvent.clientY - startY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+
+                let newLeft = elemStartX + dx;
+                let newTop = elemStartY + dy;
+
+                // 视口边界卡位碰撞防护
+                newLeft = Math.max(10, Math.min(window.innerWidth - widget.offsetWidth - 10, newLeft));
+                newTop = Math.max(10, Math.min(window.innerHeight - widget.offsetHeight - 10, newTop));
+
+                widget.style.left = `${newLeft}px`;
+                widget.style.top = `${newTop}px`;
+                widget.style.right = 'auto';
+                widget.style.transform = 'none';
+                hasCustomPos = true;
+            };
+
+            const onMouseUp = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                widget.style.cursor = 'grab';
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+
+                if (hasMoved) {
+                    try {
+                        localStorage.setItem(CARD_POS_KEY, JSON.stringify({
+                            top: widget.offsetTop,
+                            left: widget.offsetLeft
+                        }));
+                    } catch (err) {}
+                }
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        };
 
         window.showFullCountdownCard = (durationMs = 5000) => {
             isTempExpanded = true;
             widget.style.display = 'block';
             requestAnimationFrame(() => {
                 widget.style.opacity = '1';
-                widget.style.transform = 'translateY(-50%) scale(1)';
+                if (!hasCustomPos) {
+                    widget.style.transform = 'translateY(-50%) scale(1)';
+                } else {
+                    widget.style.transform = 'none';
+                }
             });
 
             if (expandTimer) clearTimeout(expandTimer);
@@ -482,7 +597,11 @@
                 if (isDoing) {
                     isTempExpanded = false;
                     widget.style.opacity = '0';
-                    widget.style.transform = 'translateY(-50%) scale(0.95)';
+                    if (!hasCustomPos) {
+                        widget.style.transform = 'translateY(-50%) scale(0.95)';
+                    } else {
+                        widget.style.transform = 'none';
+                    }
                     setTimeout(() => {
                         if (!isTempExpanded && document.documentElement.classList.contains('znx-doing-questions')) {
                             widget.style.display = 'none';
@@ -549,12 +668,12 @@
             widget.style.padding = '20px';
             widget.style.borderRadius = '20px';
             widget.style.background = isDark
-                ? 'rgba(15, 23, 42, 0.88)'
+                ? 'rgba(14, 14, 14, 0.6)'
                 : 'rgba(255, 255, 255, 0.85)';
             widget.style.backdropFilter = 'blur(20px) saturate(180%)';
             widget.style.webkitBackdropFilter = 'blur(20px)';
             widget.style.border = isDark
-                ? '1px solid rgba(56, 189, 248, 0.45)'
+                ? '1px solid rgba(255, 255, 255, 0.3)'
                 : '1px solid rgba(255, 255, 255, 0.7)';
             widget.style.boxShadow = isDark
                 ? '0 12px 36px rgba(0, 0, 0, 0.45)'
@@ -1014,8 +1133,11 @@
         setupKaoyanWaifuTips();
         const existingWaifu = document.getElementById('waifu');
         const existingCanvas = document.getElementById('live2d') || existingWaifu?.querySelector('canvas');
-        if (existingWaifu && existingCanvas && (existingCanvas.offsetWidth > 0 || existingCanvas.offsetHeight > 0)) {
-            // 看板娘与 Canvas 画布已真实健康渲染，无需重复注入
+        if ((existingWaifu && existingCanvas && (existingCanvas.offsetWidth > 0 || existingCanvas.offsetHeight > 0)) || window.Live2D || window.loadlive2d) {
+            // 看板娘引擎与 Canvas 画布或 Live2D 全局变量已存在，禁止重复 append script 触发 Identifier 'Live2D' has already been declared 报错
+            if (existingWaifu && existingWaifu.style.display === 'none') {
+                existingWaifu.style.display = '';
+            }
             return;
         }
 
@@ -1153,23 +1275,39 @@
      * 按屏幕 DOM 物理纵向位置自然排序选择题选项 (卡片作用域限定 + 双轴坐标排序)
      */
     function getSortedChoiceOptions() {
-        // 1. 优先定位当前激活的做题卡片/对话框容器 (Card Scoping)
         const modalContainer = document.querySelector('.MuiDialog-root, .modal-dialog, [role="dialog"]');
         const cardContainer = document.querySelector('div[name="ProblemItemElement"]') ||
                               document.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
                               document.querySelector('.jumbotron') ||
-                              document.querySelector('div[class*="jumbotron"]');
+                              document.querySelector('div[class*="jumbotron"]') ||
+                              document.querySelector('div[class*="_3WnwfR"]');
         const activeScope = modalContainer || cardContainer || document;
 
-        // 2. 正向检索选择题选项节点
+        // 1. 优先以 dev 6b93b89 原生 ID 顺序查找 (A, B, C, D, E 选项)
+        const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
+        const idOptions = [];
+        for (const letter of choiceLetters) {
+            let el = activeScope.querySelector(`#choiceButton${letter}`) ||
+                     document.getElementById(`choiceButton${letter}`) ||
+                     activeScope.querySelector(`input[name="choice"][value="${letter}"]`)?.closest('label') ||
+                     document.querySelector(`input[value="${letter}"]`)?.closest('label');
+            if (el && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0)) {
+                idOptions.push(el);
+            }
+        }
+        if (idOptions.length >= 2) {
+            return idOptions;
+        }
+
+        // 2. 降级检索 DOM 中全样式选择题选项节点 (兼容 label, MUI GridList, ButtonGroup, Radio)
         let rawOptions = Array.from(activeScope.querySelectorAll(
-            'label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label'
+            'label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label, .MuiGridListTile-root, .MuiGridListTile-tile, div[class*="MuiGridListTile"], div[role="group"] button, button[class*="choice"], div[id*="choiceButton"], button[id*="choice"]'
         ));
 
         if (rawOptions.length === 0) {
-            const radios = Array.from(activeScope.querySelectorAll('input[type="radio"], input[type="checkbox"], input[name="choice"]'));
+            const radios = Array.from(activeScope.querySelectorAll('input[type="radio"], input[type="checkbox"], input[name="choice"], button'));
             radios.forEach(r => {
-                const container = r.closest('label') || r.parentElement;
+                const container = r.closest('label') || r.closest('.MuiGridListTile-root') || r.parentElement;
                 if (container && !rawOptions.includes(container)) {
                     rawOptions.push(container);
                 }
@@ -1212,6 +1350,11 @@
 
     function setupKeyboardShortcutsHandler() {
         document.addEventListener('keydown', (e) => {
+            // 0. 环境隔离判断：如果处于非做题界面，或有 Modal 弹窗处于打开状态，彻底放行原生按键
+            const isDoingMode = document.documentElement.classList.contains('znx-doing-questions');
+            const hasOpenModal = !!document.querySelector('.MuiDialog-root, [role="dialog"], .modal-dialog');
+            if (!isDoingMode || hasOpenModal) return;
+
             // 1. 忽略修饰键组合 (Ctrl/Alt/Meta/Cmd) 与功能键 (F1~F12/Escape/Tab)
             if (e.ctrlKey || e.altKey || e.metaKey) return;
             const ignoreKeys = ['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab', 'Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
@@ -1323,8 +1466,6 @@
                 (fullPageText.includes('继续') && !fullPageText.includes('继续训练') && !fullPageText.includes('点击继续'))
             );
 
-            const children = targetJumbotron.querySelectorAll('div');
-
             if (isCorrect) {
                 targetJumbotron.setAttribute('data-znx-result', 'correct');
                 targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.4)', 'important');
@@ -1332,7 +1473,6 @@
                 targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
                 targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(34, 197, 94, 0.8)', 'important');
                 targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(34, 197, 94, 0.25)', 'important');
-                children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else if (isWrong) {
                 targetJumbotron.setAttribute('data-znx-result', 'wrong');
                 targetJumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.4)', 'important');
@@ -1340,11 +1480,9 @@
                 targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
                 targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(239, 68, 68, 0.8)', 'important');
                 targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(239, 68, 68, 0.25)', 'important');
-                children.forEach(c => c.style.setProperty('background', 'transparent', 'important'));
             } else {
                 targetJumbotron.removeAttribute('data-znx-result');
                 ['background', 'backdrop-filter', '-webkit-backdrop-filter', 'border-top', 'box-shadow'].forEach(p => targetJumbotron.style.removeProperty(p));
-                children.forEach(c => c.style.removeProperty('background'));
             }
         };
 
@@ -1698,13 +1836,20 @@
             }
 
             function updateTimerCapsuleHTML() {
+                if (copyObserver) copyObserver.disconnect();
                 const info = getCountdownInfo();
                 const dark = isDarkModeActive();
                 const capsuleEl = document.getElementById('znx-doing-countdown-btn');
-                if (!capsuleEl) return;
+                if (!capsuleEl) {
+                    if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
+                    return;
+                }
 
                 const renderKey = `${info.daysLeft}-${info.h}:${info.m}-${dark}-${isCapsuleExpanded}`;
-                if (capsuleEl.getAttribute('data-znx-render-key') === renderKey) return;
+                if (capsuleEl.getAttribute('data-znx-render-key') === renderKey) {
+                    if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
+                    return;
+                }
                 capsuleEl.setAttribute('data-znx-render-key', renderKey);
 
                 if (!isCapsuleExpanded) {
@@ -1727,9 +1872,9 @@
 
                     capsuleEl.innerHTML = `
                         <div style="display:flex;flex-direction:column;justify-content:space-between;width:100%;height:100%;box-sizing:border-box;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;line-height:1;margin-top:1px;">
-                                <span style="font-weight:900;color:#e11d48;font-size:12px;display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">🔥 ${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:11px;color:${dark ? '#94a3b8' : '#64748b'};font-weight:700">天</span></span>
-                                <span style="font-size:11.5px;font-weight:800;color:${labelColor};display:inline-flex;align-items:center;gap:2px;white-space:nowrap;">今日剩余 <span style="font-size:12px;font-weight:900;color:${numColor};">${remainingHours}h${info.m}m</span></span>
+                            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px;width:100%;line-height:1.2;margin-top:1px;">
+                                <span style="font-weight:900;color:#e11d48;font-size:12px;display:inline-flex;align-items:baseline;gap:2px;white-space:nowrap;font-variant-numeric:tabular-nums;">🔥 ${info.daysLeft > 0 ? info.daysLeft : 0} <span style="font-size:12px;color:${dark ? '#cbd5e1' : '#475569'};font-weight:700">天</span></span>
+                                <span style="font-size:12px;font-weight:700;color:${labelColor};display:inline-flex;align-items:baseline;gap:2px;white-space:nowrap;">今日剩余 <span style="font-size:12px;font-weight:900;color:${numColor};font-variant-numeric:tabular-nums;">${remainingHours}h${info.m}m</span></span>
                             </div>
                             <div style="width:100%;height:3px;background:${dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'};border-radius:2px;overflow:hidden;margin-bottom:1px;">
                                 <div style="width:${info.todayRemainingRatio.toFixed(1)}%;height:100%;background:linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);border-radius:2px;transition:width 0.8s ease-in-out;"></div>
@@ -1782,6 +1927,8 @@
                         };
                     }
                 }
+
+                if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
             }
 
             function expandCapsule(durationMs = 5000) {
