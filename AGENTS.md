@@ -6,6 +6,27 @@ All AI agents working on this project MUST strictly follow the repository rules 
 
 ---
 
+## 👑 0. Agent Highest Execution Redlines (Agent 最高准则与授权门禁)
+
+> [!IMPORTANT]
+> **以下两条准则为所有 Agent 在本项目中执行任何任务的最高指令，优先级高于其他所有规则！**
+
+### 0.1 Pre-Action Disclosure & Rejection Reflection (动作前置明确告知与驳回反思)
+- **前置明确告知**：在发起任何工具调用或命令动作之前，必须明确告知本次行动的具体内容。格式如下：
+  - **工具/动作**：调用的工具名称（如 `write_to_file`, `replace_file_content`, `run_command`）。
+  - **修改文件**：具体的修改目标文件（如 `implementation_plan.md`）。
+  - **目的**：本次修改的精确意图与细节（如：锁定要求、样式微调、修复根因）。
+  - **影响范围**：修改引发的影响与受影响模块。
+- **命令请求与驳回反思**：对于需要权限批准的命令直接发起请求。若用户驳回了命令请求，Agent 必须：
+  1. 明确给出当初为什么提出该动作的深层原因。
+  2. 明确表态是否认可用户的驳回决定，并积极调整策略，绝不重复尝试已被驳回的相同动作。
+
+### 0.2 Mandatory Explicit "同意" Approval Before Coding (编码前强管制“同意”确认门禁)
+- **“同意”二字强管制**：在开发方案敲定前，**任何代码的编写或改动必须经过用户回复“同意”二字确认后才可以开始编码**。
+- **严禁先斩后奏与跨轮继承**：绝不可以因为上一轮对话用户同意了，这一轮对话就不经过用户同意直接开始编码；在开发方案未经用户明确“同意”前，严禁直接修改或新建代码文件。
+
+---
+
 ## 💬 1. Mandatory Bilingual Commit Rule (中英文双语 Commit 纪律)
 
 All git commits MUST strictly follow the **Bilingual Commit Format**:

@@ -33,7 +33,7 @@
     // ==========================================
     function generateBaseCSS() {
         const isDark = isDarkModeActive();
-        const glassRgb = isDark ? '20, 22, 28' : '255, 255, 255';
+        const glassRgb = isDark ? '14, 14, 14' : '255, 255, 255';
         const tabText = isDark ? '#eee' : '#444';
 
         return `
@@ -48,7 +48,7 @@
 
             /* A. 顶部导航栏 (opacity: 0.35, blur: 10px) */
             html body #root .MuiAppBar-root {
-                background: rgba(${glassRgb}, 0.35) !important;
+                background: rgba(${glassRgb}, ${isDark ? '0.5' : '0.35'}) !important;
                 backdrop-filter: blur(10px) saturate(140%) !important;
                 -webkit-backdrop-filter: blur(10px) saturate(140%) !important;
                 border: none !important;
@@ -102,9 +102,9 @@
             /* F. 做题界面顶部工具栏 (opacity: 0.85, blur: 15px) */
             div[class*="_3WnwfR"],
             div[class*="_3r5idY"] {
-                background: rgba(${isDark ? '20, 20, 35' : '255, 255, 255'}, 0.85) !important;
-                backdrop-filter: blur(15px) !important;
-                -webkit-backdrop-filter: blur(15px) !important;
+                background: rgba(${isDark ? '14, 14, 14' : '255, 255, 255'}, ${isDark ? '0.5' : '0.85'}) !important;
+                backdrop-filter: blur(${isDark ? '10px' : '15px'}) !important;
+                -webkit-backdrop-filter: blur(${isDark ? '10px' : '15px'}) !important;
                 border: none !important;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
             }
@@ -152,10 +152,12 @@
             div[style*="background: #212529"]:not([id*="waifu"]),
             div[style*="background-color: black"]:not([id*="waifu"]),
             div[style*="background-color: rgb(34, 34, 34)"]:not([id*="waifu"]) {
-                background: rgba(${glassRgb}, 0.8) !important;
+                background: rgba(${glassRgb}, 0.5) !important;
                 backdrop-filter: blur(10px) !important;
                 -webkit-backdrop-filter: blur(10px) !important;
-                border-radius: 10px !important;
+                border-radius: 12px !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
             }
 
             /* D. 弹窗/对话框 (opacity: 0.8, blur: 20px) */
@@ -165,14 +167,14 @@
                 -webkit-backdrop-filter: blur(20px) !important;
             }
 
-            /* E. 做题面板 Bootstrap (opacity: 0.6, blur: 5px) */
+            /* E. 做题面板 Bootstrap (opacity: 0.5, blur: 10px) */
             .jumbotron {
-                background: rgba(${glassRgb}, 0.6) !important;
-                backdrop-filter: blur(5px) !important;
-                -webkit-backdrop-filter: blur(5px) !important;
+                background: rgba(${glassRgb}, 0.5) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
                 border-radius: 12px !important;
-                border: 1px solid rgba(255, 255, 255, 0.4) !important;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.05) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
             }
 
             /* 做题顶栏单题倒计时：霸气 24px 红色加粗、无背景盒、代码等宽抗抖动 */
@@ -341,7 +343,7 @@
         const candidateDivs = root.querySelectorAll('div[class*="jss"]:not(.MuiPaper-root):not([data-znx-checked]), div[class^="_"]:not(.MuiPaper-root):not([data-znx-checked]), div[class*=" _"]:not(.MuiPaper-root):not([data-znx-checked])');
 
         const isDark = isDarkModeActive();
-        const glassRgb = isDark ? '20, 22, 28' : '255, 255, 255';
+        const glassRgb = isDark ? '14, 14, 14' : '255, 255, 255';
 
         candidateDivs.forEach(el => {
             el.setAttribute('data-znx-checked', '1');
@@ -376,13 +378,13 @@
 
                     const text = el.innerText || '';
                     const isHeaderBar = text.includes('反馈') || text.includes('退出') || text.includes('复习');
-                    const bgVal = isHeaderBar ? `rgba(${glassRgb}, 0.35)` : `rgba(${glassRgb}, 0.8)`;
+                    const bgVal = isHeaderBar ? `rgba(${glassRgb}, 0.35)` : `rgba(${glassRgb}, 0.5)`;
                     const blurVal = isHeaderBar ? 'blur(10px) saturate(140%)' : 'blur(10px)';
-                    const borderRadius = isHeaderBar ? '0' : '10px';
+                    const borderRadius = isHeaderBar ? '0' : '12px';
 
                     const style = document.createElement('style');
                     style.className = 'znx-dynamic-glass';
-                    style.innerHTML = `.${targetClass} { background: ${bgVal} !important; backdrop-filter: ${blurVal} !important; -webkit-backdrop-filter: ${blurVal} !important; border-radius: ${borderRadius} !important; transform: translateZ(0); }`;
+                    style.innerHTML = `.${targetClass} { background: ${bgVal} !important; backdrop-filter: ${blurVal} !important; -webkit-backdrop-filter: ${blurVal} !important; border-radius: ${borderRadius} !important; border: 1px solid rgba(255, 255, 255, 0.3) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important; transform: translateZ(0); }`;
                     document.head.appendChild(style);
                 }
             } else {
