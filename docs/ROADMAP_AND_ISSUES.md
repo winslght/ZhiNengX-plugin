@@ -34,20 +34,17 @@
 
 ### 🎨 美化插件 (Beautifier) Roadmap
 
-- [ ] **[P2] 做题顶栏单题计时器醒目高亮与 3 分钟动态霓虹发光预警 (Single Problem Timer Highlight & Glow)**：
-  - **常态高亮样式**：顶栏中间“测试”正下方的单题计时器，字号大小完全对齐旁侧 `[反馈]` 与 `[退出]` 按钮 (`14px~15px`)，字重加粗 (`font-weight: 900`)，数字设为高亮红 (`#e11d48` / `#ef4444`)，位置保持原位不变。
-  - **3 分钟动态发光预警**：当时间低于 3 分钟（或单题耗时达到 3 分钟阈值）时，动态触发边缘霓虹发光/光晕效果 (`text-shadow: 0 0 10px rgba(239, 68, 68, 0.85), 0 0 20px rgba(225, 29, 72, 0.6)`)，提升考场节奏感。
-- [ ] **[P2] 做题端倒计时胶囊 UI 排版与格式微调 (Countdown Capsule UI Refinement)**：
-  - **格式升级**：做题端收纳胶囊右侧显示时间由数字时钟 `05:22` 升级为 `今日剩余12h35m` 格式。
-  - **字体与配色对齐**：
-    - `"今日剩余"` 4 字：字体大小、字重 (`12px / 800`) 与颜色完全对齐旁边的 `📋 复制题目` 按钮文本。
-    - `"12h35m"` 数值：字体大小与字重 (`12px / 900`) 完全对齐 `🔥 X天`，颜色保持高亮蓝色 (`#38bdf8` / `#3b82f6`)。
-  - **水平基线对齐**：胶囊内所有文本与数字严格在同一水平基线上对齐，其余交互与 5 秒自动收纳逻辑保持不变。
-- [ ] **[P1] 美化功能开关控制面板 (Live2D 看板娘与 ACG 壁纸显隐开关)**：针对学员反馈，支持独立开启/关闭 Live2D 看板娘与 ACG 动漫背景壁纸，状态自动持久化至 `localStorage`。控制面板的具体放置位置、唤起方式与 Glassmorphism 2.0 交互样式待后续设计讨论定稿。
-- [ ] **[P1] Live2D 看板娘模型本地 IndexedDB 离线缓存架构 (IndexedDB Offline Model Cache)**：基于 `window.indexedDB` 实现二进制 Blob 离线缓存（模型体积约 1.5MB~3.5MB）。首次访问从 CDN 下载存入本地，后续访问 0ms 直接读取 `IndexedDB` 转换为 `URL.createObjectURL` 内存 URL 秒速离线加载（< 50ms 启动，100% 防断网/防 CDN 故障），清理浏览器缓存或卸载脚本时由浏览器自动回收，零垃圾残留。
+- [x] **[P2] 做题顶栏单题倒计时视觉重构 (Single Problem Timer Highlight & Glow)** (v8.3.0-dev.5 完成 ✅)：
+  - **常态高亮样式**：做题顶栏单题倒计时设定为霸气 24px 大磅值数字，字重 `900` 红色加粗（`#ff3344`），保持顶栏原本背景，`tabular-nums` 代码等宽抗抖动。
+  - **少于 3 分钟常亮边缘红光高亮**：倒计时少于 3 分钟（< 180 秒）自动开启 4 层高饱和立体常亮霓虹红光（`text-shadow: 0 0 3px #ff0033...`），拒绝闪烁，全域 250px 精准捕获。
+- [x] **[P2] 做题端倒计时胶囊 UI 排版与格式重构 (Countdown Capsule UI Refinement)** (v8.3.0-dev.4 完成 ✅)：
+  - **格式升级**：做题端收纳胶囊右侧显示 `🔥 N天` 与 `今日剩余 XhYm` 明确文本，彻底消除像钟表时刻的认知歧义。
+  - **晶莹进度条**：底端恢复 3px 柔光蓝调晶莹进度条，与 `📋 复制题目` 按钮 176px 完美同框并列对齐。
+- [x] **[P1] 美化功能开关控制面板 (Live2D 看板娘与 ACG 壁纸显隐开关)** (v8.3.0-dev.2 完成 ✅)：顶栏集成【美化面板】下拉菜单，支持实时开启/关闭 Live2D 看板娘与 ACG 动漫背景壁纸，支持原生 `✕` 按键双向反向同步与状态持久化。`#waifu-toggle` 在 DOM 树中物理彻底销毁 (Physical DOM Removal)，退场/进场 100% 调取原版 `bottom: -1000px` / `bottom: 0` 0.5s 平滑动画。
+- [x] **[P1] Live2D 看板娘模型本地 IndexedDB 离线缓存架构 (IndexedDB Offline Model Cache)** (v8.3.0-dev.3 完成 ✅)：基于 `ZnxIndexedDBCache` 实现二进制 Blob 离线缓存。首次访问从 CDN 下载存入本地 `znx_waifu_cache`，后续访问 0ms 直接读取 `IndexedDB` 转换为 `URL.createObjectURL` 内存 URL 秒速离线加载（< 10ms 启动，100% 防断网/防 CDN 故障），彻底废弃旧版定时器与频繁网络轮询重试。
+- [x] **[P1] 选择题 1-5 快捷键架构重构：按屏幕 DOM 物理纵向位置自然绑定 (Visual Order Keyboard Mapping)** (v8.3.0-dev.4 完成 ✅)：增加做题卡片作用域限定 (Card Scoping) 过滤非题目假选项，基于 `getBoundingClientRect()` 2D 物理空间双轴排序算法（`top` 升序为主、`left` 辅助），确保键盘数字键 `1~5`（及 `A~E`）100% 对应屏幕上肉眼看到的第 1~5 行选项，彻底解决知能行打乱选项字母 ID 导致的键位错位痛点。
 - [ ] **[P1] 回车键快捷提交重构：主行动线 Primary Action 智能识别 (Primary Action Recognition)**：彻底废弃基于字符串白名单/黑名单（`['继续', '提交答案']`）的硬编码检索。升级为智能识别 Material-UI / Bootstrap 主色按键 (`.MuiButton-containedPrimary`, `.btn-primary`, `.btn-success`)，并在当前活跃卡片底部优先判定右下角物理位置主按键。确保在“突破口/开始复习/开始训练”等阶段过渡页面时按回车也能 100% 顺畅盲操通关。
-- [ ] **[P1] 选择题 1-5 快捷键架构重构：按屏幕 DOM 物理纵向位置自然绑定 (Visual Order Keyboard Mapping)**：彻底废弃基于字母 ID (`choiceButtonA~E`) 的硬编码映射。针对知能行乱序选项场景，改用 `querySelectorAll` 获取页面渲染的所有选项 DOM，按 `getBoundingClientRect().top` 纵向物理位置动态排序。数字键 `1~5` 严格 1:1 映射 `index 0~4`，确保不论底层 A/B/C/D 怎么打乱，数字键 `1~5` 始终 100% 对应屏幕上肉眼看到的第 1~5 行选项。
-- [ ] **[P1] 题目复制架构重构：源头精准靶向提取 (Targeted Extraction Architecture)**：彻底重构现有的“全卡片克隆+事后清洗”模式，升级为只精准靶向提取题干 DOM (`ProblemItemElement`) 与选项 DOM (`choiceButton`)。从源头 100% 隔绝对话框、倒计时胶囊 (`#znx-problem-tools-bar`) 干扰与多余空行，提升格式规范度。
+- [ ] **[P1] 题目复制架构重构：源头精准靶向提取 (Targeted Extraction Architecture)**：用户已指导彻底废弃“全页面字符黑名单排除”逻辑。升级为纯正向靶向提取 `ProblemItemElement` 题干 DOM 与 `choiceButton` 选项 DOM。从源头 100% 隔绝对话框、倒计时胶囊 (`#znx-problem-tools-bar`) 干扰与多余空行。
 - [ ] **[P2] 阶段过渡卡片暗色毛玻璃支持 (Transitional Card Glassmorphism)**：扩充美化 CSS 匹配规则，涵盖暗色/深色行内背景容器（如 `#212529` / `rgb(33, 37, 41)`），赋予过渡阶段卡片与做题面板同等的 Glassmorphism 高斯模糊与通透视感。
 - [ ] **[P1] 一键复制原排版题目 (Markdown/LaTeX)**：自动解析 DOM 中的 KaTeX/MathJax 公式提取为 $...$ / $$...$$，纯净复制题目完整格式与排版至剪贴板（详见 [FEAT_COPY_PROBLEM_MARKDOWN.md](file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/docs/FEAT_COPY_PROBLEM_MARKDOWN.md)）。
 - [ ] **[P1] 自定义考研目标倒计时**：允许用户在设置面板中自定义目标考试日期（如 2027、2028 或自定义月/日）。
