@@ -15,6 +15,7 @@
     'use strict';
 
     const SCRIPT_VERSION = '8.3.0-beta.1';
+    const DEV_SOURCE_MODIFIED_AT = '2026-09-02 17:10:00';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -81,6 +82,31 @@
                 -webkit-backdrop-filter: none !important;
                 opacity: 1 !important;
                 visibility: visible !important;
+            }
+
+            /* 训练成果与阶段过渡卡片：按脚本标记恢复原生填充和分层毛玻璃 */
+            [data-znx-training-progress-root] {
+                background: rgba(0, 0, 0, 0.12) !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                overflow: hidden !important;
+            }
+            [data-znx-training-progress-fill] {
+                background: var(--znx-training-progress-fill, #3b82f6) !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+            [data-znx-training-transition-card] {
+                background: rgba(${glassRgb}, 0.5) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-radius: 12px !important;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
             }
 
             .MuiLinearProgress-bar,
@@ -404,11 +430,44 @@
         });
     }
 
+    function restoreTrainingVisuals() {
+        const textOf = el => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+        const trainingText = /训练成果|阶段|你已经初步掌握|有进步|成功！/;
+
+        document.querySelectorAll('div').forEach(el => {
+            const style = getComputedStyle(el);
+            const parent = el.parentElement;
+            if (!parent) return;
+
+            const isProgressRoot = el.children.length === 1 &&
+                el.clientWidth > 0 && el.clientHeight > 0 &&
+                el.clientWidth >= el.firstElementChild.clientWidth &&
+                el.clientHeight <= 24 &&
+                style.overflow === 'hidden';
+            const isProgressFill = parent.clientHeight > 0 &&
+                parent.clientHeight <= 24 &&
+                el.clientHeight >= parent.clientHeight * 0.7 &&
+                el.clientWidth <= parent.clientWidth &&
+                (el.getAttribute('style') || '').includes('%');
+
+            if (isProgressRoot) el.setAttribute('data-znx-training-progress-root', '1');
+            if (isProgressFill) {
+                el.setAttribute('data-znx-training-progress-fill', '1');
+                el.style.setProperty('--znx-training-progress-fill', style.backgroundColor || '#3b82f6');
+            }
+
+            if (el.clientHeight >= 60 && el.clientHeight <= 300 && trainingText.test(textOf(el)) && el.querySelector('button')) {
+                el.setAttribute('data-znx-training-transition-card', '1');
+            }
+        });
+    }
+
     function scheduleProcessing() {
         if (!isProcessingScheduled) {
             isProcessingScheduled = true;
             const task = () => {
                 processDynamicJssClasses();
+                restoreTrainingVisuals();
                 injectMainTabButton();
             };
             if (window.requestIdleCallback) {
