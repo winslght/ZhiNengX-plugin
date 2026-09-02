@@ -15,7 +15,7 @@
     'use strict';
 
     const SCRIPT_VERSION = '8.3.0-beta.1';
-    const DEV_SOURCE_MODIFIED_AT = '2026-09-02 15:26:17';
+    const DEV_SOURCE_MODIFIED_AT = '2026-09-02 16:32:32';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -1260,6 +1260,7 @@
     function findPrimaryActionButton(questionContext = null) {
         // 正向命中宿主页面的业务按钮：按钮 ID 比样式和屏幕位置更稳定。
         const directActionSelectors = [
+            '#checkAnswerButton:not([disabled])',
             '#continueButton:not([disabled])',
             '#retryButton:not([disabled])',
             'button[id*="retry" i]:not([disabled])',
