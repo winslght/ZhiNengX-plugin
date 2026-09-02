@@ -15,6 +15,7 @@
     'use strict';
 
     const SCRIPT_VERSION = '8.3.0-beta.1';
+    const DEV_SOURCE_MODIFIED_AT = '2026-09-02 15:26:17';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -1212,24 +1213,78 @@
     /**
      * 主行动按键 Primary Action 智能定位逻辑 (基于主色 Class 与物理底部位置排序)
      */
-    function findPrimaryActionButton() {
+    function isVisibleElement(el) {
+        if (!el) return false;
+        const rect = el.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return false;
+
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+    }
+
+    /**
+     * 正向定位当前可交互的做题容器，避免依赖宿主页面的单个动态 class。
+     */
+    function findQuestionInteractionContext() {
+        const contextSelectors = [
+            'div[name="ProblemItemElement"]',
+            'div[class*="ProblemItem"]',
+            '.jumbotron',
+            'div[class*="jumbotron"]',
+            'div[class*="_3WnwfR"]'
+        ];
+
+        const questionControlSelector = [
+            'label[id^="choiceButton"]',
+            'label[name="choiceButton"]',
+            'input[name="choice"]',
+            'input[type="radio"]',
+            'input[type="checkbox"]',
+            'input[type="text"]',
+            'input[type="number"]',
+            'textarea'
+        ].join(', ');
+
+        for (const selector of contextSelectors) {
+            const contexts = Array.from(document.querySelectorAll(selector));
+            const activeContext = contexts.find(context => {
+                if (!isVisibleElement(context)) return false;
+                return Array.from(context.querySelectorAll(questionControlSelector)).some(isVisibleElement);
+            });
+            if (activeContext) return activeContext;
+        }
+
+        return null;
+    }
+
+    function findPrimaryActionButton(questionContext = null) {
+        // 正向命中宿主页面的业务按钮：按钮 ID 比样式和屏幕位置更稳定。
+        const directActionSelectors = [
+            '#continueButton:not([disabled])',
+            '#retryButton:not([disabled])',
+            'button[id*="retry" i]:not([disabled])',
+            '#submitButton:not([disabled])',
+            'button[id*="submit" i]:not([disabled])'
+        ];
+        for (const selector of directActionSelectors) {
+            const directButton = document.querySelector(selector);
+            if (directButton && directButton.getAttribute('aria-disabled') !== 'true' && isVisibleElement(directButton)) {
+                console.log('⚡ [ZhiNengX] 已正向命中主行动按键:', directButton.id || selector);
+                return directButton;
+            }
+        }
+
         const candidates = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root, [role="button"]'))
             .filter(btn => {
                 if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') return false;
-                const rect = btn.getBoundingClientRect();
-                if (rect.width <= 0 || rect.height <= 0) return false;
-                try {
-                    const style = window.getComputedStyle(btn);
-                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
-                } catch (e) {}
-                return true;
+                return isVisibleElement(btn);
             });
 
         if (candidates.length === 0) return null;
 
         // 优先在模态框/对话框/做题主卡片容器内查找
         const modalContainer = document.querySelector('.MuiDialog-root, .modal-dialog, [role="dialog"]');
-        const cardContainer = document.querySelector('.jumbotron, div[name="ProblemItemElement"], main, #app');
+        const cardContainer = questionContext || document.querySelector('.jumbotron, div[name="ProblemItemElement"], main, #app');
         const activeContainer = modalContainer || cardContainer;
 
         const scopedCandidates = activeContainer 
@@ -1274,9 +1329,9 @@
     /**
      * 按屏幕 DOM 物理纵向位置自然排序选择题选项 (卡片作用域限定 + 双轴坐标排序)
      */
-    function getSortedChoiceOptions() {
+    function getSortedChoiceOptions(questionContext = null) {
         const modalContainer = document.querySelector('.MuiDialog-root, .modal-dialog, [role="dialog"]');
-        const cardContainer = document.querySelector('div[name="ProblemItemElement"]') ||
+        const cardContainer = questionContext || document.querySelector('div[name="ProblemItemElement"]') ||
                               document.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
                               document.querySelector('.jumbotron') ||
                               document.querySelector('div[class*="jumbotron"]') ||
@@ -1325,13 +1380,8 @@
             // 剔除功能性辅助按钮 (如“我没有思路”、“显示有问题”)
             if (txt.includes('我没有思路') || txt.includes('显示有问题')) continue;
 
+            if (!isVisibleElement(el)) continue;
             const rect = el.getBoundingClientRect();
-            if (rect.width <= 0 || rect.height <= 0) continue;
-
-            try {
-                const style = window.getComputedStyle(el);
-                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
-            } catch (e) {}
 
             seenElements.add(el);
             visibleOptions.push({ el, top: rect.top, left: rect.left });
@@ -1348,17 +1398,68 @@
         return visibleOptions.map(o => o.el);
     }
 
-    function setupKeyboardShortcutsHandler() {
-        document.addEventListener('keydown', (e) => {
-            // 0. 环境隔离判断：如果处于非做题界面，或有 Modal 弹窗处于打开状态，彻底放行原生按键
-            const isDoingMode = document.documentElement.classList.contains('znx-doing-questions');
-            const hasOpenModal = !!document.querySelector('.MuiDialog-root, [role="dialog"], .modal-dialog');
-            if (!isDoingMode || hasOpenModal) return;
+    const KeyboardManager = {
+        isBound: false,
+
+        trace(stage, details = {}) {
+            console.log('[ZNX-KBD]', stage, {
+                ...details,
+                activeElement: document.activeElement?.id || document.activeElement?.tagName || null,
+                answerDisabled: document.querySelector('#answer')?.disabled ?? null,
+                doingClass: document.documentElement.classList.contains('znx-doing-questions'),
+                contextCount: document.querySelectorAll('div[name="ProblemItemElement"], div[class*="ProblemItem"], .jumbotron, div[class*="_3WnwfR"]').length,
+                actionButtons: ['checkAnswerButton', 'continueButton', 'retryButton'].map(id => ({
+                    id,
+                    present: !!document.getElementById(id),
+                    disabled: document.getElementById(id)?.disabled ?? null
+                }))
+            });
+        },
+
+        init() {
+            if (this.isBound) {
+                this.trace('listener-already-bound');
+                return;
+            }
+            this.isBound = true;
+            this.trace('listener-registering', { target: 'window', capture: true });
+
+            window.addEventListener('keydown', (e) => {
+            const isDiagnosticKey = e.key === 'Enter' || /^[1-5]$/.test(e.key);
+            if (isDiagnosticKey) this.trace('keydown-received', {
+                key: e.key,
+                eventPhase: e.eventPhase,
+                defaultPrevented: e.defaultPrevented,
+                cancelBubble: e.cancelBubble,
+                isTrusted: e.isTrusted
+            });
+
+            // 0. 环境隔离判断：仅在可见的做题上下文中接管按键，Modal 始终保留原生交互。
+            const questionContext = findQuestionInteractionContext();
+            const hasOpenModal = Array.from(
+                document.querySelectorAll('.MuiDialog-root, [role="dialog"], .modal-dialog')
+            ).some(el => {
+                return el.getAttribute('aria-hidden') !== 'true' && isVisibleElement(el);
+            });
+            if (!questionContext) {
+                if (isDiagnosticKey) this.trace('ignored-no-question-context', { key: e.key });
+                return;
+            }
+            if (hasOpenModal) {
+                if (isDiagnosticKey) this.trace('ignored-modal-open', { key: e.key });
+                return;
+            }
 
             // 1. 忽略修饰键组合 (Ctrl/Alt/Meta/Cmd) 与功能键 (F1~F12/Escape/Tab)
-            if (e.ctrlKey || e.altKey || e.metaKey) return;
+            if (e.ctrlKey || e.altKey || e.metaKey) {
+                if (isDiagnosticKey) this.trace('ignored-modifier', { key: e.key });
+                return;
+            }
             const ignoreKeys = ['Control', 'Alt', 'Meta', 'Shift', 'CapsLock', 'Tab', 'Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
-            if (ignoreKeys.includes(e.key)) return;
+            if (ignoreKeys.includes(e.key)) {
+                if (isDiagnosticKey) this.trace('ignored-function-key', { key: e.key });
+                return;
+            }
 
             // 2. 检查当前焦点是否在可编辑文本输入框内
             const activeEl = document.activeElement;
@@ -1372,38 +1473,50 @@
             // 3. 回车键 Primary Action 智能代理
             if (e.key === 'Enter' || e.keyCode === 13) {
                 // 多行 TEXTAREA 内未按 Shift 时交由原生换行
-                if (isMultilineInput && !e.shiftKey) return;
+                if (isMultilineInput && !e.shiftKey) {
+                    this.trace('ignored-multiline-input', { key: e.key });
+                    return;
+                }
 
-                const primaryBtn = findPrimaryActionButton();
+                const primaryBtn = findPrimaryActionButton(questionContext);
                 if (primaryBtn && document.body.contains(primaryBtn)) {
+                    this.trace('enter-target-found', { buttonId: primaryBtn.id, buttonText: (primaryBtn.innerText || primaryBtn.textContent || '').trim() });
                     e.preventDefault();
                     primaryBtn.click();
                     console.log('⚡ [ZhiNengX] 回车触发行动按键:', (primaryBtn.innerText || primaryBtn.textContent || '').trim());
                     return;
                 }
+                this.trace('enter-no-target', { key: e.key });
             }
 
             // 4. 数字键 1~5 物理纵向位置自然绑定
-            if (isInAnyInput) return;
+            if (isInAnyInput) {
+                if (isDiagnosticKey) this.trace('ignored-editable-input', { key: e.key });
+                return;
+            }
 
             const numVal = parseInt(e.key, 10);
             if (!isNaN(numVal) && numVal >= 1 && numVal <= 5) {
-                const sortedOptions = getSortedChoiceOptions();
+                const sortedOptions = getSortedChoiceOptions(questionContext);
                 if (sortedOptions.length >= numVal) {
                     const targetOption = sortedOptions[numVal - 1];
                     if (targetOption && document.body.contains(targetOption)) {
                         e.preventDefault();
                         const innerInput = targetOption.querySelector('input[type="radio"], input[type="checkbox"]');
-                        if (innerInput && typeof innerInput.click === 'function') {
-                            innerInput.click();
-                        }
-                        targetOption.click();
+                        const clickTarget = innerInput || targetOption;
+                        clickTarget.click();
                         console.log(`⚡ [ZhiNengX] 数字键 ${numVal} 选中肉眼第 ${numVal} 行选项:`, (targetOption.innerText || targetOption.textContent || '').trim());
                         return;
                     }
                 }
+                this.trace('choice-no-target', { key: e.key, optionCount: sortedOptions.length });
             }
-        });
+            }, true);
+        }
+    };
+
+    function setupKeyboardShortcutsHandler() {
+        KeyboardManager.init();
     }
 
     // ==========================================
@@ -1411,7 +1524,7 @@
     // ==========================================
     function setupQuestionModeObserver() {
         const checkMode = () => {
-            document.documentElement.classList.toggle('znx-doing-questions', !!document.querySelector('div[class*="_3WnwfR"]'));
+            document.documentElement.classList.toggle('znx-doing-questions', !!findQuestionInteractionContext());
         };
         new MutationObserver(checkMode).observe(document.body, { childList: true, subtree: true });
         checkMode();
@@ -1505,7 +1618,7 @@
         badge.title = '知能行 0-Push 本地开发调试模式 - 点击可一键复制当前碎版本号';
         badge.style.cssText = 'position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:999999;background:rgba(15,23,42,0.85);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(56,189,248,0.4);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:#38bdf8;box-shadow:0 4px 14px rgba(0,0,0,0.25),0 0 10px rgba(56,189,248,0.15);cursor:pointer;user-select:none;transition:all 0.2s ease;display:flex;align-items:center;gap:6px;letter-spacing:0.5px;';
 
-        badge.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#38bdf8;box-shadow:0 0 6px #38bdf8;animation:znxPulse 1.5s infinite"></span><span>🛠️ DEV <span style="color:#f43f5e;font-weight:800">v${version}</span> | 本地直加载模式</span>`;
+        badge.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#38bdf8;box-shadow:0 0 6px #38bdf8;animation:znxPulse 1.5s infinite"></span><span>🛠️ DEV <span style="color:#f43f5e;font-weight:800">v${version}</span> | 本地直加载模式 | 修改于 ${DEV_SOURCE_MODIFIED_AT}</span>`;
 
         const style = document.createElement('style');
         style.innerHTML = `@keyframes znxPulse{0%{opacity:0.4;transform:scale(0.9)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0.4;transform:scale(0.9)}}#znx-dev-watermark:hover{background:rgba(15,23,42,0.95) !important;border-color:rgba(56,189,248,0.8) !important;transform:translateX(-50%) translateY(-2px) !important;box-shadow:0 6px 18px rgba(0,0,0,0.35),0 0 14px rgba(56,189,248,0.3) !important}`;
