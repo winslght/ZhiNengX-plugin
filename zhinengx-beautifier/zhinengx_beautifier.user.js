@@ -15,7 +15,7 @@
     'use strict';
 
     const SCRIPT_VERSION = '8.3.0-beta.1';
-    const DEV_SOURCE_MODIFIED_AT = '2026-09-02 16:32:32';
+    const DEV_SOURCE_MODIFIED_AT = '2026-09-05 00:22:31';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -1339,23 +1339,9 @@
                               document.querySelector('div[class*="_3WnwfR"]');
         const activeScope = modalContainer || cardContainer || document;
 
-        // 1. 优先以 dev 6b93b89 原生 ID 顺序查找 (A, B, C, D, E 选项)
-        const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
-        const idOptions = [];
-        for (const letter of choiceLetters) {
-            let el = activeScope.querySelector(`#choiceButton${letter}`) ||
-                     document.getElementById(`choiceButton${letter}`) ||
-                     activeScope.querySelector(`input[name="choice"][value="${letter}"]`)?.closest('label') ||
-                     document.querySelector(`input[value="${letter}"]`)?.closest('label');
-            if (el && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0)) {
-                idOptions.push(el);
-            }
-        }
-        if (idOptions.length >= 2) {
-            return idOptions;
-        }
-
-        // 2. 降级检索 DOM 中全样式选择题选项节点 (兼容 label, MUI GridList, ButtonGroup, Radio)
+        // 1. 仅定位当前题目作用域内的可见选项，数字键按用户看到的物理顺序映射。
+        //    不能按 choiceButtonA-E 排序：这些 ID 表示选项身份，不表示当前布局顺序。
+        // 2. 检索 DOM 中全样式选择题选项节点 (兼容 label, MUI GridList, ButtonGroup, Radio)
         let rawOptions = Array.from(activeScope.querySelectorAll(
             'label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label, .MuiGridListTile-root, .MuiGridListTile-tile, div[class*="MuiGridListTile"], div[role="group"] button, button[class*="choice"], div[id*="choiceButton"], button[id*="choice"]'
         ));
