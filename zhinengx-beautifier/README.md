@@ -1,6 +1,5 @@
 # 🎨 知能行 UI 视觉美化与考研助手 (ZhiNengX Beautifier)
 
-![Version](https://img.shields.io/badge/Version-v8.1.0-brightgreen?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-winslght-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=for-the-badge)
