@@ -1,5 +1,7 @@
 # 🧪 本地调试资源 (Dev Resources)
 
+> **定位**：只服务于本地开发调试的资源集合 —— 不参与发布，也不被任何安装链接引用。
+
 本目录存放**只服务于本地开发调试**的资源，**不参与发布**，也不被任何安装链接引用。
 
 ---
@@ -36,3 +38,11 @@ node dev_resources/copy-solution-server.cjs
 ```
 
 随后在浏览器打开 `http://localhost:8765/`（改造后实现）与 `http://localhost:8765/baseline.html`（改造前基线）对照验证。
+
+---
+
+## 📚 相关文档
+
+- [项目说明](../README.md) · [文档索引](../docs/README.md) · [更新日志](../CHANGELOG.md)
+- [本地调试 SOP](../docs/DEVELOPMENT_WORKFLOW.md) — 调试存根的完整配置步骤
+- [缺陷矩阵与 Roadmap](../docs/ROADMAP_AND_ISSUES.md) — 截图所对应的 BUG 登记与状态
