@@ -1,6 +1,5 @@
 # 📊 知能行考研数学 - 通用诊断报告与数据大屏导出器 (ZhiNengX Exporter)
 
-![Version](https://img.shields.io/badge/Version-v11.0.1-brightgreen?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-winslght-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Tampermonkey%20%7C%20Violentmonkey-purple?style=for-the-badge)
