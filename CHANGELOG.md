@@ -2,6 +2,15 @@
 
 本文档遵守 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 规范，记录 **知能行 UI 视觉美化与考研助手 (Beautifier)** 与 **知能行通用诊断报告导出器 (Exporter)** 的全量更新历史、前版痛点修复归因、当前已知 BUG 及下一版本 Roadmap 规划。
 
+## 🚀 [8.3.0-beta.2] - 2026-11-16
+
+### 🎨 知能行 UI 视觉美化与考研助手 (Beautifier)
+- 恢复选择题按视觉顺序使用数字键选择，以及回车提交和继续流程。
+- 调整训练进度条和阶段过渡卡片的毛玻璃呈现。
+- 已知问题及实机回归状态以 `docs/ROADMAP_AND_ISSUES.md` 为准。
+
+---
+
 ## 🚀 [8.3.0-beta.1] - 2026-07-29
 
 ### 🎨 知能行 UI 视觉美化与考研助手 (Beautifier)
