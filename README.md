@@ -31,7 +31,7 @@ ZhiNengX Plugins 是专为 [知能行考研数学](https://www.bestzixue.com) �
 | 分支 (Branch) | 定位与适用场景 | 一键安装链接 |
 | :--- | :--- | :--- |
 | **`main`** | **稳定版**。无感 CSS 变量渲染，零运行开销，纯净毛玻璃，适合日常使用 | [安装 Beautifier 稳定版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/main/zhinengx-beautifier/zhinengx_beautifier.user.js) |
-| **`dev-panel`** | **开发者调参版**。内置 GUI 控制面板，支持实时手动调节透明度与模糊度 | [安装 Dev-Panel 调参版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/dev-panel/zhinengx-beautifier/zhinengx_beautifier.user.js) |
+| **`dev-panel`** | **开发者调参版**。内置 GUI 控制面板，支持实时手动调节透明度与模糊度 | [安装 Dev-Panel 调参版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/archive-dev-panel/zhinengx-beautifier/zhinengx_beautifier.user.js) |
 | **`beta`** | **预发布公测版**。集成做题端倒计时晶莹收纳胶囊、一键复制题目 (Markdown + LaTeX) 与 Glassmorphism 2.0 材质体系 | [安装 Beautifier 公测版](https://raw.githubusercontent.com/winslght/ZhiNengX-plugin/beta/zhinengx-beautifier/zhinengx_beautifier.user.js) |
 
 ---
