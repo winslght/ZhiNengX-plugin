@@ -58,13 +58,15 @@ ZhiNengX Plugins 是专为 [知能行考研数学](https://www.bestzixue.com) �
 
 ## 📖 工程化规范与文档索引
 
-本项目建立了完整的规范体系，研发与缺陷追踪详见以下文档：
+本项目建立了完整的规范体系。**全部文档的索引、权威来源声明与推荐阅读路径见 [📚 docs/README.md](docs/README.md)**，核心文档速览：
 
 - 📝 **[更新日志 (CHANGELOG.md)](CHANGELOG.md)**：项目全量演进历史与版本变更履历。
-- 🏛️ **[六维 Git Flow 分支架构规范 (GIT_FLOW_SPECIFICATION.md)](docs/GIT_FLOW_SPECIFICATION.md)**：分层隔离递进交付模型与中英文双语 Commit 提交纪律。
+- 🏛️ **[六维 Git Flow 分支架构规范 (GIT_FLOW_SPECIFICATION.md)](docs/GIT_FLOW_SPECIFICATION.md)**：分层隔离递进交付模型与中英文双语 Commit 提交纪律（**Git 规则唯一权威**）。
 - ⚡ **[0 Push 秒级调试指南 (DEVELOPMENT_WORKFLOW.md)](docs/DEVELOPMENT_WORKFLOW.md)**：基于 Tampermonkey `file://` 直加载机制的本地调试与发版 SOP。
 - 🛡️ **[Git Task 分支隔离规范 (GIT_DEVELOPMENT_SOP.md)](docs/GIT_DEVELOPMENT_SOP.md)**：任务分支隔离 (feature/fix) 与止损回退决策 SOP。
-- 🐞 **[缺陷矩阵与 Roadmap (ROADMAP_AND_ISSUES.md)](docs/ROADMAP_AND_ISSUES.md)**：已知 BUG 追踪表、临时规避方案与下版功能规划。
+- 🐞 **[缺陷矩阵与 Roadmap (ROADMAP_AND_ISSUES.md)](docs/ROADMAP_AND_ISSUES.md)**：已知 BUG 追踪表、临时规避方案与下版功能规划（**优先级唯一权威**）。
+- 🗃️ **[历史版本归档索引 (archive/README.md)](archive/README.md)**：v4.1 ~ v8.4.1 版本快照、第三方原型溯源与归档去重记录。
+- 🧪 **[本地调试资源说明 (dev_resources/README.md)](dev_resources/README.md)**：调试存根用法、复制回归夹具与截图规范。
 
 ---
 
@@ -72,23 +74,43 @@ ZhiNengX Plugins 是专为 [知能行考研数学](https://www.bestzixue.com) �
 
 ```text
 ZhiNengX/
+├── AGENTS.md                           # AI Agent 最高执行准则与项目红线
 ├── CHANGELOG.md                        # 变更历史与版本履历
-├── README.md                           # 项目说明文档
+├── README.md                           # 项目说明与安装入口
 ├── LICENSE                             # MIT 开源许可证
+├── icon.png                            # 仓库图标（被 user.js @icon 与 raw 链接引用，勿移动勿改名）
 ├── zhinengx-beautifier/                # 美化插件源码与说明
+│   ├── README.md
 │   └── zhinengx_beautifier.user.js
 ├── zhinengx-exporter/                  # 导出插件源码与说明
+│   ├── README.md
 │   └── zhinengx_exporter.user.js
-├── docs/                               # 研发 SOP 与缺陷追踪文档
+├── docs/                               # 研发 SOP、需求规范、发布记录与缺陷追踪
+│   ├── README.md                       # 📚 文档索引与权威来源声明（先读这个）
 │   ├── DEVELOPMENT_WORKFLOW.md
 │   ├── GIT_DEVELOPMENT_SOP.md
 │   ├── GIT_FLOW_SPECIFICATION.md
+│   ├── FEAT_COPY_PROBLEM_MARKDOWN.md
 │   ├── ROADMAP_AND_ISSUES.md
 │   ├── RELEASE_TEMPLATE.md
-│   └── version_history_and_ratings.md
-├── archive/                            # 历史版本归档备份
-└── dev_resources/                      # 本地调试与测试资源
+│   ├── RELEASE_v8.0.0.md
+│   ├── VERSION_HISTORY_AND_RATINGS.md
+│   └── diagnostic_report_sample.md
+├── archive/                            # 历史版本与第三方原型归档
+│   ├── README.md                       # 🗃️ 归档索引与去重记录
+│   ├── beautifier/                     # Beautifier v4.1 ~ v8.4.1 快照
+│   ├── exporter/                       # Exporter v11.0 快照
+│   └── legacy/                         # 第三方 MIT 原型（已整合进 8.4.0）
+└── dev_resources/                      # 本地调试存根、回归夹具与验收截图
+    ├── README.md                       # 🧪 调试资源使用说明
+    ├── zhinengx_beautifier.dev.user.js
+    ├── zhinengx_exporter.dev.user.js
+    ├── copy-solution-server.cjs
+    ├── copy-solution-test.html
+    └── screenshots/
 ```
+
+> ⚠️ `zhinengx-beautifier/`、`zhinengx-exporter/` 的目录名与文件名、以及根目录 `icon.png` 均为**安装链接硬依赖**（raw.githubusercontent.com 路径），重命名会直接导致所有用户的一键安装失效。
 
 ---
 

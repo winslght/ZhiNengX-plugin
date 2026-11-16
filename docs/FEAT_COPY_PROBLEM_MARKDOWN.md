@@ -3,7 +3,7 @@
 > **需求状态**：`已项目负责人评审修正 / 待开发分发 (P1 高优先级)`  
 > **归属模块**：`ZhiNengX Beautifier (美化与助手包)`  
 > **设计目标**：`纯粹极致 — 仅一键提取并复制当前题目完整格式与 LaTeX 公式，无任何多余提示词或冗余功能`  
-> **目标源码**：[`zhinengx_beautifier.user.js`](file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/zhinengx-beautifier/zhinengx_beautifier.user.js)
+> **目标源码**：[`zhinengx_beautifier.user.js`](../zhinengx-beautifier/zhinengx_beautifier.user.js)
 
 ---
 

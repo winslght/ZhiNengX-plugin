@@ -55,7 +55,7 @@
 - [ ] **[P1] 回车键快捷提交重构：主行动线 Primary Action 智能识别 (Primary Action Recognition)**：彻底废弃基于字符串白名单/黑名单（`['继续', '提交答案']`）的硬编码检索。升级为智能识别 Material-UI / Bootstrap 主色按键 (`.MuiButton-containedPrimary`, `.btn-primary`, `.btn-success`)，并在当前活跃卡片底部优先判定右下角物理位置主按键。确保在“突破口/开始复习/开始训练”等阶段过渡页面时按回车也能 100% 顺畅盲操通关。
 - [ ] **[P1] 题目复制架构重构：源头精准靶向提取 (Targeted Extraction Architecture)**：用户已指导彻底废弃“全页面字符黑名单排除”逻辑。升级为纯正向靶向提取 `ProblemItemElement` 题干 DOM 与 `choiceButton` 选项 DOM。从源头 100% 隔绝对话框、倒计时胶囊 (`#znx-problem-tools-bar`) 干扰与多余空行。
 - [ ] **[P2] 阶段过渡卡片暗色毛玻璃支持 (Transitional Card Glassmorphism)**：扩充美化 CSS 匹配规则，涵盖暗色/深色行内背景容器（如 `#212529` / `rgb(33, 37, 41)`），赋予过渡阶段卡片与做题面板同等的 Glassmorphism 高斯模糊与通透视感。
-- [ ] **[P1] 一键复制原排版题目 (Markdown/LaTeX)**：自动解析 DOM 中的 KaTeX/MathJax 公式提取为 $...$ / $$...$$，纯净复制题目完整格式与排版至剪贴板（详见 [FEAT_COPY_PROBLEM_MARKDOWN.md](file:///c:/Users/winsl/OneDrive/Desktop/Vibe%20Coding/ZhiNengX/docs/FEAT_COPY_PROBLEM_MARKDOWN.md)）。
+- [ ] **[P1] 一键复制原排版题目 (Markdown/LaTeX)**：自动解析 DOM 中的 KaTeX/MathJax 公式提取为 $...$ / $$...$$，纯净复制题目完整格式与排版至剪贴板（详见 [FEAT_COPY_PROBLEM_MARKDOWN.md](./FEAT_COPY_PROBLEM_MARKDOWN.md)）。
 - [ ] **[P1] 自定义考研目标倒计时**：允许用户在设置面板中自定义目标考试日期（如 2027、2028 或自定义月/日）。
 - [ ] **[P1] 主题颜色预设一键切换**：内置【黑曜石】、【翡翠绿】、【深海蓝】、【紫罗兰】四套原生样式模板。
 - [ ] **[P2] 看板娘互动增强**：新增悬停语音/文字提示及更多 Live2D 动作。
