@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "copy-solution-tests",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["dev_resources/copy-solution-server.cjs"],
+      "port": 8765
+    }
+  ]
+}

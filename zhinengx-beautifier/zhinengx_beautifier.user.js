@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行 UI 视觉美化与考研助手
 // @namespace    http://tampermonkey.net/
-// @version      8.3.0-beta.2
+// @version      8.4.0-beta.1
 // @description  为知能行考研数学提供全局毛玻璃视觉升级、回车快捷提交/下一步、Dark Reader 深色模式自适应、Live2D 看板娘(多CDN容灾)与考研倒计时(1位小数)辅助
 // @author       winslght
 // @license      MIT
@@ -14,7 +14,7 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.3.0-beta.2';
+    const SCRIPT_VERSION = '8.4.0-beta.1';
     const DEV_SOURCE_MODIFIED_AT = '2026-09-05 00:22:31';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
@@ -1756,7 +1756,7 @@
             }, 2000);
         };
 
-        const copyToClipboard = (text) => {
+        const copyToClipboard = (text, subject = '题目与 LaTeX 公式') => {
             if (!text || !text.trim()) {
                 showToast('⚠️ 未能提取到有效题目内容', true);
                 return;
@@ -1764,14 +1764,14 @@
 
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(() => {
-                    showToast('✨ 题目与 LaTeX 公式已成功复制到剪贴板');
-                }).catch(() => fallbackCopy(text));
+                    showToast(`${subject}已成功复制到剪贴板`);
+                }).catch(() => fallbackCopy(text, subject));
             } else {
-                fallbackCopy(text);
+                fallbackCopy(text, subject);
             }
         };
 
-        const fallbackCopy = (text) => {
+        const fallbackCopy = (text, subject) => {
             try {
                 const textArea = document.createElement('textarea');
                 textArea.value = text;
@@ -1784,16 +1784,16 @@
                 const successful = document.execCommand('copy');
                 document.body.removeChild(textArea);
                 if (successful) {
-                    showToast('✨ 题目与 LaTeX 公式已成功复制到剪贴板');
+                    showToast(`${subject}已成功复制到剪贴板`);
                 } else {
-                    showModalCopy(text);
+                    showModalCopy(text, subject);
                 }
             } catch (err) {
-                showModalCopy(text);
+                showModalCopy(text, subject);
             }
         };
 
-        const showModalCopy = (text) => {
+        const showModalCopy = (text, subject) => {
             let modal = document.getElementById('znx-copy-modal');
             if (modal) modal.remove();
 
@@ -1827,12 +1827,36 @@
             `;
             document.body.appendChild(modal);
 
+            if (subject === '题目和解析') modal.querySelector('h4').textContent = '请按 Ctrl+C 复制题目和解析';
             const ta = modal.querySelector('textarea');
             ta.value = text;
             ta.select();
 
             modal.querySelector('#znx-modal-close-btn').onclick = () => modal.remove();
             modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        };
+
+        const replaceMathJaxScripts = (clone) => {
+            const mathjaxScripts = Array.from(clone.querySelectorAll('script[type^="math/"], script[type^="Math/"]'));
+            mathjaxScripts.forEach(script => {
+                const rawFormula = (script.textContent || script.innerText || '').trim();
+                const scriptType = (script.getAttribute('type') || '').toLowerCase();
+                const scriptId = script.id || '';
+                if (rawFormula) {
+                    const isBlock = scriptType.includes('mode=display') || !!script.closest('.MathJax_Display');
+                    const mathMd = isBlock ? `\n$$\n${rawFormula}\n$$\n` : ` $${rawFormula}$ `;
+                    if (scriptId) {
+                        const frameId = CSS.escape(`${scriptId}-Frame`);
+                        const frame = clone.querySelector(`#${frameId}`) || Array.from(clone.querySelectorAll('[id]')).find(element => element.id.startsWith(`${scriptId}-Frame`));
+                        if (frame) frame.remove();
+                    }
+                    const prev = script.previousElementSibling;
+                    if (prev && (prev.classList.contains('MathJax_Preview') || prev.classList.contains('MathJax_SVG') || prev.classList.contains('MathJax'))) prev.remove();
+                    script.replaceWith(document.createTextNode(mathMd));
+                } else {
+                    script.remove();
+                }
+            });
         };
 
         const processNodeMathAndText = (node) => {
@@ -1854,28 +1878,7 @@
             });
 
             // 2. 提取 MathJax 公式
-            const mathjaxScripts = Array.from(clone.querySelectorAll('script[type^="math/"], script[type^="Math/"]'));
-            mathjaxScripts.forEach(script => {
-                const rawFormula = (script.textContent || script.innerText || '').trim();
-                const scriptType = (script.getAttribute('type') || '').toLowerCase();
-                const scriptId = script.id || '';
-
-                if (rawFormula) {
-                    const isBlock = scriptType.includes('mode=display') || !!script.closest('.MathJax_Display');
-                    const mathMd = isBlock ? `\n$$\n${rawFormula}\n$$\n` : ` $${rawFormula}$ `;
-                    if (scriptId) {
-                        const frame = clone.querySelector(`#${scriptId}-Frame`) || clone.querySelector(`[id^="${scriptId}-Frame"]`);
-                        if (frame) frame.remove();
-                    }
-                    const prev = script.previousElementSibling;
-                    if (prev && (prev.classList.contains('MathJax_Preview') || prev.classList.contains('MathJax_SVG') || prev.classList.contains('MathJax'))) {
-                        prev.remove();
-                    }
-                    script.replaceWith(document.createTextNode(mathMd));
-                } else {
-                    script.remove();
-                }
-            });
+            replaceMathJaxScripts(clone);
 
             // 3. 清理残存辅助 script 与样式节点
             clone.querySelectorAll('.MathJax_SVG, .MathJax_Preview, .MathJax, .MathJax_Display, .MJX_Assistive_MathML, script, style, button, .znx-ignored').forEach(el => el.remove());
@@ -1941,6 +1944,128 @@
             console.log('[ZhiNengX Copy] 📄 最终纯净 Markdown:\n' + cleanedText);
 
             return cleanedText;
+        };
+
+        const mathmlToLatex = (node) => {
+            if (!node) throw new Error('公式结构不完整');
+            if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+            const children = Array.from(node.children);
+            const parts = () => children.map(mathmlToLatex).join('');
+            const symbols = { '{': '\\{', '}': '\\}', '%': '\\%', '&': '\\&', '#': '\\#', '$': '\\$', '_': '\\_', '\\': '\\backslash ', '−': '-', '×': '\\times ', '÷': '\\div ', '≤': '\\leq ', '≥': '\\geq ', '≠': '\\neq ', '∞': '\\infty ', '∑': '\\sum ', '∏': '\\prod ', '∫': '\\int ', '∂': '\\partial ', '∈': '\\in ', '→': '\\to ', 'α': '\\alpha ', 'β': '\\beta ', 'θ': '\\theta ', 'π': '\\pi ', 'λ': '\\lambda ' };
+            switch (node.localName) {
+                case 'mi': case 'mn': case 'mo':
+                    return Array.from(node.textContent).map(char => symbols[char] || char).join('');
+                case 'mtext':
+                    return `\\text{${node.textContent.replace(/[\\{}%$&#_]/g, char => `\\${char}`)}}`;
+                case 'mspace': return ' ';
+                case 'mfrac': return `\\frac{${mathmlToLatex(children[0])}}{${mathmlToLatex(children[1])}}`;
+                case 'msup': return `{${mathmlToLatex(children[0])}}^{${mathmlToLatex(children[1])}}`;
+                case 'msub': return `{${mathmlToLatex(children[0])}}_{${mathmlToLatex(children[1])}}`;
+                case 'msubsup': return `{${mathmlToLatex(children[0])}}_{${mathmlToLatex(children[1])}}^{${mathmlToLatex(children[2])}}`;
+                case 'mover': return `\\overset{${mathmlToLatex(children[1])}}{${mathmlToLatex(children[0])}}`;
+                case 'munder': return `\\underset{${mathmlToLatex(children[1])}}{${mathmlToLatex(children[0])}}`;
+                case 'munderover': return `\\overset{${mathmlToLatex(children[2])}}{\\underset{${mathmlToLatex(children[1])}}{${mathmlToLatex(children[0])}}}`;
+                case 'msqrt': return `\\sqrt{${parts()}}`;
+                case 'mroot': return `\\sqrt[${mathmlToLatex(children[1])}]{${mathmlToLatex(children[0])}}`;
+                case 'semantics': return mathmlToLatex(children[0]);
+                case 'mfenced': {
+                    const separators = Array.from((node.getAttribute('separators') ?? ',').replace(/\s/g, ''));
+                    const fence = value => Array.from(value).map(char => symbols[char] || char).join('');
+                    return fence(node.getAttribute('open') ?? '(') + children.map((child, index) =>
+                        (index && separators.length ? fence(separators[Math.min(index - 1, separators.length - 1)]) : '') + mathmlToLatex(child)
+                    ).join('') + fence(node.getAttribute('close') ?? ')');
+                }
+                case 'mtable': {
+                    const rows = children.filter(child => child.localName === 'mtr');
+                    const columns = Math.max(1, ...rows.map(row => row.children.length));
+                    return `\\begin{array}{${'c'.repeat(columns)}}${rows.map(row => Array.from(row.children).map(mathmlToLatex).join(' & ')).join(' \\\\ ')}\\end{array}`;
+                }
+                case 'math': case 'mrow': case 'mstyle': case 'mpadded': case 'mtd': case 'mtr':
+                    return parts();
+                default: throw new Error(`暂不支持的公式结构：${node.localName}`);
+            }
+        };
+
+        const extractSolutionMarkdown = (node) => {
+            const clone = node.cloneNode(true);
+            replaceMathJaxScripts(clone);
+            clone.querySelectorAll('.katex, mjx-container, math').forEach(math => {
+                if (!clone.contains(math)) return;
+                const annotation = math.querySelector('annotation[encoding="application/x-tex"]');
+                const source = annotation?.textContent.trim();
+                const mathml = math.matches('math') ? math : math.querySelector('math');
+                if (!source && !mathml) throw new Error('未找到公式源码');
+                const latex = source || mathmlToLatex(mathml).trim();
+                const display = math.closest('.katex-display') || math.closest('mjx-container[display="true"]');
+                const isBlock = !!display || mathml?.getAttribute('display') === 'block';
+                (display || math).replaceWith(document.createTextNode(isBlock ? `\n$$\n${latex}\n$$\n` : ` $${latex}$ `));
+            });
+            clone.querySelectorAll('img').forEach(image => {
+                const source = image.getAttribute('src');
+                if (!source) throw new Error('题图尚未加载，请稍后重试');
+                const url = new URL(source, document.baseURI);
+                if (!['https:', 'http:', 'data:'].includes(url.protocol) || (url.protocol === 'data:' && !url.href.startsWith('data:image/'))) {
+                    throw new Error('题图链接暂不支持导出');
+                }
+                const alt = (image.getAttribute('alt') || '题图').replace(/[\[\]\\\r\n]/g, ' ');
+                image.replaceWith(document.createTextNode(`\n![${alt}](${url.href.replace(/\(/g, '%28').replace(/\)/g, '%29')})\n`));
+            });
+            clone.querySelectorAll('br').forEach(br => br.replaceWith(document.createTextNode('\n')));
+            clone.querySelectorAll('p, div, li, h1, h2, h3, h4, h5, h6, tr').forEach(block => {
+                block.prepend(document.createTextNode('\n'));
+                block.append(document.createTextNode('\n'));
+            });
+            return processNodeMathAndText(clone);
+        };
+
+        const getOriginalProblemDialogs = () => {
+            const dialogs = new Set();
+            document.querySelectorAll('h2, h3, .MuiDialogTitle-root').forEach(title => {
+                if (title.textContent.trim() !== '查看原题') return;
+                const dialog = title.closest('[role="dialog"], .MuiDialog-paper');
+                if (dialog && dialog.getClientRects().length && !dialog.closest('[aria-hidden="true"]') && getComputedStyle(dialog).visibility !== 'hidden') dialogs.add(dialog);
+            });
+            return Array.from(dialogs);
+        };
+
+        const updateSolutionCopyButtons = () => {
+            if (!document.documentElement.classList.contains('znx-doing-questions')) {
+                document.querySelectorAll('[data-znx-copy-solution]').forEach(button => button.remove());
+                return;
+            }
+            getOriginalProblemDialogs().forEach(dialog => {
+                if (dialog.querySelector('[data-znx-copy-solution]')) return;
+                const host = dialog.querySelector('.MuiDialogActions-root') || dialog.querySelector('.MuiDialogContent-root');
+                if (!host) return;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.dataset.znxCopySolution = '';
+                button.textContent = '复制题目和解析';
+                button.style.cssText = 'padding:8px 14px;margin:8px;border:1px solid currentColor;border-radius:12px;background:rgba(var(--znx-glass-rgb,255,255,255),0.65);color:var(--znx-tab-text,#444);backdrop-filter:blur(12px);cursor:pointer;font-weight:700;';
+                button.onclick = event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!getOriginalProblemDialogs().includes(dialog)) return;
+                    const question = dialog.querySelector('.MuiExpansionPanelDetails-root, .MuiAccordionDetails-root');
+                    const solution = dialog.querySelector('#solution');
+                    if (!question || !solution) {
+                        showToast('未找到完整题目和解析，请先展开原题与题解', true);
+                        return;
+                    }
+                    try {
+                        const questionText = extractSolutionMarkdown(question);
+                        const solutionText = extractSolutionMarkdown(solution);
+                        if (!questionText || !solutionText) {
+                            showToast('题目或解析内容为空，请等待加载完成', true);
+                            return;
+                        }
+                        copyToClipboard(`## 题目\n\n${questionText}\n\n## 解析\n\n${solutionText}`, '题目和解析');
+                    } catch (error) {
+                        showToast('题目和解析提取失败，请检查公式或题图是否完整', true);
+                    }
+                };
+                host.appendChild(button);
+            });
         };
 
         const checkAndUpdateButton = () => {
@@ -2271,8 +2396,12 @@
             const runTask = () => {
                 isScheduled = false;
                 if (copyObserver) copyObserver.disconnect();
-                checkAndUpdateButton();
-                if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
+                try {
+                    updateSolutionCopyButtons();
+                    checkAndUpdateButton();
+                } finally {
+                    if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
+                }
             };
 
             // 使用 16ms requestAnimationFrame 极速优先响应替代 requestIdleCallback

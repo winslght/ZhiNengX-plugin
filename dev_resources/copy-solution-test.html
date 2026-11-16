@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN" class="znx-doing-questions">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>题目和解析复制 · 浏览器回归</title>
+<style>
+body{font:16px system-ui;max-width:850px;margin:32px auto;padding:0 16px;color:#263344;background:#f1f5f9}button{font:inherit;padding:8px 14px;cursor:pointer}.MuiDialog-paper,.jumbotron{background:white;border:1px solid #cbd5e1;border-radius:16px;padding:20px;margin:20px 0}.MuiDialogActions-root{display:flex;justify-content:flex-end;flex-wrap:wrap}.MuiExpansionPanelDetails-root{padding:12px;background:#f8fafc}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;background:#e2e8f0}html[data-darkreader-scheme]{--znx-glass-rgb:15,23,42;--znx-tab-text:#eee}html[data-darkreader-scheme] body{background:#0f172a;color:#eee}html[data-darkreader-scheme] .MuiDialog-paper{background:#1e293b}html[data-darkreader-scheme] .MuiExpansionPanelDetails-root{background:#334155}
+</style>
+<h1>题目和解析复制回归</h1>
+<p>仅使用模拟内容和模拟剪贴板，测试生产脚本中的完整复制模块。</p>
+<button id="run-tests">运行回归</button> <button id="theme">切换深色</button>
+<div class="jumbotron"><header>模拟题卡</header><div class="ProblemItem">旧题目：求 1 + 1。</div></div>
+<div id="fixtures"></div>
+<h2>复制结果</h2><pre id="output">尚未复制</pre>
+<h2>回归结果</h2><pre id="results">尚未运行</pre>
+<script>
+const fixtures = document.getElementById('fixtures');
+window.testState = { results: [], clipboard: '', mode: 'api' };
+Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => {
+    if (testState.mode !== 'api') throw new Error('模拟权限拒绝');
+    testState.clipboard = text;
+    document.getElementById('output').textContent = text;
+} } });
+document.execCommand = () => {
+    if (testState.mode !== 'exec') return false;
+    testState.clipboard = document.querySelector('textarea').value;
+    return true;
+};
+const makeDialog = (question = '<p>计算 <math><mfrac><mn>1</mn><mn>2</mn></mfrac></math>。</p>', solution = '<p>由定义可得：</p><math display="block"><msup><mi>x</mi><mn>2</mn></msup></math>') => {
+    const dialog = document.createElement('section');
+    dialog.className = 'MuiDialog-paper';
+    dialog.setAttribute('role', 'dialog');
+    dialog.innerHTML = '<h3>查看原题</h3><div class="MuiDialogContent-root"><div class="MuiExpansionPanelDetails-root"></div><div id="solution"></div></div><div class="MuiDialogActions-root"></div>';
+    dialog.querySelector('.MuiExpansionPanelDetails-root').innerHTML = question;
+    dialog.querySelector('#solution').innerHTML = solution;
+    fixtures.appendChild(dialog);
+    return dialog;
+};
+makeDialog();
+const settle = () => new Promise(resolve => setTimeout(resolve, 100));
+const assert = (condition, name) => { testState.results.push({ name, pass: !!condition }); if (!condition) throw new Error(name); };
+const copy = async dialog => { dialog.querySelector('[data-znx-copy-solution]').click(); await settle(); return testState.clipboard; };
+document.getElementById('theme').onclick = () => document.documentElement.toggleAttribute('data-darkreader-scheme');
+document.getElementById('run-tests').onclick = async () => {
+    testState.results = [];
+    try {
+        fixtures.replaceChildren();
+        let dialog = makeDialog();
+        await settle();
+        let output = await copy(dialog);
+        assert(output.includes('## 题目\n\n计算') && output.includes('\\frac{1}{2}') && output.includes('## 解析') && output.includes('$$\n{x}^{2}\n$$'), '题目和解析、分式、块级公式');
+        assert(dialog.querySelector('math mfrac') !== null, '不修改页面公式 DOM');
+        dialog.querySelector('h3').append(document.createTextNode(''));
+        await settle();
+        assert(dialog.querySelectorAll('[data-znx-copy-solution]').length === 1, '重复 DOM 更新不重复注入');
+        const other = makeDialog('<p>第二题</p>', '<p>第二题解析</p>');
+        assert((await copy(dialog)) === output, '多弹窗不串题');
+        other.style.display = 'none';
+        fixtures.replaceChildren();
+        dialog = makeDialog('<p>原题</p>', '<p>本题解析</p>');
+        const outside = document.createElement('div'); outside.id = 'solution'; outside.textContent = '外部解析'; document.body.appendChild(outside);
+        dialog.querySelector('#solution').remove();
+        await settle();
+        testState.clipboard = 'unchanged';
+        await copy(dialog);
+        assert(testState.clipboard === 'unchanged' && document.getElementById('znx-copy-toast').textContent.includes('完整题目和解析'), '缺少解析不跨弹窗取值');
+        outside.remove();
+        fixtures.replaceChildren();
+        dialog = makeDialog('<p>KaTeX <span class="katex"><span class="katex-mathml"><math><semantics><mi>x</mi><annotation encoding="application/x-tex">x+1</annotation></semantics></math></span><span class="katex-html">重复视觉文本</span></span></p>', '<p>MathJax <span id="MathJax-Element-1-Frame" class="MathJax_SVG">重复视觉文本</span><script type="math/tex; mode=display" id="MathJax-Element-1">y=2<\/script></p>');
+        await settle();
+        output = await copy(dialog);
+        assert(output.includes('$x+1$') && output.includes('$$\ny=2\n$$') && !output.includes('重复视觉文本'), 'KaTeX 与 MathJax v2 源码及去重');
+        fixtures.replaceChildren();
+        dialog = makeDialog('<p>题图<img alt="示意图" src="data:image/png;base64,aA=="></p>', '<p>第一步</p><p>第二步<br>第三步</p>');
+        await settle();
+        output = await copy(dialog);
+        assert(output.includes('![示意图](data:image/png;base64,aA==)') && output.includes('第一步\n第二步\n第三步'), '题图 Markdown 与解析段落');
+        testState.mode = 'exec';
+        testState.clipboard = '';
+        await copy(dialog);
+        assert(testState.clipboard.includes('## 解析'), 'Clipboard 拒绝后 execCommand 降级');
+        testState.mode = 'manual';
+        await copy(dialog);
+        assert(document.querySelector('#znx-copy-modal textarea').value.includes('## 解析') && document.querySelector('#znx-copy-modal h4').textContent.includes('题目和解析'), '双重失败后手动复制');
+        document.querySelector('#znx-modal-close-btn').click();
+        testState.mode = 'api';
+        fixtures.replaceChildren();
+        dialog = makeDialog('<p>原题</p>', '<math><menclose><mi>x</mi></menclose></math>');
+        await settle();
+        testState.clipboard = 'unchanged';
+        await copy(dialog);
+        assert(testState.clipboard === 'unchanged' && document.getElementById('znx-copy-toast').textContent.includes('提取失败'), '不支持公式明确报错，不静默丢结构');
+        fixtures.replaceChildren();
+        dialog = makeDialog('<math><mo>{</mo><mi>x</mi><mo>}</mo></math>', '<math><mfenced open="{" close="}"><mi>x</mi><mi>y</mi></mfenced></math>');
+        await settle();
+        output = await copy(dialog);
+        assert(output.includes('\\{x\\}') && output.includes('\\{x,y\\}'), 'MathML 运算符和围栏保留可见花括号');
+        fixtures.replaceChildren();
+        dialog = makeDialog('<p>原题</p>', '<span class="MathJax_SVG" id="MathJax-Element-2-Frame"><span class="MJX_Assistive_MathML"><math><mphantom><mi>x</mi></mphantom></math></span></span><script type="math/tex" id="MathJax-Element-2">x+2<\/script>');
+        await settle();
+        output = await copy(dialog);
+        assert(output.includes('$x+2$'), 'MathJax v2 优先 TeX，不受辅助 MathML 阻断');
+        fixtures.replaceChildren();
+        dialog = makeDialog('<p>原题</p>', '<p>解析</p>');
+        dialog.querySelector('.MuiExpansionPanelDetails-root').remove();
+        await settle();
+        testState.clipboard = 'unchanged';
+        await copy(dialog);
+        assert(testState.clipboard === 'unchanged', '缺少题目不复制');
+        fixtures.replaceChildren();
+        dialog = makeDialog('<p>原题</p>', '');
+        await settle();
+        await copy(dialog);
+        assert(testState.clipboard === 'unchanged', '空解析不复制');
+        fixtures.replaceChildren();
+        dialog = makeDialog();
+        dialog.style.display = 'none';
+        await settle();
+        assert(!dialog.querySelector('[data-znx-copy-solution]'), '隐藏弹窗不注入');
+        dialog.style.display = '';
+        fixtures.appendChild(document.createElement('div'));
+        await settle();
+        document.getElementById('znx-copy-problem-btn').click();
+        await settle();
+        assert(testState.clipboard === '旧题目：求 1 + 1。', '原复制题目行为不变');
+        document.documentElement.classList.remove('znx-doing-questions');
+        fixtures.appendChild(document.createElement('div'));
+        await settle();
+        assert(!document.querySelector('[data-znx-copy-solution]'), '离开做题页移除新入口');
+        document.documentElement.classList.add('znx-doing-questions');
+        fixtures.replaceChildren();
+        makeDialog();
+        await settle();
+        assert(document.querySelectorAll('[data-znx-copy-solution]').length === 1, '重新进入训练页恢复入口');
+    } catch (error) { console.error(error); }
+    finally { document.getElementById('results').textContent = testState.results.map(result => `${result.pass ? 'PASS' : 'FAIL'} ${result.name}`).join('\n'); }
+};
+</script>
+<script src="/copy-module.js"></script>
+</html>
