@@ -28,6 +28,7 @@
 | :--- | :--- | :--- | :--- |
 | [`DEVELOPMENT_WORKFLOW.md`](./DEVELOPMENT_WORKFLOW.md) | 操作 SOP | Tampermonkey `file://` 直加载实现 0 Push 秒级调试，以及规范化发版流程 | 调试机制或发版流程变更时 |
 | [`GIT_DEVELOPMENT_SOP.md`](./GIT_DEVELOPMENT_SOP.md) | 操作 SOP | 任务分支隔离 (`feat/` `fix/`) 与修改产生衍生 BUG 时的止损回退判定 | 回退策略变更时 |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | 贡献指南 | 提交问题、准备复现、验证改动与提交 PR | 贡献流程调整时 |
 | [`GIT_FLOW_SPECIFICATION.md`](./GIT_FLOW_SPECIFICATION.md) | 架构规范 | 六维分支模型、渠道隔离与版本号流转的**最高规范** | 分支模型变更时（需评审） |
 | [`FEAT_COPY_PROBLEM_MARKDOWN.md`](./FEAT_COPY_PROBLEM_MARKDOWN.md) | 需求设计 | 「一键复制原排版题目 (Markdown + LaTeX)」的需求边界、DOM 靶向提取与交互设计 | 需求评审或实现方案调整时 |
 | [`ROADMAP_AND_ISSUES.md`](./ROADMAP_AND_ISSUES.md) | 追踪矩阵 | 已发现 BUG 动态矩阵 + 需求规划池与回归排查顺序 | 每次发现 BUG / 完成需求时 |
