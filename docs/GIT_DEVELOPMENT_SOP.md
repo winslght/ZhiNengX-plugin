@@ -65,6 +65,10 @@ git checkout -b feat/theme-presets  # 特性类任务分支命名: feat/xxxx
 
 例如：`fix(scope): resolve issue / 修复特定逻辑问题`
 
+### 4.1 低频合并提交纪律 (Batch Commit Discipline)
+- **严禁高频碎片化 Commit**：禁止针对单条文档小修改、单行拼写纠正或临时对话点频繁执行 `git commit`。
+- **阶段合并原则**：多项需求录入或相近模块改动，必须在阶段里程碑结束时**合并为单次完整的 Commit**。
+
 ---
 
 ## 🏁 3. 验证与合并 (Git Flow 标准流转)

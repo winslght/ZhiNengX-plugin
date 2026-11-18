@@ -2,24 +2,153 @@
 
 本文档遵守 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 规范，记录 **知能行 UI 视觉美化与考研助手 (Beautifier)** 与 **知能行通用诊断报告导出器 (Exporter)** 的全量更新历史、前版痛点修复归因、当前已知 BUG 及下一版本 Roadmap 规划。
 
+## [8.4.0] - 2026-11-18
+
+### 修复 / Fixed
+- 保留能力进度条原生渐变与考研倒计时配色。查看答案确认框不再让做题底栏误变红，答对和答错仍按底栏反馈显示。Preserved native progress and countdown colors and fixed false wrong-answer feedback.
+- 恢复训练与复盘弹窗里的题解复制入口，保留 MathJax SVG 中的辅助 MathML，避免公式丢失或重复。Fixed solution copying in training and review, including missing or duplicated MathJax formulas.
+- 数字键按屏幕视觉顺序选择选项，回车可提交答案或继续。Number keys follow the visible choice order, and Enter submits or continues.
+
+### 优化 / Improved
+- 统一题干和普通选项卡片的毛玻璃效果。训练成功页、「温故知新」「突破口」、账号设置页及「完成测试」弹窗调整了底色和通透度。Aligned glass styling across question cards, transitions, settings and the completion dialog.
+- 「复制题目和解析」移到「关闭」左侧，采用同规格的淡橙色按钮。Moved the pale amber copy button to the left of Close.
+
+### 新增 / Added
+- 支持将题目与解析一并复制为 Markdown，保留 LaTeX 及题图链接。原题折叠时提示先展开。Added Markdown copying for questions and solutions, with LaTeX and image links.
+- 新增本地快照收集器，支持自动连拍、导出离线合集和切换原版及插件视图。Added automatic local capture, offline bundles and original/enhanced views.
+
+### 已知问题 / Known issues
+- 解析缺少 TeX 源码且包含暂不支持的 MathML 结构时，复制会提示失败。Unsupported MathML without TeX source still produces a copy error.
+- 已通过本地 Chrome 夹具和真实快照提取检查。真实网页上的完整复制流程与复杂题图访问仍待验证。Live end-to-end copying and access to complex question images remain to be tested.
+
+---
+
+## [8.4.0-beta.2] - 2026-11-18
+
+### 修复 / Fixed
+- 保留能力进度条的原生渐变和考研倒计时的原有配色。Preserved native ability-bar gradients and countdown colors.
+- 打开「想看答案」确认框时，做题底栏不再误变红。答对、答错仍按底栏反馈分别显示绿色、红色。Stopped the reveal-answer dialog from triggering incorrect feedback colors.
+- 「题目解析」弹窗在训练和复盘时均可复制题目及解析。保留 MathJax SVG 中的辅助 MathML，原题折叠时提示先展开。Fixed copying from solution dialogs during training and review, including MathJax SVG formula extraction.
+
+### 优化 / Improved
+- 未选中的选项卡片与题干共用毛玻璃样式，判题后不再额外变淡。Matched the glass treatment of unselected options and the question card before and after grading.
+- 改善训练成功页、「温故知新」、「突破口」、账号设置及「完成测试」弹窗的毛玻璃层次。Refined glass surfaces across training, review and account screens.
+- 「复制题目和解析」移至「关闭」左侧，采用同规格的淡橙色按钮。Moved the copy button next to Close and used the same sizing with a pale amber color.
+
+### 新增 / Added
+- 新增本地页面快照收集器，支持自动连拍、离线合集及原版和插件效果对照。Added a local snapshot tool for automatic capture, offline bundles and switching between original and enhanced views.
+
+### 已知问题 / Known issues
+- 解析中缺少 TeX 源码且使用暂不支持的 MathML 结构时，复制仍会提示失败。Unsupported MathML without TeX source still produces a copy error.
+- 已通过本地 Chrome 夹具和真实快照提取检查。真实网页的展开原题及复制全流程、复杂题图访问仍待实测。Live end-to-end copying and access to complex question images remain to be tested.
+
+---
+
+## [8.4.0-beta.1] - 2026-11-16
+
+### 知能行 UI 视觉美化与考研助手 (Beautifier)
+- **Feat / 新增**：训练页“查看原题”弹窗增加“复制题目和解析”，按 Markdown 章节输出，并复用三级剪贴板降级机制。
+- **Feat / 新增**：新入口支持 TeX 源码、基础 MathML 结构、解析换行及 Markdown 题图链接；不支持的公式结构或缺失内容会提示失败。
+- **Compatibility / 兼容**：基于 8.3.0-beta.2，保留原“复制题目”算法、快捷键及视觉修复；Exporter 版本不变。
+- **Credits / 致谢**：解析提取功能参考玄鸟墨色提供的 MIT 许可组件，集成时重新组织了弹窗定位与复制流程。
+- **Validation / 验证**：提供本地浏览器模拟夹具；真实知能行页面、图片访问权限及复杂公式仍需实机回归，本记录不代表已公开发布。
+
+---
+
+## 🚀 [8.3.0-beta.2] - 2026-11-16
+
+### 🎨 知能行 UI 视觉美化与考研助手 (Beautifier)
+- 恢复选择题按视觉顺序使用数字键选择，以及回车提交和继续流程。
+- 调整训练进度条和阶段过渡卡片的毛玻璃呈现。
+- 已知问题及实机回归状态以 `docs/ROADMAP_AND_ISSUES.md` 为准。
+
+---
+
+## 🚀 [8.3.0-beta.1] - 2026-07-29
+
+### 🎨 知能行 UI 视觉美化与考研助手 (Beautifier)
+- **Feat (新增功能)**:
+  - **题目一键纯净复制**：做题页面新增 `📋 复制题目` 按钮，一键快速提取题干与选项，方便整理错题与复习笔记。
+  - **做题端倒计时胶囊与自由拖拽**：做题顶栏新增极简倒计时胶囊，悬浮不占地方；支持随时点击展开大卡片、屏幕自由拖拽，并能自动记住您习惯停放的位置。
+  - **萌系看板娘秒级加载与个性化控制**：优化看板娘加载速度，实现秒速呈现与离线免等待；新增设置面板，壁纸和看板娘开关一键随心掌控。
+- **Fix (修复内容)**:
+  - **快捷键体验修复**：修复了部分题型下数字键 `1`~`5` 选不上答案的问题，并解决了在弹窗或非做题页面下误触快捷键的隐患。
+  - **答案反馈与卡顿修复**：修复了提交答案后题目内部分代码块颜色被误擦除的问题；消除了后台重复刷新的隐患，长时间做题更流畅不卡顿。
+- **Perf (优化内容)**:
+  - **全站毛玻璃质感升级**：全面提升界面通透度与层次感，无论是复习提要还是大屏面板都更加晶莹好看，同时完美展现您的自定义背景壁纸。
+  - **顶栏细节美化**：重新对齐了做题顶栏倒计时胶囊内的文字与数字排版，视觉呈现更加精细美观。
+
 ---
 
 ## 🚀 [Unreleased / 下一版本 Roadmap 规划]
 
 ### 🧪 本地开发碎版本履历 (Dev History)
+- **Beautifier v8.4.0-dev.1.7 至 v8.4.0-dev.1.12** (2026-11-18)
+  - **修复**：判题后普通选项不再额外变淡，与题干保持同样的毛玻璃叠加效果。点击「想看答案」时，确认框的「再试一次」不再让做题底栏误变红。
+  - **修复**：识别真实「题目解析」弹窗，训练结束后的复盘也能复制题目和解析。MathJax SVG 内的辅助 MathML 不再随视觉节点被删掉，原题折叠时提示先展开。
+  - **优化**：「复制题目和解析」移到「关闭」左边，使用同规格的淡橙色按钮。账号设置页加半透明底板，「温故知新」和「突破口」的正文与操作栏共用各自外层的毛玻璃。
+  - **已知问题**：解析中没有 TeX 源码且包含暂不支持的 MathML 结构时，复制会提示失败。真实网页中展开原题后的完整复制流程仍待实测。
+- **Beautifier v8.4.0-dev.1.1 至 v8.4.0-dev.1.6** (2026-11-18):
+  - 限定训练进度条识别范围，保留能力条的原生渐变和倒计时组件的配色。
+  - 恢复训练成功页毛玻璃，让“休息一下 / 继续”横栏与上方面板共用一层背景。
+  - 提高“完成测试”提示卡片的通透度，让未选中的选择题选项与题干使用同款毛玻璃。
+  - 本地直加载底栏显示 DEV 碎版本和源码修改时间，便于核对当前测试版本。
+  - 新增页面快照收集器，支持自动连拍、离线合集及原版和插件效果对照。实际采集的快照留在本地。
+- **Beautifier v8.3.0-dev.5** (2026-07-29):
+  - **Refactored**: 单题倒计时视觉重构：保持顶栏原有背景，不给数字追加新背景盒；字号对齐旁边的“反馈”、“退出”按钮；数字采用高亮红色 `#ef4444` 加粗，并注入 `tabular-nums` 及 `ui-monospace` 代码等宽字体（秒数跳动零抖动）；倒计时少于 3 分钟（< 180 秒）时自动开启平稳常亮式字体边缘红光高亮 (`text-shadow`)，彻底取消闪烁/呼吸脉冲动画。
+- **Beautifier v8.3.0-dev.4** (2026-07-29):
+  - **Refactored**: 选择题 1-5 快捷键重构（用户实测通过 ✅）：重构 `getSortedChoiceOptions` 增加做题卡片作用域限定 (Card Scoping)，过滤非题目假选项，基于 `getBoundingClientRect()` 实现 `top` 升序与 `left` 辅助双轴空间排序算法，确保数字键 1~5 100% 对应屏幕上肉眼看到的第 1~5 行选项，彻底解决知能行打乱选项字母 ID 导致的键位错位痛点。
+  - **Refactored**: 做题端倒计时胶囊 UI 排版重构：收缩态上层采用单水平线展示 `🔥 N天` 与 `今日剩余 XhYm` 明确文本，彻底消除像钟表时刻的认知歧义；底端全面恢复 3px 柔光蓝调晶莹进度条，与 `📋 复制题目` 按钮 176px 完美同框并列对齐。
+  - **Refactored**: 全设备多端响应式与 16ms 稳固装载重构：彻底解决快速切题时工具栏模块加载失败/消失痛点。解绑死板 `135px` 硬编码限制为自适应 flex 容器，注入 `@media (max-width: 600px)` 手机端和平板竖屏适配规则（按钮 5:5 弹性等分、响应式字号、100% 防溢出截断），废弃 `requestIdleCallback` 全面换用 16ms `requestAnimationFrame` + React 异步补打锁，实现极速稳定挂载。
+- **Beautifier v8.3.0-dev.3** (2026-07-29):
+  - **Refactored**: 看板娘 `waifu-toggle` 原版底层机制：彻底废弃 CSS 遮罩代码，使用 `MutationObserver` 结合 `element.remove()` 从 DOM 树中物理彻底销毁节点；退场与进场 100% 调取原版 `waifu.css` 内置的 `bottom: -1000px` 与 `bottom: 0` 0.5s 平滑动画。
+  - **Added**: 看板娘 IndexedDB 离线 Blob 缓存引擎 (`ZnxIndexedDBCache`)：首次下载自动存入 `znx_waifu_cache`，后续访问 0ms 从 IndexedDB 秒速离线加载（`< 10ms` 启动，100% 防断网与 CDN 故障）。彻底删除了旧版 8 秒定时器与频繁网络轮询重试。
+  - **Refactored**: 题目一键复制模块：贯彻 Clean Architecture 原则 #7，彻底废弃长串字符串黑名单正则，升级为正向 DOM 节点靶向提取 (`ProblemItemElement` 题干 + `choiceButton` 选项)，源头 100% 物理隔离倒计时胶囊与 UI 辅助按钮杂音。
+- **Beautifier v8.3.0-dev.2** (2026-07-29):
+  - **Added**: 恢复主导航栏【美化面板】Tab 入口（`modulePageTabs美化`），提供 Glassmorphism 控制面板统一管理 Live2D 看板娘与 ACG 壁纸开关。
 - **Beautifier v8.2.0-dev.1** (2026-07-27):
   - **Fixed**: 修复 `setupKeyboardShortcutsHandler` 中的致命 `ReferenceError: targetOption is not defined` 异常与缺失 `}` 导致的 `SyntaxError` 阻断级 Bug。
   - **Fixed**: 提前 `isCurrentlyInInput` 输入框判定顺序，防止主观题 `TEXTAREA` 多行换行与富文本框 `role="textbox"` 按回车被错误劫持为“提交答案”。
   - **Added**: 解析知能行真实 DOM (`#choiceButtonA~E`)，精准绑定数字键 `1~5` 到选择题选项 A-E。
   - **Reverted**: 彻底撤回 ESC/Space 快捷键与输入框虚空索敌对焦逻辑，仅保留极速 1~5 数字键秒选与 Enter 回车提交。
 
-### 📌 下一版本重定义目标
-- **Beautifier v8.3.0 目标**：提供更多自定义主题预设（黑曜石、深海蓝、翡翠绿），并支持自定义考研目标倒计时日期。
-- **Exporter v11.1.0 目标**：优化 ECharts 大屏在移动端/窄屏下的自适应显示，增加诊断报告一键导出 PDF 功能。
+### 📌 下一版本重定义目标 (Architecture Refactor)
+- **Beautifier 回车键 Primary Action 智能代理**：由文本白名单检索升级为基于 Material-UI 主色类 (`containedPrimary`) 与卡片右下角物理位置识别，确保盲操覆盖阶段过渡界面。
+- **Beautifier 选择题 1-5 快捷键映射重构**：由字母 ID 硬编码绑定升级为 DOM 屏幕物理纵向坐标 (`getBoundingClientRect().top`) 动态排序绑定，彻底解决知能行打乱选项顺序导致的 1-5 键位错位痛点。
+- **Beautifier 题目复制引擎重构**：将题目复制从“全量卡片克隆+正则洗涤”升级为“题干与选项源头靶向提取”架构，彻底解决倒计时胶囊文本泄露与空行多余问题。
+- **Beautifier 暗色过渡卡片毛玻璃覆盖**：扩充 CSS 匹配选择器，覆盖 `#212529` 等暗色行内背景节点，赋予全流程通透视觉。
+- **ZhiNengX Unified Engine v8.3.0 / v11.1.0 目标**：全量合并 Beautifier 与 Exporter 两个脚本，去除冗余共享组件并实现轻量化模块架构。
 
 ---
 
 ## 🧪 专版公测 (Beta Branches)
+
+### 📌 [v8.2.0-beta.4.1] - 2026-07-28 (Beta 公测版)
+> **本版主要动机**：在 8.2.0-beta.4 基础上新增右下角轻量级 ACG 壁纸显隐开关与状态记忆。
+
+#### 🎨 知能行 UI 视觉美化与考研助手 (ZhiNengX Beautifier)
+- **Added**: 新增右下角浮动开关 `🖼️ 壁纸 [ON/OFF]`，支持随时一键开启/关闭 ACG 背景壁纸。
+- **Added**: 壁纸显隐状态自动持久化至 `localStorage` (`znx_wallpaper_enabled`)。
+- **Added**: 开关面板适配 Glassmorphism 2.0 及 Dark Reader 浅色/深色主题。
+
+### 📌 [v8.2.0-beta.4] - 2026-07-27 (Beta 公测版)
+> **本版主要动机**：全量发布做题端倒计时晶莹收纳胶囊、Glassmorphism 2.0 材质统一下沉、Live2D 动态金句与进度条全防护。
+
+#### 🎨 知能行 UI 视觉美化与考研助手 (ZhiNengX Beautifier)
+- **Refactored**: 重构考研倒计时布局：主页展开 260px 经典卡片；做题界面（`znx-doing-questions`）收纳为题目顶部与复制按钮协排的 `🔥 距考研 145天 · 今日 05:22` 晶莹胶囊，5 秒无操作自动收回。
+- **Style**: 统一 Glassmorphism 2.0 材质：高透光渐变、高斯模糊 (`blur(12px)`)、`20px` 圆角胶囊形态与顶边内光，与 `📋 复制题目` 按钮并列居左对齐。
+- **Added**: 看板娘考研精炼金句与做题交互提示（鼠标悬停提交/查看题解/输入框时触发提示）。
+- **Fixed**: 修复对话框/成就卡片内的等级进度条 (`MuiLinearProgress`) 被毛玻璃图层误覆盖消隐问题，设置最高优先级保真防护。
+- **Fixed**: 强化 Live2D 看板娘 Canvas 实体画面双重校验与破损节点自动擦除轮换。
+
+### 📌 [v8.2.0-beta.3] - 2026-07-27 (Beta 公测版)
+> **本版主要动机**：全量发布经过 5 轮本地对抗碎测无 BUG 的 **`📋 一键复制原排版题目 (Markdown + LaTeX)`** 核心功能。
+
+#### 🎨 知能行 UI 视觉美化与考研助手 (ZhiNengX Beautifier)
+- **Added**: 新增 `📋 复制题目` 按钮组件，纯粹提取当前题目全文与格式。
+- **Added**: 提纯 KaTeX 与 MathJax v2.7 (SVG/TeX/MathML) 源码，行内公式输出为 `$ ... $`，块级公式输出为 `$$ ... $$`。
+- **Added**: 三级降级剪贴板架构 (`navigator.clipboard` ➔ `execCommand` ➔ `Glassmorphism Modal` 弹框)，严格遵循 `@grant none` 沙盒安全机制。
+- **Added**: 针对无标号选项自动补充 `A. `, `B. `, `C. `, `D. `, `E. ` 标号前缀，剔除假选项与做题提示，纯正则二次强洗擦除 UI 杂质。
 
 ### 📌 [v8.2.0-beta.1 / v11.0.1-beta.1] - 2026-07-26 (Beta 公测版)
 > **本版主要动机**：全量修复三大已知 BUG（Live2D 容灾重试、导出报告卡死、倒计时精度）并发布公测。
