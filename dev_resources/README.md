@@ -14,6 +14,9 @@
 | `zhinengx_exporter.dev.user.js` | Exporter 本地调试存根，机制同上。 |
 | `copy-solution-server.cjs` | 「题目和解析复制」功能的本地夹具服务（`127.0.0.1:8765`）。运行时从正式源码中截取 `setupCopyProblemHandler()` 注入测试页，并以 `git show 78f537c:...` 提供改造前的基线版本用于 A/B 对比。 |
 | `copy-solution-test.html` | 上述夹具服务的测试页面（模拟知能行「查看原题」弹窗 DOM）。 |
+| `snapshots/capture.user.js` | **页面快照收集器 v2.0**（可装油猴）：自动/手动把页面状态拍成离线快照，一键导出可切换「插件后 / 原版」的合集。改插件前先在这里复现，不用重做题。详见 [`snapshots/README.md`](snapshots/README.md)。 |
+| `snapshots/selfcheck.js` | 收集器的静态自检：`node dev_resources/snapshots/selfcheck.js`。 |
+| `snapshots/inbox/` | 导出的单张快照与合集（含个人数据，已 gitignore）。 |
 | `screenshots/` | 缺陷复现与视觉验收截图（实机采集）。提交新截图请用 `ScreenShot_YYYY-MM-DD_HHMMSS_NNN.jpg` 命名。 |
 | `html/`、`data/` | 知能行页面原始抓包与导出数据 dump，体积大且含账号数据，**已被 `.gitignore` 忽略**，仅保留在本地。 |
 

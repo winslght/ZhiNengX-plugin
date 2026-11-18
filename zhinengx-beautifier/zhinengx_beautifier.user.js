@@ -14,8 +14,8 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.4.0-beta.1';
-    const DEV_SOURCE_MODIFIED_AT = '2026-09-05 00:22:31';
+    const SCRIPT_VERSION = '8.4.0-dev.1.12';
+    const DEV_SOURCE_MODIFIED_AT = '2026-11-18 17:39:53';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -94,7 +94,7 @@
                 overflow: hidden !important;
             }
             [data-znx-training-progress-fill] {
-                background: var(--znx-training-progress-fill, #3b82f6) !important;
+                background: var(--znx-training-progress-fill) !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
                 opacity: 1 !important;
@@ -107,6 +107,12 @@
                 border: 1px solid rgba(255, 255, 255, 0.3) !important;
                 border-radius: 12px !important;
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
+            }
+            /* 成功内容与底部操作栏共用外层毛玻璃，避免叠加底色。 */
+            [data-znx-training-success-row],
+            [data-znx-training-success-actions],
+            [data-znx-training-overview-surface] {
+                background: transparent !important;
             }
 
             .MuiLinearProgress-bar,
@@ -155,6 +161,7 @@
             }
 
             /* B. 全站内容卡片 Surface 统一毛玻璃 Token (透光度 0.5, 高斯模糊 10px) */
+            html.znx-doing-questions label[name="choiceButton"][style*="background-color: rgb(255, 255, 255)"]:has(> input[name="choice"]:not(:checked)),
             .jumbotron,
             div[class*="jumbotron"],
             .MuiPaper-root:not(.MuiAppBar-root):not(.MuiDialog-paper):not(.MuiPopover-paper),
@@ -171,6 +178,18 @@
                 border-radius: 12px !important;
                 border: 1px solid rgba(255, 255, 255, 0.3) !important;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
+            }
+
+            /* 判题锁定后，普通选项保留与题干一致的毛玻璃叠加效果。 */
+            html.znx-doing-questions label.disabled[name="choiceButton"][style*="background-color: rgb(255, 255, 255)"]:has(> input[name="choice"]:not(:checked)) {
+                opacity: 1 !important;
+            }
+
+            #navigation-pills[data-znx-account-settings-glass] {
+                background: rgba(${glassRgb}, 0.72) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                border-radius: 12px;
             }
 
             /* C. 复习提要与弹窗内卡片/标题块专属 0.3 通透度 Token */
@@ -193,6 +212,9 @@
                 background: rgba(${glassRgb}, 0.8) !important;
                 backdrop-filter: blur(20px) !important;
                 -webkit-backdrop-filter: blur(20px) !important;
+            }
+            .MuiDialog-paper[data-znx-finish-test-dialog] {
+                background: rgba(${glassRgb}, 0.65) !important;
             }
 
             /* E. 做题面板 Bootstrap (opacity: 0.5, blur: 10px) */
@@ -255,11 +277,7 @@
             #waifu:hover #waifu-tool, #waifu-tool:hover { opacity: 1 !important; pointer-events: auto !important; }
 
             /* G. 做题底栏做对/做错毛玻璃 (opacity: 0.4, blur: 8px) */
-            html.znx-doing-questions .jumbotron:has(#FootcontentYes),
-            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes),
-            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentYes),
-            html.znx-doing-questions .jumbotron[data-znx-result="correct"],
-            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="correct"] {
+            html.znx-doing-questions [data-znx-result="correct"] {
                 background: rgba(34, 197, 94, 0.4) !important;
                 backdrop-filter: blur(8px) saturate(140%) !important;
                 -webkit-backdrop-filter: blur(8px) saturate(140%) !important;
@@ -267,23 +285,7 @@
                 box-shadow: 0 -4px 20px rgba(34, 197, 94, 0.25), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
                 transition: background 0.2s ease !important;
             }
-            html.znx-doing-questions .jumbotron:has(#FootcontentYes) div,
-            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentYes) div,
-            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentYes) div,
-            html.znx-doing-questions .jumbotron[data-znx-result="correct"] div,
-            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="correct"] div {
-                background: transparent !important;
-                box-shadow: none !important;
-            }
-
-            html.znx-doing-questions .jumbotron:has(#FootcontentNo),
-            html.znx-doing-questions .jumbotron:has(#FootcontentWrong),
-            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentNo),
-            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentWrong),
-            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentNo),
-            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentWrong),
-            html.znx-doing-questions .jumbotron[data-znx-result="wrong"],
-            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="wrong"] {
+            html.znx-doing-questions [data-znx-result="wrong"] {
                 background: rgba(239, 68, 68, 0.4) !important;
                 backdrop-filter: blur(8px) saturate(140%) !important;
                 -webkit-backdrop-filter: blur(8px) saturate(140%) !important;
@@ -291,16 +293,16 @@
                 box-shadow: 0 -4px 20px rgba(239, 68, 68, 0.25), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
                 transition: background 0.2s ease !important;
             }
-            html.znx-doing-questions .jumbotron:has(#FootcontentNo) div,
-            html.znx-doing-questions .jumbotron:has(#FootcontentWrong) div,
-            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentNo) div,
-            html.znx-doing-questions div[class*="_3o6JR"]:has(#FootcontentWrong) div,
-            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentNo) div,
-            html.znx-doing-questions div[class*="jumbotron"]:has(#FootcontentWrong) div,
-            html.znx-doing-questions .jumbotron[data-znx-result="wrong"] div,
-            html.znx-doing-questions div[class*="_3o6JR"][data-znx-result="wrong"] div {
+            html.znx-doing-questions [data-znx-result] div {
                 background: transparent !important;
                 box-shadow: none !important;
+            }
+
+            .MuiDialogActions-root button[data-znx-copy-solution] {
+                margin-inline-end: 8px;
+                background-color: #f6d38d !important;
+                border-color: #ddb970 !important;
+                color: #392709 !important;
             }
 
             /* 做题工具栏与倒计时胶囊全设备多端 (PC / 平板 / 手机端) 响应式适配 */
@@ -430,36 +432,122 @@
         });
     }
 
+    function markTrainingOverviewSurfaces() {
+        const attribute = 'data-znx-training-overview-surface';
+        const surfaces = new Set();
+        document.querySelectorAll('#root button').forEach(button => {
+            const label = button.textContent.trim();
+            const matchesContent = label === '返回主页'
+                ? row => /^温故知新[！!]/.test(row.textContent.trim())
+                : label === '开始训练' ? row => !!row.querySelector('#weaknessDisplayContainer') : null;
+            if (!matchesContent) return;
+            for (let actions = button.parentElement; actions && actions.id !== 'root'; actions = actions.parentElement) {
+                if (getComputedStyle(actions).position !== 'fixed') continue;
+                const row = Array.from(actions.parentElement.children).find(el =>
+                    getComputedStyle(el).display === 'table-row' &&
+                    matchesContent(el) &&
+                    Array.from(el.children).some(child => getComputedStyle(child).display === 'table-cell')
+                );
+                if (row) {
+                    surfaces.add(row);
+                    surfaces.add(actions);
+                }
+                break;
+            }
+        });
+        document.querySelectorAll(`[${attribute}]`).forEach(el => {
+            if (!surfaces.has(el)) el.removeAttribute(attribute);
+        });
+        surfaces.forEach(el => el.setAttribute(attribute, '1'));
+    }
+
     function restoreTrainingVisuals() {
         const textOf = el => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
         const trainingText = /训练成果|阶段|你已经初步掌握|有进步|成功！/;
 
-        document.querySelectorAll('div').forEach(el => {
-            const style = getComputedStyle(el);
-            const parent = el.parentElement;
-            if (!parent) return;
-
-            const isProgressRoot = el.children.length === 1 &&
-                el.clientWidth > 0 && el.clientHeight > 0 &&
-                el.clientWidth >= el.firstElementChild.clientWidth &&
-                el.clientHeight <= 24 &&
-                style.overflow === 'hidden';
-            const isProgressFill = parent.clientHeight > 0 &&
-                parent.clientHeight <= 24 &&
-                el.clientHeight >= parent.clientHeight * 0.7 &&
-                el.clientWidth <= parent.clientWidth &&
-                (el.getAttribute('style') || '').includes('%');
-
-            if (isProgressRoot) el.setAttribute('data-znx-training-progress-root', '1');
-            if (isProgressFill) {
-                el.setAttribute('data-znx-training-progress-fill', '1');
-                el.style.setProperty('--znx-training-progress-fill', style.backgroundColor || '#3b82f6');
-            }
-
-            if (el.clientHeight >= 60 && el.clientHeight <= 300 && trainingText.test(textOf(el)) && el.querySelector('button')) {
-                el.setAttribute('data-znx-training-transition-card', '1');
+        document.querySelectorAll('[data-znx-training-success-row]').forEach(row => {
+            if (!/成功[！!]/.test(textOf(row)) || !/训练|知识点/.test(textOf(row)) || !row.querySelector('button')) {
+                row.removeAttribute('data-znx-training-success-row');
             }
         });
+        document.querySelectorAll('#root button').forEach(button => {
+            for (let el = button.parentElement; el && el.id !== 'root'; el = el.parentElement) {
+                if (getComputedStyle(el).display === 'table-row' &&
+                    /成功[！!]/.test(textOf(el)) && /训练|知识点/.test(textOf(el)) &&
+                    Array.from(el.children).some(child => getComputedStyle(child).display === 'table-cell')) {
+                    el.setAttribute('data-znx-training-success-row', '1');
+                    break;
+                }
+            }
+        });
+
+        document.querySelectorAll('[data-znx-training-success-actions]').forEach(el => {
+            const labels = Array.from(el.querySelectorAll('button'), button => textOf(button));
+            if (!labels.includes('休息一下') || !labels.includes('继续') ||
+                !el.parentElement?.querySelector('[data-znx-training-success-row]')) {
+                el.removeAttribute('data-znx-training-success-actions');
+            }
+        });
+        document.querySelectorAll('#root button').forEach(button => {
+            if (textOf(button) !== '休息一下') return;
+            for (let el = button.parentElement; el && el.id !== 'root'; el = el.parentElement) {
+                if (getComputedStyle(el).position === 'fixed' &&
+                    el.parentElement?.querySelector('[data-znx-training-success-row]') &&
+                    Array.from(el.querySelectorAll('button')).some(other => textOf(other) === '继续')) {
+                    el.setAttribute('data-znx-training-success-actions', '1');
+                    break;
+                }
+            }
+        });
+
+        const cards = Array.from(document.querySelectorAll('div')).filter(el =>
+            el.clientHeight >= 60 && el.clientHeight <= 300 && trainingText.test(textOf(el)) && el.querySelector('button')
+        );
+
+        cards.forEach(card => {
+            card.setAttribute('data-znx-training-transition-card', '1');
+            card.querySelectorAll('div').forEach(el => {
+                const style = getComputedStyle(el);
+                const parent = el.parentElement;
+                if (!parent) return;
+
+                const isProgressRoot = el.children.length === 1 &&
+                    el.clientWidth > 0 && el.clientHeight > 0 &&
+                    el.clientWidth >= el.firstElementChild.clientWidth &&
+                    el.clientHeight <= 24 &&
+                    style.overflow === 'hidden';
+                const isProgressFill = parent.clientHeight > 0 &&
+                    parent.clientHeight <= 24 &&
+                    el.clientHeight >= parent.clientHeight * 0.7 &&
+                    el.clientWidth <= parent.clientWidth &&
+                    (el.getAttribute('style') || '').includes('%');
+
+                if (isProgressRoot) el.setAttribute('data-znx-training-progress-root', '1');
+                if (isProgressFill && !el.hasAttribute('data-znx-training-progress-fill')) {
+                    const background = style.backgroundImage !== 'none' ? style.backgroundImage : style.backgroundColor;
+                    el.style.setProperty('--znx-training-progress-fill', background);
+                    el.setAttribute('data-znx-training-progress-fill', '1');
+                }
+            });
+        });
+    }
+
+    function markFinishTestDialog() {
+        document.querySelectorAll('.MuiDialog-paper[role="dialog"]').forEach(dialog => {
+            const title = dialog.querySelector('.MuiDialogTitle-root h2');
+            const message = dialog.querySelector('.MuiDialogContent-root');
+            dialog.toggleAttribute('data-znx-finish-test-dialog',
+                title?.textContent.trim() === '完成测试' &&
+                message?.textContent.trim() === '请先完成测试，不要切换专题');
+        });
+    }
+
+    function markAccountSettingsSurface() {
+        const panel = document.querySelector('#root #navigation-pills');
+        const isSettingsPanel = /^\/accountsetting\/?$/.test(location.pathname) &&
+            !!panel?.querySelector('[role="tablist"]') &&
+            !!panel?.querySelector('.react-swipeable-view-container');
+        panel?.toggleAttribute('data-znx-account-settings-glass', isSettingsPanel);
     }
 
     function scheduleProcessing() {
@@ -468,6 +556,9 @@
             const task = () => {
                 processDynamicJssClasses();
                 restoreTrainingVisuals();
+                markTrainingOverviewSurfaces();
+                markFinishTestDialog();
+                markAccountSettingsSurface();
                 injectMainTabButton();
             };
             if (window.requestIdleCallback) {
@@ -1579,69 +1670,36 @@
     // 10. 底栏做对/做错状态感应器
     // ==========================================
     function setupJumbotronFeedbackObserver() {
+        const footerSelector = '.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"], div[class*="_1ktiDhx"]';
+        const markerSelector = '#FootcontentYes, #FootcontentNo, #FootcontentWrong';
+        const actionLabels = new Set(['提交答案', '继续', '再试一次', '查看题解', '显示答案', '想看答案']);
+        let activeFooter = null;
+
+        const findFooter = () => {
+            const controls = document.querySelectorAll(`#root button, #root #FootcontentYes, #root #FootcontentNo, #root #FootcontentWrong`);
+            for (const control of controls) {
+                if (!control.matches(markerSelector) && !actionLabels.has(control.textContent.trim())) continue;
+                if (!isVisibleElement(control)) continue;
+                const footer = control.closest(footerSelector);
+                if (footer) return footer;
+            }
+            return null;
+        };
+
         const updateStatus = () => {
-            const isDoing = document.documentElement.classList.contains('znx-doing-questions');
-            const jumbotron = document.querySelector('.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"]');
-
-            if (!isDoing || !jumbotron) {
-                if (jumbotron) {
-                    jumbotron.removeAttribute('data-znx-result');
-                    ['background', 'backdrop-filter', '-webkit-backdrop-filter', 'border-top', 'box-shadow'].forEach(p => jumbotron.style.removeProperty(p));
-                    jumbotron.querySelectorAll('div').forEach(c => c.style.removeProperty('background'));
-                }
-                return;
+            const footer = document.documentElement.classList.contains('znx-doing-questions') ? findFooter() : null;
+            if (activeFooter !== footer) {
+                activeFooter?.removeAttribute('data-znx-result');
+                activeFooter = footer;
             }
+            if (!footer) return;
 
-            const buttons = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root'));
-            const actionBtn = buttons.find(b => {
-                const t = (b.innerText || b.textContent || '').trim();
-                return t.includes('提交答案') || t.includes('继续') || t.includes('再试一次') || t.includes('查看题解');
-            });
-
-            const targetJumbotron = actionBtn ? (
-                actionBtn.closest('.jumbotron') || actionBtn.closest('div[class*="jumbotron"]') ||
-                actionBtn.closest('div[class*="_3o6JR"]') || actionBtn.closest('div[class*="_1ktiDhx"]') ||
-                actionBtn.parentElement?.parentElement
-            ) : jumbotron;
-
-            if (!targetJumbotron) return;
-
-            const fullPageText = document.body.innerText || '';
-
-            // 1. 最高优先级：判定做错 / 超时 / 放弃场景（防止“超时，点击继续”被误识别为做对继续）
-            const isWrong = fullPageText.includes('答案错误') ||
-                            fullPageText.includes('再试一次') ||
-                            fullPageText.includes('超时') ||
-                            fullPageText.includes('做不出来') ||
-                            fullPageText.includes('换个简单') ||
-                            !!document.getElementById('FootcontentNo') ||
-                            !!document.getElementById('FootcontentWrong');
-
-            // 2. 只有在【非做错且非超时】的前提下，才识别为做对
-            const isCorrect = !isWrong && (
-                fullPageText.includes('答案正确') ||
-                !!document.getElementById('FootcontentYes') ||
-                (fullPageText.includes('继续') && !fullPageText.includes('继续训练') && !fullPageText.includes('点击继续'))
-            );
-
-            if (isCorrect) {
-                targetJumbotron.setAttribute('data-znx-result', 'correct');
-                targetJumbotron.style.setProperty('background', 'rgba(34, 197, 94, 0.4)', 'important');
-                targetJumbotron.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
-                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
-                targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(34, 197, 94, 0.8)', 'important');
-                targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(34, 197, 94, 0.25)', 'important');
-            } else if (isWrong) {
-                targetJumbotron.setAttribute('data-znx-result', 'wrong');
-                targetJumbotron.style.setProperty('background', 'rgba(239, 68, 68, 0.4)', 'important');
-                targetJumbotron.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
-                targetJumbotron.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
-                targetJumbotron.style.setProperty('border-top', '1.5px solid rgba(239, 68, 68, 0.8)', 'important');
-                targetJumbotron.style.setProperty('box-shadow', '0 -4px 20px rgba(239, 68, 68, 0.25)', 'important');
-            } else {
-                targetJumbotron.removeAttribute('data-znx-result');
-                ['background', 'backdrop-filter', '-webkit-backdrop-filter', 'border-top', 'box-shadow'].forEach(p => targetJumbotron.style.removeProperty(p));
-            }
+            const text = footer.innerText;
+            const isWrong = /答案错误|再试一次|超时|做不出来|换个简单/.test(text) ||
+                Array.from(footer.querySelectorAll('#FootcontentNo, #FootcontentWrong')).some(isVisibleElement);
+            const isCorrect = text.includes('答案正确') || isVisibleElement(footer.querySelector('#FootcontentYes'));
+            if (isWrong || isCorrect) footer.dataset.znxResult = isWrong ? 'wrong' : 'correct';
+            else footer.removeAttribute('data-znx-result');
         };
 
         new MutationObserver(updateStatus).observe(document.body, { childList: true, subtree: true, characterData: true });
@@ -1843,15 +1901,15 @@
                 const scriptType = (script.getAttribute('type') || '').toLowerCase();
                 const scriptId = script.id || '';
                 if (rawFormula) {
-                    const isBlock = scriptType.includes('mode=display') || !!script.closest('.MathJax_Display');
-                    const mathMd = isBlock ? `\n$$\n${rawFormula}\n$$\n` : ` $${rawFormula}$ `;
-                    if (scriptId) {
-                        const frameId = CSS.escape(`${scriptId}-Frame`);
-                        const frame = clone.querySelector(`#${frameId}`) || Array.from(clone.querySelectorAll('[id]')).find(element => element.id.startsWith(`${scriptId}-Frame`));
-                        if (frame) frame.remove();
-                    }
+                    const displaySelector = '.MathJax_Display, .MathJax_SVG_Display';
+                    const frame = scriptId && (clone.querySelector(`#${CSS.escape(scriptId + '-Frame')}`) ||
+                        Array.from(clone.querySelectorAll('[id]')).find(element => element.id.startsWith(`${scriptId}-Frame`)));
                     const prev = script.previousElementSibling;
-                    if (prev && (prev.classList.contains('MathJax_Preview') || prev.classList.contains('MathJax_SVG') || prev.classList.contains('MathJax'))) prev.remove();
+                    const isBlock = scriptType.includes('mode=display') || !!script.closest(displaySelector) ||
+                        !!frame?.closest?.(displaySelector) || !!prev?.matches(displaySelector);
+                    const mathMd = isBlock ? `\n$$\n${rawFormula}\n$$\n` : ` $${rawFormula}$ `;
+                    if (frame && !frame.contains(script)) frame.remove();
+                    if (prev?.matches('.MathJax_Preview, .MathJax_SVG, .MathJax, .MathJax_SVG_Display, .MathJax_Display')) prev.remove();
                     script.replaceWith(document.createTextNode(mathMd));
                 } else {
                     script.remove();
@@ -1996,9 +2054,12 @@
                 const mathml = math.matches('math') ? math : math.querySelector('math');
                 if (!source && !mathml) throw new Error('未找到公式源码');
                 const latex = source || mathmlToLatex(mathml).trim();
-                const display = math.closest('.katex-display') || math.closest('mjx-container[display="true"]');
+                // MathJax SVG 外壳识别参考玄鸟墨色的解析提取脚本（MIT）。
+                const display = math.closest('.katex-display, mjx-container[display="true"], .MathJax_SVG_Display, .MathJax_Display');
+                const visual = math.closest('.MathJax_SVG, .MathJax') || math.closest('.MJX_Assistive_MathML');
                 const isBlock = !!display || mathml?.getAttribute('display') === 'block';
-                (display || math).replaceWith(document.createTextNode(isBlock ? `\n$$\n${latex}\n$$\n` : ` $${latex}$ `));
+                const markdown = latex ? (isBlock ? `\n$$\n${latex}\n$$\n` : ` $${latex}$ `) : '';
+                (display || visual || math).replaceWith(document.createTextNode(markdown));
             });
             clone.querySelectorAll('img').forEach(image => {
                 const source = image.getAttribute('src');
@@ -2021,33 +2082,43 @@
         const getOriginalProblemDialogs = () => {
             const dialogs = new Set();
             document.querySelectorAll('h2, h3, .MuiDialogTitle-root').forEach(title => {
-                if (title.textContent.trim() !== '查看原题') return;
+                const titleText = title.textContent.trim();
+                if (titleText !== '查看原题' && titleText !== '题目解析') return;
                 const dialog = title.closest('[role="dialog"], .MuiDialog-paper');
-                if (dialog && dialog.getClientRects().length && !dialog.closest('[aria-hidden="true"]') && getComputedStyle(dialog).visibility !== 'hidden') dialogs.add(dialog);
+                if (dialog && !title.closest('.MuiDialogContent-root') && dialog.getClientRects().length &&
+                    !dialog.closest('[aria-hidden="true"]') && getComputedStyle(dialog).visibility === 'visible') dialogs.add(dialog);
             });
             return Array.from(dialogs);
         };
 
         const updateSolutionCopyButtons = () => {
-            if (!document.documentElement.classList.contains('znx-doing-questions')) {
-                document.querySelectorAll('[data-znx-copy-solution]').forEach(button => button.remove());
-                return;
-            }
-            getOriginalProblemDialogs().forEach(dialog => {
+            const dialogs = getOriginalProblemDialogs();
+            document.querySelectorAll('[data-znx-copy-solution]').forEach(button => {
+                if (!dialogs.includes(button.closest('[role="dialog"], .MuiDialog-paper'))) button.remove();
+            });
+            dialogs.forEach(dialog => {
                 if (dialog.querySelector('[data-znx-copy-solution]')) return;
-                const host = dialog.querySelector('.MuiDialogActions-root') || dialog.querySelector('.MuiDialogContent-root');
+                const actions = dialog.querySelector('.MuiDialogActions-root');
+                const close = actions?.querySelector('button#closeSolutionModalButton');
+                const host = actions || dialog.querySelector('.MuiDialogContent-root');
                 if (!host) return;
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.dataset.znxCopySolution = '';
                 button.textContent = '复制题目和解析';
-                button.style.cssText = 'padding:8px 14px;margin:8px;border:1px solid currentColor;border-radius:12px;background:rgba(var(--znx-glass-rgb,255,255,255),0.65);color:var(--znx-tab-text,#444);backdrop-filter:blur(12px);cursor:pointer;font-weight:700;';
+                button.className = 'btn btn-warning';
                 button.onclick = event => {
                     event.preventDefault();
                     event.stopPropagation();
                     if (!getOriginalProblemDialogs().includes(dialog)) return;
                     const question = dialog.querySelector('.MuiExpansionPanelDetails-root, .MuiAccordionDetails-root');
                     const solution = dialog.querySelector('#solution');
+                    const questionPanel = question?.closest('.MuiExpansionPanel-root, .MuiAccordion-root');
+                    const questionToggle = questionPanel?.querySelector('.MuiExpansionPanelSummary-root, .MuiAccordionSummary-root');
+                    if (questionToggle?.getAttribute('aria-expanded') === 'false') {
+                        showToast('请先展开「查看原题」，等待公式显示后再复制', true);
+                        return;
+                    }
                     if (!question || !solution) {
                         showToast('未找到完整题目和解析，请先展开原题与题解', true);
                         return;
@@ -2064,7 +2135,8 @@
                         showToast('题目和解析提取失败，请检查公式或题图是否完整', true);
                     }
                 };
-                host.appendChild(button);
+                if (close) close.before(button);
+                else host.appendChild(button);
             });
         };
 
