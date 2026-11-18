@@ -101,6 +101,12 @@ document.getElementById('run-tests').onclick = async () => {
         output = await copy(dialog);
         assert(output.includes('$x+2$'), 'MathJax v2 优先 TeX，不受辅助 MathML 阻断');
         fixtures.replaceChildren();
+        dialog = makeDialog('<p>原题</p>', '<div class="MathJax_SVG_Display"><span class="MathJax_SVG" id="MathJax-Element-3-Frame"><span class="MJX_Assistive_MathML"><math><mi>q</mi></math></span></span></div><script type="math/tex" id="MathJax-Element-3">q=3<\/script><span class="MathJax_SVG"><span class="MJX_Assistive_MathML"><math><msub><mi>x</mi><mi>n</mi></msub></math></span></span>');
+        await settle();
+        output = await copy(dialog);
+        assert(output.includes('$$\nq=3\n$$') && (output.match(/\$\{x\}_\{n\}\$/g) || []).length === 1 && !output.includes('$q$'),
+            'MathJax SVG 块公式从视觉外壳识别，辅助 MathML 保留且不重复');
+        fixtures.replaceChildren();
         dialog = makeDialog('<p>原题</p>', '<p>解析</p>');
         dialog.querySelector('.MuiExpansionPanelDetails-root').remove();
         await settle();
@@ -124,9 +130,23 @@ document.getElementById('run-tests').onclick = async () => {
         await settle();
         assert(testState.clipboard === '旧题目：求 1 + 1。', '原复制题目行为不变');
         document.documentElement.classList.remove('znx-doing-questions');
-        fixtures.appendChild(document.createElement('div'));
+        fixtures.replaceChildren();
+        dialog = makeDialog('<p>复盘原题</p>', '<p>复盘解析</p>');
+        dialog.querySelector('h3').outerHTML = '<div class="MuiDialogTitle-root"><h2>题目解析</h2></div>';
+        const question = dialog.querySelector('.MuiExpansionPanelDetails-root');
+        const panel = document.createElement('div');
+        panel.className = 'MuiExpansionPanel-root';
+        panel.innerHTML = '<div class="MuiExpansionPanelSummary-root" role="button" aria-expanded="false">查看原题</div>';
+        question.replaceWith(panel);
+        panel.appendChild(question);
         await settle();
-        assert(!document.querySelector('[data-znx-copy-solution]'), '离开做题页移除新入口');
+        assert(!document.getElementById('znx-copy-problem-btn') && !!dialog.querySelector('[data-znx-copy-solution]'), '非做题状态下仍为题目解析弹窗挂载复制入口');
+        testState.clipboard = 'unchanged';
+        await copy(dialog);
+        assert(testState.clipboard === 'unchanged' && document.getElementById('znx-copy-toast').textContent.includes('请先展开'), '原题折叠时提示展开');
+        panel.querySelector('[aria-expanded]').setAttribute('aria-expanded', 'true');
+        output = await copy(dialog);
+        assert(output.includes('复盘原题') && output.includes('复盘解析'), '展开后从当前弹窗复制题目和解析');
         document.documentElement.classList.add('znx-doing-questions');
         fixtures.replaceChildren();
         makeDialog();
