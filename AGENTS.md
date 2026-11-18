@@ -59,6 +59,7 @@ All git commits MUST strictly follow the **Bilingual Commit Format**:
 
 ## 📌 3. Version Bumping Rules (版本号规则)
 
+- 本地 `develop` 每次修改美化脚本后，递增其 DEV 碎版本号，并在最后一次保存时同步更新 `DEV_SOURCE_MODIFIED_AT`，使底栏显示的版本和修改时间与实际源码一致。当前版本为 `8.4.0-dev.1.6`。这不改变发布用 Userscript `@version`。
 - **Do NOT bump Userscript `@version` headers on `develop` or task branches**.
 - Only update `@version` headers in Userscript files and `CHANGELOG.md` when preparing a release on a `release/*` or `hotfix/*` branch.
 - Version string format:

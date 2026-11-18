@@ -14,8 +14,8 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.4.0-beta.1';
-    const DEV_SOURCE_MODIFIED_AT = '2026-09-05 00:22:31';
+    const SCRIPT_VERSION = '8.4.0-dev.1.6';
+    const DEV_SOURCE_MODIFIED_AT = '2026-11-18 16:56:21';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -94,7 +94,7 @@
                 overflow: hidden !important;
             }
             [data-znx-training-progress-fill] {
-                background: var(--znx-training-progress-fill, #3b82f6) !important;
+                background: var(--znx-training-progress-fill) !important;
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
                 opacity: 1 !important;
@@ -107,6 +107,11 @@
                 border: 1px solid rgba(255, 255, 255, 0.3) !important;
                 border-radius: 12px !important;
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
+            }
+            /* 成功内容与底部操作栏共用外层毛玻璃，避免叠加底色。 */
+            [data-znx-training-success-row],
+            [data-znx-training-success-actions] {
+                background: transparent !important;
             }
 
             .MuiLinearProgress-bar,
@@ -155,6 +160,7 @@
             }
 
             /* B. 全站内容卡片 Surface 统一毛玻璃 Token (透光度 0.5, 高斯模糊 10px) */
+            html.znx-doing-questions label[name="choiceButton"][style*="background-color: rgb(255, 255, 255)"]:has(> input[name="choice"]:not(:checked)),
             .jumbotron,
             div[class*="jumbotron"],
             .MuiPaper-root:not(.MuiAppBar-root):not(.MuiDialog-paper):not(.MuiPopover-paper),
@@ -193,6 +199,9 @@
                 background: rgba(${glassRgb}, 0.8) !important;
                 backdrop-filter: blur(20px) !important;
                 -webkit-backdrop-filter: blur(20px) !important;
+            }
+            .MuiDialog-paper[data-znx-finish-test-dialog] {
+                background: rgba(${glassRgb}, 0.65) !important;
             }
 
             /* E. 做题面板 Bootstrap (opacity: 0.5, blur: 10px) */
@@ -434,31 +443,80 @@
         const textOf = el => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
         const trainingText = /训练成果|阶段|你已经初步掌握|有进步|成功！/;
 
-        document.querySelectorAll('div').forEach(el => {
-            const style = getComputedStyle(el);
-            const parent = el.parentElement;
-            if (!parent) return;
-
-            const isProgressRoot = el.children.length === 1 &&
-                el.clientWidth > 0 && el.clientHeight > 0 &&
-                el.clientWidth >= el.firstElementChild.clientWidth &&
-                el.clientHeight <= 24 &&
-                style.overflow === 'hidden';
-            const isProgressFill = parent.clientHeight > 0 &&
-                parent.clientHeight <= 24 &&
-                el.clientHeight >= parent.clientHeight * 0.7 &&
-                el.clientWidth <= parent.clientWidth &&
-                (el.getAttribute('style') || '').includes('%');
-
-            if (isProgressRoot) el.setAttribute('data-znx-training-progress-root', '1');
-            if (isProgressFill) {
-                el.setAttribute('data-znx-training-progress-fill', '1');
-                el.style.setProperty('--znx-training-progress-fill', style.backgroundColor || '#3b82f6');
+        document.querySelectorAll('[data-znx-training-success-row]').forEach(row => {
+            if (!/成功[！!]/.test(textOf(row)) || !/训练|知识点/.test(textOf(row)) || !row.querySelector('button')) {
+                row.removeAttribute('data-znx-training-success-row');
             }
-
-            if (el.clientHeight >= 60 && el.clientHeight <= 300 && trainingText.test(textOf(el)) && el.querySelector('button')) {
-                el.setAttribute('data-znx-training-transition-card', '1');
+        });
+        document.querySelectorAll('#root button').forEach(button => {
+            for (let el = button.parentElement; el && el.id !== 'root'; el = el.parentElement) {
+                if (getComputedStyle(el).display === 'table-row' &&
+                    /成功[！!]/.test(textOf(el)) && /训练|知识点/.test(textOf(el)) &&
+                    Array.from(el.children).some(child => getComputedStyle(child).display === 'table-cell')) {
+                    el.setAttribute('data-znx-training-success-row', '1');
+                    break;
+                }
             }
+        });
+
+        document.querySelectorAll('[data-znx-training-success-actions]').forEach(el => {
+            const labels = Array.from(el.querySelectorAll('button'), button => textOf(button));
+            if (!labels.includes('休息一下') || !labels.includes('继续') ||
+                !el.parentElement?.querySelector('[data-znx-training-success-row]')) {
+                el.removeAttribute('data-znx-training-success-actions');
+            }
+        });
+        document.querySelectorAll('#root button').forEach(button => {
+            if (textOf(button) !== '休息一下') return;
+            for (let el = button.parentElement; el && el.id !== 'root'; el = el.parentElement) {
+                if (getComputedStyle(el).position === 'fixed' &&
+                    el.parentElement?.querySelector('[data-znx-training-success-row]') &&
+                    Array.from(el.querySelectorAll('button')).some(other => textOf(other) === '继续')) {
+                    el.setAttribute('data-znx-training-success-actions', '1');
+                    break;
+                }
+            }
+        });
+
+        const cards = Array.from(document.querySelectorAll('div')).filter(el =>
+            el.clientHeight >= 60 && el.clientHeight <= 300 && trainingText.test(textOf(el)) && el.querySelector('button')
+        );
+
+        cards.forEach(card => {
+            card.setAttribute('data-znx-training-transition-card', '1');
+            card.querySelectorAll('div').forEach(el => {
+                const style = getComputedStyle(el);
+                const parent = el.parentElement;
+                if (!parent) return;
+
+                const isProgressRoot = el.children.length === 1 &&
+                    el.clientWidth > 0 && el.clientHeight > 0 &&
+                    el.clientWidth >= el.firstElementChild.clientWidth &&
+                    el.clientHeight <= 24 &&
+                    style.overflow === 'hidden';
+                const isProgressFill = parent.clientHeight > 0 &&
+                    parent.clientHeight <= 24 &&
+                    el.clientHeight >= parent.clientHeight * 0.7 &&
+                    el.clientWidth <= parent.clientWidth &&
+                    (el.getAttribute('style') || '').includes('%');
+
+                if (isProgressRoot) el.setAttribute('data-znx-training-progress-root', '1');
+                if (isProgressFill && !el.hasAttribute('data-znx-training-progress-fill')) {
+                    const background = style.backgroundImage !== 'none' ? style.backgroundImage : style.backgroundColor;
+                    el.style.setProperty('--znx-training-progress-fill', background);
+                    el.setAttribute('data-znx-training-progress-fill', '1');
+                }
+            });
+        });
+    }
+
+    function markFinishTestDialog() {
+        document.querySelectorAll('.MuiDialog-paper[role="dialog"]').forEach(dialog => {
+            const title = dialog.querySelector('.MuiDialogTitle-root h2');
+            const message = dialog.querySelector('.MuiDialogContent-root');
+            dialog.toggleAttribute('data-znx-finish-test-dialog',
+                title?.textContent.trim() === '完成测试' &&
+                message?.textContent.trim() === '请先完成测试，不要切换专题');
         });
     }
 
@@ -468,6 +526,7 @@
             const task = () => {
                 processDynamicJssClasses();
                 restoreTrainingVisuals();
+                markFinishTestDialog();
                 injectMainTabButton();
             };
             if (window.requestIdleCallback) {
