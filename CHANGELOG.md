@@ -2,6 +2,27 @@
 
 本文档遵守 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 规范，记录 **知能行 UI 视觉美化与考研助手 (Beautifier)** 与 **知能行通用诊断报告导出器 (Exporter)** 的全量更新历史、前版痛点修复归因、当前已知 BUG 及下一版本 Roadmap 规划。
 
+## [8.4.0] - 2026-11-18
+
+### 修复 / Fixed
+- 保留能力进度条原生渐变与考研倒计时配色。查看答案确认框不再让做题底栏误变红，答对和答错仍按底栏反馈显示。Preserved native progress and countdown colors and fixed false wrong-answer feedback.
+- 恢复训练与复盘弹窗里的题解复制入口，保留 MathJax SVG 中的辅助 MathML，避免公式丢失或重复。Fixed solution copying in training and review, including missing or duplicated MathJax formulas.
+- 数字键按屏幕视觉顺序选择选项，回车可提交答案或继续。Number keys follow the visible choice order, and Enter submits or continues.
+
+### 优化 / Improved
+- 统一题干和普通选项卡片的毛玻璃效果。训练成功页、「温故知新」「突破口」、账号设置页及「完成测试」弹窗调整了底色和通透度。Aligned glass styling across question cards, transitions, settings and the completion dialog.
+- 「复制题目和解析」移到「关闭」左侧，采用同规格的淡橙色按钮。Moved the pale amber copy button to the left of Close.
+
+### 新增 / Added
+- 支持将题目与解析一并复制为 Markdown，保留 LaTeX 及题图链接。原题折叠时提示先展开。Added Markdown copying for questions and solutions, with LaTeX and image links.
+- 新增本地快照收集器，支持自动连拍、导出离线合集和切换原版及插件视图。Added automatic local capture, offline bundles and original/enhanced views.
+
+### 已知问题 / Known issues
+- 解析缺少 TeX 源码且包含暂不支持的 MathML 结构时，复制会提示失败。Unsupported MathML without TeX source still produces a copy error.
+- 已通过本地 Chrome 夹具和真实快照提取检查。真实网页上的完整复制流程与复杂题图访问仍待验证。Live end-to-end copying and access to complex question images remain to be tested.
+
+---
+
 ## [8.4.0-beta.2] - 2026-11-18
 
 ### 修复 / Fixed

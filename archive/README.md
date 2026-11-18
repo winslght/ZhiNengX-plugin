@@ -49,7 +49,7 @@
 | 已删除文件 | 原因 | 保留者 |
 | :--- | :--- | :--- |
 | `beautifier/zhinengx_beautifier_v7.3.user.js` | 与 `v7.4.1` 内容逐字节一致 | `zhinengx_beautifier_v7.4.1.user.js` |
-| `beautifier/developer_panel/zhinengx_beautifier_dev_panel.user.js` | 与 `v7.4.1` 内容逐字节一致 | 同上；开发者面板发行版见 `archive-dev-panel` 分支 |
+| `beautifier/developer_panel/zhinengx_beautifier_dev_panel.user.js` | 与 `v7.4.1` 内容逐字节一致 | 移除重复文件；原开发者面板归档分支已停止提供安装链接 |
 | `beautifier/zhinengx_beautifier_v8.5.0.user.js` | 实为 `v8.0.0` 的副本（文件名与内容不符） | `zhinengx_beautifier_v8.0.0.user.js` |
 
 > ⚠️ 注意：`v8.5.0` **没有任何可信归档**。若后续需要追溯该版本，请从对应分支或 Git 历史中获取，不要沿用旧文件名。
