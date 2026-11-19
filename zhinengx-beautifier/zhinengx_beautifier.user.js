@@ -14,8 +14,8 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.4.0-dev.1.12';
-    const DEV_SOURCE_MODIFIED_AT = '2026-11-18 17:39:53';
+    const SCRIPT_VERSION = '8.4.0-dev.1.18';
+    const DEV_SOURCE_MODIFIED_AT = '2026-11-19 17:16:08';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -298,11 +298,60 @@
                 box-shadow: none !important;
             }
 
-            .MuiDialogActions-root button[data-znx-copy-solution] {
+            [data-znx-copy-solution-control] {
+                position: relative;
+                display: inline-block;
+                vertical-align: middle;
                 margin-inline-end: 8px;
-                background-color: #f6d38d !important;
-                border-color: #ddb970 !important;
-                color: #392709 !important;
+            }
+            button[data-znx-copy-solution].btn-primary {
+                background-color: #E58068 !important;
+                border-color: #E58068 !important;
+            }
+            button[data-znx-copy-solution].btn-primary:hover,
+            button[data-znx-copy-solution].btn-primary:focus-visible,
+            button[data-znx-copy-solution].btn-primary:active {
+                background-color: #D86B52 !important;
+                border-color: #D86B52 !important;
+            }
+            .znx-copy-solution-tooltip {
+                position: absolute;
+                inset-block-end: calc(100% + 14px);
+                inset-inline-start: 50%;
+                transform: translateX(-50%) scale(0.75, 0.5625);
+                transform-origin: center bottom;
+                width: max-content;
+                max-width: min(200px, 70vw);
+                padding: 10px 15px;
+                border-radius: 4px;
+                background-color: #fff;
+                color: #555;
+                box-shadow: 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12), 0 5px 5px -3px rgba(0, 0, 0, 0.2);
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 15px;
+                font-weight: 500;
+                line-height: 1.4;
+                text-align: center;
+                white-space: normal;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1),
+                    transform 133ms cubic-bezier(0.4, 0, 0.2, 1),
+                    visibility 0s linear 200ms;
+                pointer-events: none;
+                z-index: 2;
+            }
+            button[data-znx-copy-solution]:hover + .znx-copy-solution-tooltip,
+            button[data-znx-copy-solution]:focus-visible + .znx-copy-solution-tooltip {
+                transform: translateX(-50%) scale(1);
+                opacity: 1;
+                visibility: visible;
+                transition-delay: 0s;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .znx-copy-solution-tooltip {
+                    transition: none;
+                }
             }
 
             /* 做题工具栏与倒计时胶囊全设备多端 (PC / 平板 / 手机端) 响应式适配 */
@@ -1885,7 +1934,7 @@
             `;
             document.body.appendChild(modal);
 
-            if (subject === '题目和解析') modal.querySelector('h4').textContent = '请按 Ctrl+C 复制题目和解析';
+            if (subject === '题目及解析') modal.querySelector('h4').textContent = '请按 Ctrl+C 复制题目及解析';
             const ta = modal.querySelector('textarea');
             ta.value = text;
             ta.select();
@@ -1894,19 +1943,28 @@
             modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
         };
 
-        const replaceMathJaxScripts = (clone) => {
+        const replaceMathJaxScripts = (clone, useRenderedNonTex = false) => {
             const mathjaxScripts = Array.from(clone.querySelectorAll('script[type^="math/"], script[type^="Math/"]'));
             mathjaxScripts.forEach(script => {
                 const rawFormula = (script.textContent || script.innerText || '').trim();
                 const scriptType = (script.getAttribute('type') || '').toLowerCase();
                 const scriptId = script.id || '';
+                const frame = scriptId ? (clone.querySelector(`#${CSS.escape(scriptId + '-Frame')}`) ||
+                    Array.from(clone.querySelectorAll('[id]')).find(element => element.id.startsWith(`${scriptId}-Frame`))) : null;
+                const prev = script.previousElementSibling;
+                if (useRenderedNonTex && !/^math\/tex(?:\s*;|\s*$)/.test(scriptType)) {
+                    const rendered = frame || prev;
+                    if (rawFormula && !rendered?.matches('[data-mathml], math') &&
+                        !rendered?.querySelector('[data-mathml], math')) {
+                        throw new Error('非 TeX 公式尚未渲染');
+                    }
+                    script.remove();
+                    return;
+                }
                 if (rawFormula) {
                     const displaySelector = '.MathJax_Display, .MathJax_SVG_Display';
-                    const frame = scriptId && (clone.querySelector(`#${CSS.escape(scriptId + '-Frame')}`) ||
-                        Array.from(clone.querySelectorAll('[id]')).find(element => element.id.startsWith(`${scriptId}-Frame`)));
-                    const prev = script.previousElementSibling;
                     const isBlock = scriptType.includes('mode=display') || !!script.closest(displaySelector) ||
-                        !!frame?.closest?.(displaySelector) || !!prev?.matches(displaySelector);
+                        !!frame?.closest(displaySelector) || !!prev?.matches(displaySelector);
                     const mathMd = isBlock ? `\n$$\n${rawFormula}\n$$\n` : ` $${rawFormula}$ `;
                     if (frame && !frame.contains(script)) frame.remove();
                     if (prev?.matches('.MathJax_Preview, .MathJax_SVG, .MathJax, .MathJax_SVG_Display, .MathJax_Display')) prev.remove();
@@ -1917,7 +1975,14 @@
             });
         };
 
-        const processNodeMathAndText = (node) => {
+        const normalizeExtractedText = (text) => text
+            .replace(/[ \t]+/g, ' ')
+            .split('\n')
+            .map(line => line.trim())
+            .filter(Boolean)
+            .join('\n');
+
+        const processNodeMathAndText = (node, preserveDisplayMath = false) => {
             if (!node) return '';
             const clone = node.cloneNode(true);
 
@@ -1943,13 +2008,13 @@
 
             // 4. 提取纯文本
             const rawText = clone.innerText || clone.textContent || '';
-            return rawText
-                .replace(/[ \t]+/g, ' ')
-                .split('\n')
-                .map(line => line.trim())
-                .filter(line => line.length > 0)
-                .join('\n')
-                .trim();
+            if (!preserveDisplayMath) return normalizeExtractedText(rawText);
+
+            // 块公式单独成段，正文清理不触碰块内的 TeX。
+            return rawText.split(/(^[ \t]*\$\$[ \t]*\r?\n[\s\S]*?^[ \t]*\$\$[ \t]*(?=\r?\n|$))/gm)
+                .map((part, index) => index % 2 ? part.trim() : normalizeExtractedText(part))
+                .filter(Boolean)
+                .join('\n\n');
         };
 
         const extractPureProblemMarkdown = (problemContainerEl) => {
@@ -2007,12 +2072,28 @@
         const mathmlToLatex = (node) => {
             if (!node) throw new Error('公式结构不完整');
             if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+            const content = renderMathmlNode(node);
+            const color = node.getAttribute('mathcolor')?.trim().toLowerCase();
+            if (content && /^(?:black|blue|cyan|green|magenta|red|white|yellow)$/.test(color ?? '')) {
+                return `\\textcolor{${color}}{${content}}`;
+            }
+            return content;
+        };
+
+        const renderMathmlNode = (node) => {
             const children = Array.from(node.children);
             const parts = () => children.map(mathmlToLatex).join('');
             const symbols = { '{': '\\{', '}': '\\}', '%': '\\%', '&': '\\&', '#': '\\#', '$': '\\$', '_': '\\_', '\\': '\\backslash ', '−': '-', '×': '\\times ', '÷': '\\div ', '≤': '\\leq ', '≥': '\\geq ', '≠': '\\neq ', '∞': '\\infty ', '∑': '\\sum ', '∏': '\\prod ', '∫': '\\int ', '∂': '\\partial ', '∈': '\\in ', '→': '\\to ', 'α': '\\alpha ', 'β': '\\beta ', 'θ': '\\theta ', 'π': '\\pi ', 'λ': '\\lambda ' };
+            const operators = { '⋅': '\\cdot ', '∣': '\\vert ', '′': '\\prime ', '″': '\\prime\\prime ' };
+            const identifier = node.textContent.trim();
             switch (node.localName) {
-                case 'mi': case 'mn': case 'mo':
-                    return Array.from(node.textContent).map(char => symbols[char] || char).join('');
+                case 'mi':
+                    if (/^(?:ln|log|exp|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|sinh|cosh|tanh|lim|max|min)$/.test(identifier)) {
+                        return `\\${identifier} `;
+                    }
+                    // 普通标识符沿用符号映射。
+                case 'mn': case 'mo':
+                    return Array.from(node.textContent).map(char => operators[char] || symbols[char] || char).join('');
                 case 'mtext':
                     return `\\text{${node.textContent.replace(/[\\{}%$&#_]/g, char => `\\${char}`)}}`;
                 case 'mspace': return ' ';
@@ -2046,12 +2127,17 @@
 
         const extractSolutionMarkdown = (node) => {
             const clone = node.cloneNode(true);
-            replaceMathJaxScripts(clone);
-            clone.querySelectorAll('.katex, mjx-container, math').forEach(math => {
+            replaceMathJaxScripts(clone, true);
+            clone.querySelectorAll('.katex, mjx-container, .MathJax_SVG[data-mathml], .MathJax[data-mathml], math').forEach(math => {
                 if (!clone.contains(math)) return;
                 const annotation = math.querySelector('annotation[encoding="application/x-tex"]');
                 const source = annotation?.textContent.trim();
-                const mathml = math.matches('math') ? math : math.querySelector('math');
+                let mathml = math.matches('math') ? math : math.querySelector('math');
+                const serialized = math.getAttribute('data-mathml');
+                if (!source && !mathml && serialized) {
+                    const root = new DOMParser().parseFromString(serialized, 'application/xml').documentElement;
+                    if (root.localName === 'math') mathml = root;
+                }
                 if (!source && !mathml) throw new Error('未找到公式源码');
                 const latex = source || mathmlToLatex(mathml).trim();
                 // MathJax SVG 外壳识别参考玄鸟墨色的解析提取脚本（MIT）。
@@ -2076,7 +2162,7 @@
                 block.prepend(document.createTextNode('\n'));
                 block.append(document.createTextNode('\n'));
             });
-            return processNodeMathAndText(clone);
+            return processNodeMathAndText(clone, true);
         };
 
         const getOriginalProblemDialogs = () => {
@@ -2091,10 +2177,11 @@
             return Array.from(dialogs);
         };
 
+        let nextSolutionTooltipId = 0;
         const updateSolutionCopyButtons = () => {
             const dialogs = getOriginalProblemDialogs();
-            document.querySelectorAll('[data-znx-copy-solution]').forEach(button => {
-                if (!dialogs.includes(button.closest('[role="dialog"], .MuiDialog-paper'))) button.remove();
+            document.querySelectorAll('[data-znx-copy-solution-control]').forEach(control => {
+                if (!dialogs.includes(control.closest('[role="dialog"], .MuiDialog-paper'))) control.remove();
             });
             dialogs.forEach(dialog => {
                 if (dialog.querySelector('[data-znx-copy-solution]')) return;
@@ -2105,8 +2192,14 @@
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.dataset.znxCopySolution = '';
-                button.textContent = '复制题目和解析';
-                button.className = 'btn btn-warning';
+                button.textContent = '复制题目及解析';
+                button.className = 'btn btn-primary';
+                const tooltip = document.createElement('span');
+                tooltip.id = `znx-copy-solution-tooltip-${++nextSolutionTooltipId}`;
+                tooltip.className = 'znx-copy-solution-tooltip';
+                tooltip.setAttribute('role', 'tooltip');
+                tooltip.textContent = '复制到剪贴板，请粘贴到支持 Markdown 和 LaTeX 的笔记应用。';
+                button.setAttribute('aria-describedby', tooltip.id);
                 button.onclick = event => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -2130,13 +2223,16 @@
                             showToast('题目或解析内容为空，请等待加载完成', true);
                             return;
                         }
-                        copyToClipboard(`## 题目\n\n${questionText}\n\n## 解析\n\n${solutionText}`, '题目和解析');
+                        copyToClipboard(`## 题目\n\n${questionText}\n\n## 解析\n\n${solutionText}`, '题目及解析');
                     } catch (error) {
                         showToast('题目和解析提取失败，请检查公式或题图是否完整', true);
                     }
                 };
-                if (close) close.before(button);
-                else host.appendChild(button);
+                const control = document.createElement('span');
+                control.dataset.znxCopySolutionControl = '';
+                control.append(button, tooltip);
+                if (close) close.before(control);
+                else host.appendChild(control);
             });
         };
 

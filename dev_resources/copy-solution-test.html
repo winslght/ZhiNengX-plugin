@@ -46,7 +46,14 @@ document.getElementById('run-tests').onclick = async () => {
     try {
         fixtures.replaceChildren();
         let dialog = makeDialog();
+        dialog.querySelector('.MuiDialogActions-root').innerHTML = '<div><button id="closeSolutionModalButton" class="btn btn-primary">我是猜对的</button><button id="closeSolutionModalButton" class="btn btn-danger">关闭</button></div>';
         await settle();
+        const copyButton = dialog.querySelector('[data-znx-copy-solution]');
+        const referenceButton = dialog.querySelector('button#closeSolutionModalButton');
+        const tooltip = document.getElementById(copyButton.getAttribute('aria-describedby'));
+        assert(copyButton.textContent === '复制题目及解析' && copyButton.className === referenceButton.className &&
+            copyButton.parentElement.nextElementSibling === referenceButton && tooltip?.matches('[role="tooltip"]') &&
+            tooltip.textContent.includes('Markdown 和 LaTeX'), '复制按钮复用站点样式并放在原生按钮左侧，附有格式提示');
         let output = await copy(dialog);
         assert(output.includes('## 题目\n\n计算') && output.includes('\\frac{1}{2}') && output.includes('## 解析') && output.includes('$$\n{x}^{2}\n$$'), '题目和解析、分式、块级公式');
         assert(dialog.querySelector('math mfrac') !== null, '不修改页面公式 DOM');
@@ -71,6 +78,14 @@ document.getElementById('run-tests').onclick = async () => {
         output = await copy(dialog);
         assert(output.includes('$x+1$') && output.includes('$$\ny=2\n$$') && !output.includes('重复视觉文本'), 'KaTeX 与 MathJax v2 源码及去重');
         fixtures.replaceChildren();
+        const aligned = '\\begin{aligned}\na & =  b \\\\\na & = c\n\\end{aligned}';
+        dialog = makeDialog('<p>求极限</p><math display="block"><mi>x</mi></math><p>写出结果。</p>',
+            '<p>【解答】</p><script type="math/tex; mode=display">' + aligned + '<\/script><p>计算完成。</p>');
+        await settle();
+        output = await copy(dialog);
+        assert(output.includes('求极限\n\n$$\nx\n$$\n\n写出结果。') &&
+            output.includes('【解答】\n\n$$\n' + aligned + '\n$$\n\n计算完成。'), '题干和解析块公式独立成段，保留多行 TeX');
+        fixtures.replaceChildren();
         dialog = makeDialog('<p>题图<img alt="示意图" src="data:image/png;base64,aA=="></p>', '<p>第一步</p><p>第二步<br>第三步</p>');
         await settle();
         output = await copy(dialog);
@@ -81,7 +96,7 @@ document.getElementById('run-tests').onclick = async () => {
         assert(testState.clipboard.includes('## 解析'), 'Clipboard 拒绝后 execCommand 降级');
         testState.mode = 'manual';
         await copy(dialog);
-        assert(document.querySelector('#znx-copy-modal textarea').value.includes('## 解析') && document.querySelector('#znx-copy-modal h4').textContent.includes('题目和解析'), '双重失败后手动复制');
+        assert(document.querySelector('#znx-copy-modal textarea').value.includes('## 解析') && document.querySelector('#znx-copy-modal h4').textContent.includes('题目及解析'), '双重失败后手动复制');
         document.querySelector('#znx-modal-close-btn').click();
         testState.mode = 'api';
         fixtures.replaceChildren();
@@ -100,6 +115,22 @@ document.getElementById('run-tests').onclick = async () => {
         await settle();
         output = await copy(dialog);
         assert(output.includes('$x+2$'), 'MathJax v2 优先 TeX，不受辅助 MathML 阻断');
+        fixtures.replaceChildren();
+        dialog = makeDialog('<p>原题</p>',
+            '以 <span class="MathJax_SVG"><span class="MJX_Assistive_MathML"><math><mstyle mathcolor="red"><mrow><mtext>任何方式</mtext></mrow></mstyle></math></span></span> 趋近于 <span class="MathJax_SVG" data-mathml="&lt;math&gt;&lt;mstyle mathcolor=&quot;red&quot;&gt;&lt;mtext&gt;同一常数&lt;/mtext&gt;&lt;/mstyle&gt;&lt;/math&gt;"></span> A。');
+        await settle();
+        output = await copy(dialog);
+        assert(output.includes('以 $\\textcolor{red}{\\text{任何方式}}$ 趋近于 $\\textcolor{red}{\\text{同一常数}}$ A。'),
+            '保留辅助 MathML 和 data-mathml 中的局部红色强调');
+        fixtures.replaceChildren();
+        dialog = makeDialog(
+            '<span class="MathJax_SVG" id="MathJax-Ascii-Frame"><span class="MJX_Assistive_MathML"><math><mfrac><msqrt><mn>2</mn></msqrt><mn>2</mn></mfrac><mi>ln</mi><mi>a</mi></math></span></span><script type="math/asciimath" id="MathJax-Ascii">sqrt2/2ln(a<\/script>',
+            '<span class="MathJax_SVG" data-mathml="&lt;math&gt;&lt;msup&gt;&lt;mi&gt;f&lt;/mi&gt;&lt;mo&gt;′&lt;/mo&gt;&lt;/msup&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mo&gt;∂&lt;/mo&gt;&lt;mi&gt;F&lt;/mi&gt;&lt;/math&gt;"></span>'
+        );
+        await settle();
+        output = await copy(dialog);
+        assert(output.includes('\\frac{\\sqrt{2}}{2}\\ln a') && !output.includes('sqrt2/2ln(a') &&
+            output.includes('{f}^{\\prime }=\\partial F'), 'AsciiMath 用渲染后的结构转换，支持 data-mathml、对数和导数');
         fixtures.replaceChildren();
         dialog = makeDialog('<p>原题</p>', '<div class="MathJax_SVG_Display"><span class="MathJax_SVG" id="MathJax-Element-3-Frame"><span class="MJX_Assistive_MathML"><math><mi>q</mi></math></span></span></div><script type="math/tex" id="MathJax-Element-3">q=3<\/script><span class="MathJax_SVG"><span class="MJX_Assistive_MathML"><math><msub><mi>x</mi><mi>n</mi></msub></math></span></span>');
         await settle();
