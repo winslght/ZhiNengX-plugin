@@ -2,6 +2,34 @@
 
 本文档遵守 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 规范，记录 **知能行 UI 视觉美化与考研助手 (Beautifier)** 与 **知能行通用诊断报告导出器 (Exporter)** 的全量更新历史、前版痛点修复归因、当前已知 BUG 及下一版本 Roadmap 规划。
 
+## [导出器 11.1.0-beta.1 · 美化助手 8.4.0-beta.3] - 2026-11-20
+
+### 修复 / Fixed
+
+- **美化助手**：修复答案解析里部分 MathJax SVG / AsciiMath 公式复制后结构丢失的问题。从辅助 MathML 和序列化 MathML 恢复公式，保留显示公式的独立 Markdown 段落、公式内空格和可识别的彩色强调。Restored formula structure, display blocks, TeX spacing and color emphasis in copied solutions.
+- **导出器**：修复高数、线代响应轮流到达时互相覆盖，以及缺失值被误显示为 0% 的问题。同一标签页保留各自有效字段，显式 0% 照常显示，从未取得的值显示「—」。Preserved valid per-subject data across partial responses and distinguished missing values from zero.
+- **导出器**：区分每日综合刷题与纯综测的题量和正确率，同时单列辅导题量。当天无综测时保留零题量与空正确率。Separated overall practice, mock exams and tutoring statistics.
+
+### 优化 / Improved
+
+- **美化助手**：答案弹窗入口统一为「复制题目及解析」。按钮沿用原生悬停和按压反馈，采用浅橙配色，提示框跟随相邻原生提示的外观和渐入渐出动画。Matched the copy control and animated help tooltip to the solution dialog.
+- **导出器**：报告和图表按页面顺序排高数，再排线代。线代依次为行列式与矩阵、秩与向量、线性方程组、特征值、二次型。Markdown 使用章节名称，隐藏内部代号。Aligned topic order with the site and removed internal topic IDs from reports.
+- **导出器**：宽窗口的雷达图和每日统计图并排撑满整行，窄窗口上下排列。图高增加至 560px，放大雷达图和标签。章节图加大组间距与分隔线，悬停数值右对齐，白色指标圆点加描边。Improved responsive chart sizing, labels, grouping and tooltip readability.
+- **开发维护**：原始 JSON、下载的网页资源、HAR 与本地快照保留在本机。Ignored local captures and downloaded site resources.
+
+### 新增 / Added
+
+- **导出器**：直接从刷新时捕获的 JSON 读取「12月20日」能力值。报告记录响应获取时间，标明沿用缓存的科目，导出时在顶部提示缺失科目。无需逐章展开。Added dated exam ability, capture timestamps, cache indicators and immediate missing-subject notices.
+- **导出器**：按实际报告内容判断重复。成功刷新后内容相同会说明已重新获取，连续刷新仍相同时提示可在新的练习或测试后再查看。Added copy freshness and unchanged-data feedback.
+- **导出器**：今天、本周、上周各一张章节进步图，按统一横轴展示等级 1–5 和「12月20日」的百分点变化。六种颜色区分指标，图例可交互，数字明细可展开。Added three grouped progress charts with a shared scale, interactive legends and expandable tables.
+
+### 已知问题与验证 / Known issues and verification
+
+- 首次在标签页仅收到一科响应时，其他科目明细可能需要切换科目并刷新才能补齐。未获取的科目会在导出时提示。A first capture may require visiting another subject to complete the report.
+- 已用本地响应样本和 Chrome 验证报告、图表及缺失值，并以答案页快照检查公式导出。其他数学科目和不同浏览器的在线表现仍待扩大验证。Verified representative samples in Chrome. Broader subject and browser coverage is pending.
+
+---
+
 ## [8.4.0-beta.2] - 2026-11-18
 
 ### 修复 / Fixed

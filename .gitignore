@@ -12,7 +12,9 @@ Thumbs.db
 
 # Dev debug dumps (optional large html pages & downloaded static files)
 dev_resources/html/
-dev_resources/data/*.json
+dev_resources/data/
+dev_resources/resources/
+dev_resources/**/*.har
 
 # 本地页面快照（含头像/用户名/做题记录等个人数据，永不入库）
 dev_resources/snapshots/inbox/*
