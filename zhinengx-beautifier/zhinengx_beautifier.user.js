@@ -14,8 +14,8 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.4.0-dev.1.18';
-    const DEV_SOURCE_MODIFIED_AT = '2026-11-19 17:16:08';
+    const SCRIPT_VERSION = '8.4.1-dev.1.1';
+    const DEV_SOURCE_MODIFIED_AT = '2026-11-20 02:06:26';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
