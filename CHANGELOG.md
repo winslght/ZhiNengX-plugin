@@ -2,10 +2,11 @@
 
 本文档遵守 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 规范，记录 **知能行 UI 视觉美化与考研助手 (Beautifier)** 与 **知能行通用诊断报告导出器 (Exporter)** 的全量更新历史、前版痛点修复归因、当前已知 BUG 及下一版本 Roadmap 规划。
 
-## [导出器 11.1.0-beta.1 · 美化助手 8.4.0-beta.3] - 2026-11-20
+## [导出器 11.1.0-beta.1 · 美化助手 8.4.1-beta.1] - 2026-11-20
 
 ### 修复 / Fixed
 
+- **美化助手**：公测编号提升至 8.4.1-beta.1，从 8.4.0 正式版安装时油猴会按升级处理。Raised the beta version above the 8.4.0 stable release so Tampermonkey treats it as an upgrade.
 - **美化助手**：修复答案解析里部分 MathJax SVG / AsciiMath 公式复制后结构丢失的问题。从辅助 MathML 和序列化 MathML 恢复公式，保留显示公式的独立 Markdown 段落、公式内空格和可识别的彩色强调。Restored formula structure, display blocks, TeX spacing and color emphasis in copied solutions.
 - **导出器**：修复高数、线代响应轮流到达时互相覆盖，以及缺失值被误显示为 0% 的问题。同一标签页保留各自有效字段，显式 0% 照常显示，从未取得的值显示「—」。Preserved valid per-subject data across partial responses and distinguished missing values from zero.
 - **导出器**：区分每日综合刷题与纯综测的题量和正确率，同时单列辅导题量。当天无综测时保留零题量与空正确率。Separated overall practice, mock exams and tutoring statistics.
