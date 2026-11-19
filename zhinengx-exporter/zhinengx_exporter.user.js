@@ -18,6 +18,7 @@
 
     const win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
 
+    const SCRIPT_VERSION = '11.1.0-dev.1.1';
     let rawFullJson = null;
 
     // 强行约束原生侧边栏顺序 (包含数一、数二、数三全模块)
@@ -91,6 +92,71 @@
 
     function getExcludeKeys(examType) {
         return EXCLUDE_KEYS_BY_EXAM[examType] || EXCLUDE_KEYS_BY_EXAM[2];
+    }
+
+    function normalizeTopicName(name) {
+        return name.replace(/\s+/g, '').replace(/[·•]/g, '•');
+    }
+
+    const TOPIC_KEYS_BY_NAME = new Map(Object.entries(TOPIC_NAMES).map(([key, name]) => [normalizeTopicName(name), key]));
+    const DATED_PROGRESS_LABEL = /^(\d{1,2}月\d{1,2}日)\s*[：:]\s*(\d+(?:\.\d+)?)%$/;
+    const DATED_PROGRESS_HINT = '日期能力条请在「进度 → 分类进度」展开章节后导出。';
+
+    function readPageProgress(root) {
+        const dates = new Set();
+        const byTopic = new Map();
+        const headings = root.querySelectorAll('nav.MuiList-root > div > .MuiListItem-button .MuiListItemText-primary');
+
+        for (const heading of headings) {
+            const name = heading.querySelector('div > span')?.textContent || heading.textContent;
+            const key = TOPIC_KEYS_BY_NAME.get(normalizeTopicName(name));
+            if (!key) continue;
+            if (!byTopic.has(key)) byTopic.set(key, new Map());
+
+            const card = heading.closest('.MuiListItem-button').nextElementSibling?.querySelector('.MuiCardContent-root');
+            if (!card) continue;
+
+            for (const label of card.querySelectorAll('span > span')) {
+                const match = label.textContent.trim().match(DATED_PROGRESS_LABEL);
+                if (!match || Number(match[2]) > 100) continue;
+
+                const [, date, percent] = match;
+                dates.add(date);
+                byTopic.get(key).set(date, percent + '%');
+            }
+        }
+        return { order: [...byTopic.keys()], dates: [...dates], byTopic };
+    }
+
+    function orderedTopics(keys, pageOrder, excludeKeys) {
+        const remaining = new Set(keys.filter(key => !excludeKeys.has(key)));
+        const ordered = [...pageOrder, ...TOPIC_ORDER].filter(key => remaining.delete(key));
+        return [...ordered, ...remaining];
+    }
+
+    function getLevelsData(status) {
+        const reportLevels = status.progress_report_info?.progress_info_per_topic_all_module;
+        const annualModules = status.extra_info_for_annual_plan?.module_to_topic_to_progress_per_level;
+        if (reportLevels) return reportLevels;
+        if (annualModules) return Object.assign({}, ...Object.values(annualModules));
+
+        return status.topic_to_level_to_progress_with_self_check_obs || {};
+    }
+
+    function getProgressRows(status, pageProgress, excludeKeys) {
+        const levelsData = getLevelsData(status);
+        const rows = [];
+
+        for (const key of orderedTopics([...Object.keys(levelsData), ...pageProgress.order], pageProgress.order, excludeKeys)) {
+            const levels = Array.isArray(levelsData[key]) ? levelsData[key] : [];
+            const score = status.topic?.[key] || 0;
+            const noRustyScore = status.topic_without_rusty?.[key] || 0;
+            const dated = pageProgress.byTopic.get(key);
+            if (dated?.size || levels.some(rate => rate > 0) || score > 0 || noRustyScore > 0) {
+                rows.push({ key, levels, score, noRustyScore, dated });
+            }
+        }
+        return rows;
     }
 
     // 格式化当前日期为 yyyy/mm/dd
@@ -200,7 +266,7 @@
     // ==========================================
     // 纯粹诊断报告生成器 (最顶行指定标题)
     // ==========================================
-    function buildPureMarkdownReport(json) {
+    function buildPureMarkdownReport(json, pageProgress) {
         if (!json || !json.status) return null;
 
         const status = json.status || {};
@@ -211,8 +277,6 @@
         const wrongInfo = reportInfo.wrong_problem_reason_info || {};
         const changeInfo = reportInfo.period_to_progress_change_info || {};
         const detailed = status.topic_to_detailedProgress || {};
-        const topicScores = status.topic || {};
-        const topicWithoutRusty = status.topic_without_rusty || {};
         const compSkillInfo = status.computational_skill_info_all_topic || {};
         const yellowDots = status.topics_with_yellowDot || [];
         const inApp = profile.inAppMessageInfo || {};
@@ -221,16 +285,6 @@
         const examName = profile.examType === 1 ? '数学一 (数一)' : (profile.examType === 2 ? '数学二 (数二)' : (profile.examType === 3 ? '数学三 (数三)' : '考研数学'));
         const yyyymmdd = getYYYYMMDD();
         const timestamp = getFormattedTimestamp();
-
-        let levelsData = reportInfo.progress_info_per_topic_all_module;
-        if (!levelsData && status.extra_info_for_annual_plan?.module_to_topic_to_progress_per_level) {
-            levelsData = {};
-            const modules = status.extra_info_for_annual_plan.module_to_topic_to_progress_per_level;
-            for (let m in modules) {
-                Object.assign(levelsData, modules[m]);
-            }
-        }
-        if (!levelsData) levelsData = status.topic_to_level_to_progress_with_self_check_obs || {};
 
         // 顶行要求格式: 知能行yyyy/mm/dd导出报告
         let md = `# 知能行${yyyymmdd}导出报告\n\n`;
@@ -245,7 +299,7 @@
         md += `- **累计刷题时长**：${inApp.totalTimeSpent ? (inApp.totalTimeSpent / 3600000).toFixed(1) + ' 小时' : '未知'}\n`;
         md += `- **完成辅导 Session**：${inApp.numFinishedTutorSession || 0} 次\n`;
         if (yellowDots.length > 0) {
-            const yellowNames = yellowDots.filter(k => !excludeKeys.has(k)).map(k => TOPIC_NAMES[k] || k).join('、');
+            const yellowNames = orderedTopics(yellowDots, pageProgress.order, excludeKeys).map(k => TOPIC_NAMES[k] || k).join('、');
             if (yellowNames) {
                 md += `- ⚠️ **须优先消灭小黄点章节**：${yellowNames}\n`;
             }
@@ -254,41 +308,26 @@
 
         // 2. 核心章节熟练度五级分布 (过滤 0% 与非考纲章节)
         md += `## 2. 核心章节熟练度分布 (Level 1 ~ Level 5)\n\n`;
-        md += `| 章节代号 | 章节名称 | 综合熟练度 | 抗生锈熟练度 | L1 (基础%) | L2 (进阶%) | L3 (熟练%) | L4 (拔高%) | L5 (通精%) |\n`;
-        md += `| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n`;
+        const dateHeaders = pageProgress.dates.map(date => ` ${date} |`).join('');
+        md += `| 章节代号 | 章节名称 | 综合熟练度 | 抗生锈熟练度 | L1 (基础%) | L2 (进阶%) | L3 (熟练%) | L4 (拔高%) | L5 (通精%) |${dateHeaders}\n`;
+        md += `|${' :--- |'.repeat(9 + pageProgress.dates.length)}\n`;
 
-        for (const key in levelsData) {
-            if (excludeKeys.has(key)) continue;
-
-            const rates = levelsData[key];
-            const safeRates = Array.isArray(rates) ? rates : [0, 0, 0, 0, 0];
-            const rawScoreVal = topicScores[key] || 0;
-            const noRustyScoreVal = topicWithoutRusty[key] || 0;
-
-            const hasProgress = safeRates.some(r => r > 0) || rawScoreVal > 0 || noRustyScoreVal > 0;
-            if (!hasProgress) continue;
-
+        for (const { key, levels, score, noRustyScore, dated } of getProgressRows(status, pageProgress, excludeKeys)) {
             const topicName = TOPIC_NAMES[key] || key;
-            const rawScore = (rawScoreVal * 100).toFixed(1) + '%';
-            const noRustyScore = (noRustyScoreVal * 100).toFixed(1) + '%';
-
-            const l1 = ((safeRates[0] || 0) * 100).toFixed(1) + '%';
-            const l2 = ((safeRates[1] || 0) * 100).toFixed(1) + '%';
-            const l3 = ((safeRates[2] || 0) * 100).toFixed(1) + '%';
-            const l4 = ((safeRates[3] || 0) * 100).toFixed(1) + '%';
-            const l5 = ((safeRates[4] || 0) * 100).toFixed(1) + '%';
-            
-            md += `| \`${key}\` | **${topicName}** | **${rawScore}** | ${noRustyScore} | ${l1} | ${l2} | ${l3} | ${l4} | ${l5} |\n`;
+            const rawScore = (score * 100).toFixed(1) + '%';
+            const noRusty = (noRustyScore * 100).toFixed(1) + '%';
+            const levelCells = Array.from({ length: 5 }, (_, index) => ` ${((levels[index] || 0) * 100).toFixed(1)}% |`).join('');
+            const dateCells = pageProgress.dates.map(date => ` ${dated?.get(date) ?? '—'} |`).join('');
+            md += `| \`${key}\` | **${topicName}** | **${rawScore}** | ${noRusty} |${levelCells}${dateCells}\n`;
         }
+        if (!pageProgress.dates.length) md += `\n${DATED_PROGRESS_HINT}\n`;
 
         // 3. 三维能力拆解 (过滤 0% 章节)
         md += `\n## 3. 知识点三维能力拆解 (概念 / 简单应用 / 综合技巧)\n\n`;
         md += `| 章节代号 | 章节名称 | 💡 概念掌握 (CONCEPTS) | 🛠️ 简单应用 (APPLICATION) | ⚡ 综合技巧 (COMBO) |\n`;
         md += `| :--- | :--- | :--- | :--- | :--- |\n`;
 
-        for (const key in detailed) {
-            if (excludeKeys.has(key)) continue;
-
+        for (const key of orderedTopics(Object.keys(detailed), pageProgress.order, excludeKeys)) {
             const dims = detailed[key];
             if (dims && (dims.CONCEPTS > 0 || dims.SIMPLE_APPLICATION > 0 || dims.COMBO_SKILL > 0)) {
                 const topicName = TOPIC_NAMES[key] || key;
@@ -303,9 +342,7 @@
         md += `\n## 4. 重计算题硬核能力明细\n\n`;
         md += `| 章节代号 | 章节名称 | 重计算题接触数 | 独立做对率 | 二次尝试修正次数 |\n`;
         md += `| :--- | :--- | :--- | :--- | :--- |\n`;
-        for (const key in compSkillInfo) {
-            if (excludeKeys.has(key)) continue;
-
+        for (const key of orderedTopics(Object.keys(compSkillInfo), pageProgress.order, excludeKeys)) {
             const info = compSkillInfo[key];
             if (info && info.num_seen_computational_heavy_problems > 0) {
                 const name = TOPIC_NAMES[key] || key;
@@ -424,10 +461,10 @@
         const profile = rawFullJson.profile || {};
         const excludeKeys = getExcludeKeys(profile.examType);
 
-        const filterTopics = (keys) => keys.filter(k => !excludeKeys.has(k) && TOPIC_NAMES[k]);
+        const pageProgress = readPageProgress(document);
+        const filterTopics = keys => orderedTopics(keys, pageProgress.order, excludeKeys).filter(key => TOPIC_NAMES[key]);
 
         // 1. 原生级进度矩阵
-        let levelsData = status.progress_report_info?.progress_info_per_topic_all_module || status.topic_to_level_to_progress_with_self_check_obs || {};
         const matrixContainer = document.getElementById('znx-chart-bar');
         
         let matrixHtml = `
@@ -441,48 +478,43 @@
                         <th style="padding: 15px 10px; width: 16%;">等级 3 (熟练)</th>
                         <th style="padding: 15px 10px; width: 16%;">等级 4 (拔高)</th>
                         <th style="padding: 15px 10px; width: 16%;">等级 5 (通精)</th>
+                        ${pageProgress.dates.map(date => `<th style="padding: 15px 10px; white-space: nowrap;">${date}</th>`).join('')}
                     </tr>
                 </thead>
                 <tbody>
         `;
 
-        // 强行按照原生侧边栏的章节顺序遍历
-        TOPIC_ORDER.forEach(k => {
-            // 如果用户不是数二，或者该章节不在数二黑名单中
-            if (!excludeKeys.has(k)) {
-                const rates = levelsData[k] || [0, 0, 0, 0, 0];
-                const rawScoreVal = status.topic ? (status.topic[k] || 0) : 0;
-                
-                // 只有该章节至少有一级进度>0，或者总进度>0才展示
-                if (rates.some(r => r > 0) || rawScoreVal > 0) {
-                    matrixHtml += `<tr style="border-bottom: 1px solid #f3f4f6;">`;
-                    matrixHtml += `<td style="padding: 18px 10px; text-align: left; font-weight: bold; color: #111827; font-size: 16px;">${TOPIC_NAMES[k] || k}</td>`;
-                    
-                    for (let i = 0; i < 5; i++) {
-                        const percent = (rates[i] || 0) * 100;
-                        if (percent > 0) {
-                            matrixHtml += `
-                                <td style="padding: 15px 10px;">
-                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                        <div style="border: 1px solid rgb(69, 101, 155); background: linear-gradient(to right, rgb(121, 179, 82) ${percent}%, white ${percent}%); height: 16px; width: 90%; border-radius: 2px;"></div>
-                                        <div style="color: #4b5563; font-size: 13px; font-weight: bold; margin-top: 6px;">${percent.toFixed(1)}%</div>
-                                    </div>
-                                </td>
-                            `;
-                        } else {
-                            matrixHtml += `
-                                <td style="padding: 15px 10px;">
-                                    <div style="color: #d1d5db; font-size: 13px; font-weight: 500;">0.0%</div>
-                                </td>
-                            `;
-                        }
-                    }
-                    matrixHtml += `</tr>`;
+        for (const { key, levels: rates, dated } of getProgressRows(status, pageProgress, excludeKeys)) {
+            matrixHtml += `<tr style="border-bottom: 1px solid #f3f4f6;">`;
+            matrixHtml += `<td style="padding: 18px 10px; text-align: left; font-weight: bold; color: #111827; font-size: 16px;">${TOPIC_NAMES[key] || key.replaceAll("&", "&amp;").replaceAll("<", "&lt;")}</td>`;
+
+            for (let i = 0; i < 5; i++) {
+                const percent = (rates[i] || 0) * 100;
+                if (percent > 0) {
+                    matrixHtml += `
+                        <td style="padding: 15px 10px;">
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <div style="border: 1px solid rgb(69, 101, 155); background: linear-gradient(to right, rgb(121, 179, 82) ${percent}%, white ${percent}%); height: 16px; width: 90%; border-radius: 2px;"></div>
+                                <div style="color: #4b5563; font-size: 13px; font-weight: bold; margin-top: 6px;">${percent.toFixed(1)}%</div>
+                            </div>
+                        </td>
+                    `;
+                } else {
+                    matrixHtml += `
+                        <td style="padding: 15px 10px;">
+                            <div style="color: #d1d5db; font-size: 13px; font-weight: 500;">0.0%</div>
+                        </td>
+                    `;
                 }
             }
-        });
+            for (const date of pageProgress.dates) {
+                matrixHtml += `<td style="padding: 15px 10px;">${dated?.get(date) ?? '—'}</td>`;
+            }
+            matrixHtml += `</tr>`;
+        }
 
         matrixHtml += `</tbody></table>`;
+        if (!pageProgress.dates.length) matrixHtml += `<p>${DATED_PROGRESS_HINT}</p>`;
         matrixContainer.innerHTML = matrixHtml;
 
         // 2. 三维能力雷达图
@@ -552,6 +584,7 @@
             exportBtn.className = historyTab.className.replace('Mui-selected', '').trim();
             exportBtn.tabIndex = -1;
             exportBtn.type = 'button';
+            exportBtn.title = SCRIPT_VERSION;
             exportBtn.role = 'tab';
             exportBtn.setAttribute('aria-selected', 'false');
             exportBtn.id = 'modulePageTabs导出';
@@ -586,7 +619,7 @@
                         return;
                     }
 
-                    const reportMarkdown = buildPureMarkdownReport(data);
+                    const reportMarkdown = buildPureMarkdownReport(data, readPageProgress(document));
                     if (!reportMarkdown) {
                         alert('诊断报告生成失败：返回的数据解构缺乏核心状态，请刷新页面重试！');
                         return;
@@ -646,6 +679,7 @@
             chartBtn.className = historyTab.className.replace('Mui-selected', '').trim();
             chartBtn.tabIndex = -1;
             chartBtn.type = 'button';
+            chartBtn.title = SCRIPT_VERSION;
             chartBtn.role = 'tab';
             chartBtn.setAttribute('aria-selected', 'false');
             chartBtn.id = 'modulePageTabs图表';
