@@ -756,14 +756,27 @@
         // ==========================================
         // ECharts 与大屏 UI
         // ==========================================
-        let echartsLoaded = false;
+        // A pending promise is shared by preloading and chart clicks. Keep a
+        // successful load, but discard a failed attempt so the next click retries.
+        let echartsLoad = null;
         function loadECharts() {
-            if (echartsLoaded || document.getElementById('echarts-lib')) return;
-            const script = document.createElement('script');
-            script.id = 'echarts-lib';
-            script.src = 'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js';
-            script.onload = () => { echartsLoaded = true; };
-            document.head.appendChild(script);
+            if (echartsLoad) return echartsLoad;
+            echartsLoad = new Promise(resolve => {
+                const script = document.createElement('script');
+                script.id = 'echarts-lib';
+                script.src = 'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js';
+                const finish = loaded => {
+                    if (!loaded) {
+                        script.remove();
+                        echartsLoad = null;
+                    }
+                    resolve(loaded);
+                };
+                script.onload = () => finish(typeof window.echarts?.init === 'function');
+                script.onerror = () => finish(false);
+                document.head.appendChild(script);
+            });
+            return echartsLoad;
         }
 
         function createDashboardModal() {
@@ -940,7 +953,7 @@
         }
 
         function renderCharts() {
-            if (!echartsLoaded || !progressSnapshot) return;
+            if (!progressSnapshot) return;
             const { status, profile = {} } = progressSnapshot.data;
             const excludeKeys = getExcludeKeys(profile.examType);
 
@@ -1178,8 +1191,8 @@
                     if (!snapshot) {
                         alert('未能调取到熟练度 JSON 数据，请确认知能行是否已登录并刷新页面！'); return;
                     }
-                    if (!echartsLoaded) {
-                        alert('图表库 ECharts 正在加载，请稍候再试...'); return;
+                    if (!await loadECharts()) {
+                        alert('图表库 ECharts 加载失败，请再次点击数据图表重试。'); return;
                     }
                     createDashboardModal();
                 });
@@ -1202,8 +1215,8 @@
     }
 
     function mountBeautifier() {
-        const SCRIPT_VERSION = '10.0.0-dev.1.2';
-        const DEV_SOURCE_MODIFIED_AT = '2026-11-20 20:04:51';
+        const SCRIPT_VERSION = '10.0.0-dev.1.3';
+        const DEV_SOURCE_MODIFIED_AT = '2026-11-20 20:27:11';
         console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
         let styleEl;
@@ -3027,7 +3040,7 @@
                                problemContainerEl.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
                                problemContainerEl.querySelector('div[class*="ProblemItem"]');
 
-                const stemText = extractContentMarkdown(stemEl || problemContainerEl);
+                const stemText = extractContentMarkdown(stemEl || problemContainerEl, { training: true });
 
                 // 2. 正向靶向定位【选择题选项 DOM】按物理 Y 轴位置升序排列
                 const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
@@ -3047,7 +3060,7 @@
 
                 const optionTexts = optionEls.map((label, idx) => {
                     const letter = choiceLetters[idx] || '';
-                    let txt = extractContentMarkdown(label);
+                    let txt = extractContentMarkdown(label, { training: true });
                     if (letter && !txt.startsWith(`${letter}.`) && !txt.startsWith(`${letter} `)) {
                         txt = `${letter}. ${txt}`;
                     }
@@ -3123,7 +3136,7 @@
                 }
             };
 
-            const extractContentMarkdown = (node) => {
+            const extractContentMarkdown = (node, { training = false } = {}) => {
                 const clone = node.cloneNode(true);
                 replaceMathJaxScripts(clone);
                 clone.querySelectorAll('.katex, mjx-container, .MathJax_SVG[data-mathml], .MathJax[data-mathml], math').forEach(math => {
@@ -3136,8 +3149,12 @@
                         const root = new DOMParser().parseFromString(serialized, 'application/xml').documentElement;
                         if (root.localName === 'math') mathml = root;
                     }
-                    if (!source && !mathml) throw new Error('未找到公式源码');
-                    const latex = source || mathmlToLatex(mathml).trim();
+                    let latex = source || (mathml && mathmlToLatex(mathml).trim());
+                    if (!latex && training && math.matches('.katex')) {
+                        const plain = math.querySelector('.katex-mathml');
+                        if (plain && !plain.childElementCount) latex = plain.textContent.trim();
+                    }
+                    if (!latex && !mathml) throw new Error('未找到公式源码');
                     // MathJax SVG 外壳识别参考玄鸟墨色的解析提取脚本（MIT）。
                     const display = math.closest('.katex-display, mjx-container[display="true"], .MathJax_SVG_Display, .MathJax_Display');
                     const visual = math.closest('.MathJax_SVG, .MathJax') || math.closest('.MJX_Assistive_MathML');

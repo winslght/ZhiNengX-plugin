@@ -1,0 +1,66 @@
+{
+  "profile": {
+    "username": "fixture",
+    "examType": 2
+  },
+  "status": {
+    "topic_to_final_progress": {
+      "limit-compute": 0,
+      "det-compute": 0.2
+    },
+    "progress_report_info": {
+      "progress_info_per_topic_all_module": {
+        "limit-compute": [
+          0,
+          null,
+          0.3
+        ],
+        "det-compute": [
+          0.1
+        ]
+      },
+      "period_to_progress_change_info": {
+        "today": {
+          "sorted_topics": [
+            "limit-compute"
+          ],
+          "progress_improvement_info_per_topic": {
+            "limit-compute": {
+              "0": {
+                "old_progress": 0,
+                "new_progress": 0.1
+              }
+            }
+          }
+        },
+        "did_make_progress_today": false,
+        "cur_week": {
+          "sorted_topics": [
+            "limit-compute"
+          ],
+          "progress_improvement_info_per_topic": {
+            "limit-compute": {
+              "0": {
+                "old_progress": 0,
+                "new_progress": 0.1
+              }
+            }
+          }
+        },
+        "last_week": {
+          "sorted_topics": [
+            "limit-compute"
+          ],
+          "progress_improvement_info_per_topic": {
+            "limit-compute": {
+              "0": {
+                "old_progress": 0,
+                "new_progress": 0.1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

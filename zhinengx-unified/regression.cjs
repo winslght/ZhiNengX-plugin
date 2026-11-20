@@ -10,13 +10,8 @@ const baseline = file => execFileSync('git', ['show', 'ab81e2b:' + file], { cwd:
 const beauty = baseline('zhinengx-beautifier/zhinengx_beautifier.user.js');
 const exporter = baseline('zhinengx-exporter/zhinengx_exporter.user.js');
 const unified = read('zhinengx-unified/zhinengx_unified.user.js');
-const profile = JSON.parse(read('dev_resources/data/getUserProfileDiagramLast.json').replace(/^\uFEFF/, ''));
-const inbox = 'dev_resources/snapshots/inbox';
-function snapshot(prefix) {
-    const file = fs.readdirSync(path.join(root, inbox)).find(name => name.startsWith(prefix));
-    assert.ok(file, 'missing snapshot ' + prefix);
-    return read(path.join(inbox, file));
-}
+const fixtureText = name => read('zhinengx-unified/fixtures/' + name);
+const profile = JSON.parse(fixtureText('profile.json'));
 const fixture = read('dev_resources/copy-solution-test.html');
 const origin = 'https://replay.invalid';
 const html = '<div id="root"><div class="MuiTabs-flexContainer"><button id="modulePageTabs历史">历史</button></div></div>';
@@ -111,21 +106,17 @@ async function run(browser, variant) {
     assert.deepEqual(await pos(),{left:200,top:185});
     console.log(variant,'legacy settings, mouse and touch drag OK');
 
-    for (const [kind, prefix] of [['choice','znx_20261120-151159'],['blank','znx_20261120-152535']]) {
+    for (const kind of ['choice', 'blank']) {
         await page.evaluate(source => {
-            const tree = new DOMParser().parseFromString(source,'text/html');
-            const captured = tree.querySelector('#znx-snapshot-full').content.querySelector('#root');
-            if (!captured) throw Error('missing snapshot root');
-            captured.querySelectorAll('script:not([type^="math/"]),iframe').forEach(el=>el.remove());
-            document.querySelector('#root').replaceWith(document.importNode(captured,true));
+            const tree = new DOMParser().parseFromString(source, 'text/html');
+            document.querySelector('#root').replaceWith(document.importNode(tree.querySelector('#root'), true));
             document.activeElement.blur();
-        }, snapshot(prefix));
+        }, fixtureText(kind + '.html'));
         if (kind === 'choice') {
-            const second = await page.locator('input[name=choice]').evaluateAll(inputs =>
-                inputs.filter(input => input.getBoundingClientRect().height > 0 &&
-                    !/我没有思路|显示有问题/.test(input.closest('label')?.textContent || ''))
-                    .sort((a,b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[1]?.closest('label')?.id);
-            assert.ok(second, 'snapshot must contain a second choice');
+            const second = 'choiceButtonB';
+            const visualOrder = await page.locator('label').evaluateAll(labels =>
+                labels.sort((a,b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top).map(el => el.id));
+            assert.deepEqual(visualOrder, ['choiceButtonA', second]);
             await page.keyboard.press('2');
             assert.equal(await page.locator('input[name=choice]:checked').evaluate(el=>el.closest('label').id),second);
             assert.equal(await page.locator('input[name=choice]:checked').count(),1);
@@ -142,6 +133,7 @@ async function run(browser, variant) {
         } else {
             await page.keyboard.press('7');
             assert.equal(await page.locator('#answer').inputValue(),'7');
+            assert.equal(await page.evaluate(()=>document.activeElement.id),'answer');
         }
         console.log(variant, kind,'keyboard OK');
     }
@@ -171,7 +163,93 @@ async function run(browser, variant) {
         assert.equal(await label.evaluate(el=>getComputedStyle(el).color),dark?'rgb(56, 189, 248)':'rgb(15, 23, 42)');
         console.log(variant,dark?'dark':'light',results.split('\n').length,'copy assertions OK');
     }
+    if (combined) {
+        await cp.goto(origin);
+        await cp.evaluate(() => {
+            fixtures.replaceChildren();
+            document.querySelector('.ProblemItem').innerHTML = '问题 <span class="katex"><span class="katex-mathml">x+1</span></span>';
+        });
+        await cp.locator('#znx-copy-problem-btn').click();
+        assert.equal(await cp.evaluate(()=>testState.clipboard), '问题 $x+1$');
+        await cp.evaluate(() => {
+            const stem = document.querySelector('.ProblemItem');
+            stem.innerHTML = '<span class="katex-display"><span class="katex"><span class="katex-mathml">x+1</span></span></span>' +
+                '<img alt="题图" src="/fixture.png">' +
+                '<span class="MathJax_SVG"><math><msqrt><mi>x</mi></msqrt></math></span><script type="math/asciimath">sqrt(x)</script>';
+            const options = document.createElement('div');
+            options.style.cssText = 'display:flex;flex-direction:column-reverse';
+            options.innerHTML = '<label id="choiceButtonB">乙</label><label id="choiceButtonA">甲</label>';
+            stem.after(options);
+        });
+        await cp.locator('#znx-copy-problem-btn').click();
+        const training = await cp.evaluate(()=>testState.clipboard);
+        assert.ok(training.includes('$$\nx+1\n$$'));
+        assert.ok(training.includes('![题图](' + origin + '/fixture.png)'));
+        assert.ok(training.includes('\\sqrt{x}') && !training.includes('sqrt(x)'));
+        assert.match(training, /A\. 甲[\s\S]+B\. 乙/);
+        for (const formula of [
+            '<span class="katex"><span class="katex-mathml">x+1</span></span>',
+            '<script type="math/asciimath">sqrt(2)</script>'
+        ]) {
+            await cp.evaluate(markup => {
+                fixtures.replaceChildren();
+                makeDialog('<p>问题</p>',markup);
+                testState.clipboard='unchanged';
+            },formula);
+            await cp.locator('[data-znx-copy-solution]').click();
+            assert.equal(await cp.evaluate(()=>testState.clipboard),'unchanged');
+            assert.match(await cp.locator('#znx-copy-toast').innerText(),/提取失败/);
+        }
+        console.log('Training text-only KaTeX and strict solution rejection OK');
+    }
     await cp.close();
+}
+const chartStub = 'window.chartData={};window.echarts={getInstanceByDom:()=>null,init:el=>({getWidth:()=>el.clientWidth,getHeight:()=>el.clientHeight,setOption:opt=>{chartData[el.dataset.znxProgressPlot||el.id]=opt.series},dispose(){}})};';
+
+async function verifyChartRetry(browser) {
+    const page = await browser.newPage();
+    page.setDefaultTimeout(6000);
+    const pending = [];
+    await page.route('**/*', async route => {
+        const url = route.request().url();
+        if (url.includes('/echarts@')) {
+            pending.push(route);
+        } else if (url === origin + '/') {
+            await route.fulfill({contentType:'text/html;charset=utf-8', body:
+                '<script>fetch("/getUserProfileDiagramLast")</script>' + html});
+        } else if (url === origin + '/getUserProfileDiagramLast') {
+            await route.fulfill({json:profile});
+        } else {
+            await route.abort();
+        }
+    });
+    await page.addInitScript({content:unified});
+    const firstRequest = page.waitForEvent('request', r => r.url().includes('/echarts@'));
+    await page.goto(origin, {waitUntil:'domcontentloaded'});
+    await firstRequest;
+    await page.waitForFunction(()=>!!sessionStorage.getItem('znx-exporter-session'));
+    const charts = page.locator('#modulePageTabs图表');
+    await charts.click();
+    const failure = page.waitForEvent('dialog');
+    await pending[0].abort();
+    const notice = await failure;
+    assert.match(notice.message(), /加载失败/);
+    await notice.dismiss();
+    assert.equal(await page.locator('#echarts-lib').count(),0);
+    const retry = page.waitForEvent('request', r => r.url().includes('/echarts@'));
+    await charts.click();
+    await retry;
+    await charts.click();
+    assert.equal(pending.length,2);
+    await pending[1].fulfill({contentType:'text/javascript',body:chartStub});
+    await page.locator('#znx-dashboard-modal').waitFor();
+    await page.waitForFunction(()=>window.chartData?.today);
+    await page.getByRole('button',{name:/关闭大屏/}).click();
+    await charts.click();
+    await page.locator('#znx-dashboard-modal').waitFor();
+    assert.equal(pending.length,2);
+    console.log('Chart preload failure, concurrent retry, reopen: 2 requests OK');
+    await page.close();
 }
 async function verifyMigration(browser) {
     const context = await browser.newContext();
@@ -202,7 +280,7 @@ async function verifyMigration(browser) {
             return r.fulfill({contentType:'text/javascript',body:url.endsWith('/early')?artifact:beauty});
         if (url === origin+'/getUserProfileDiagramLast') return r.fulfill({json:payload});
         if (url.includes('/echarts@')) return r.fulfill({contentType:'text/javascript',body:
-            'window.chartData={};window.echarts={getInstanceByDom:()=>null,init:el=>({getWidth:()=>el.clientWidth,getHeight:()=>el.clientHeight,setOption:opt=>{chartData[el.dataset.znxProgressPlot||el.id]=opt.series},dispose(){}})};'});
+            chartStub});
         return r.abort();
     });
     await page.addInitScript(()=>{
@@ -275,6 +353,7 @@ async function verifyMigration(browser) {
 (async()=>{
     const browser=await chromium.launch({ channel:process.env.CHROME_CHANNEL||'chrome',headless:true });
     try {
+        await verifyChartRetry(browser);
         await verifyMigration(browser);
         await run(browser,'baseline');
         await run(browser,'unified');
