@@ -240,9 +240,10 @@ async function verifyMigration(browser) {
             assert.equal(series[5].name,'12月20日');
         }
     }
-    async function xhrUpdate(day,key) {
+    async function xhrUpdate(day,key,periods) {
         date=[2026,10,day];
         payload=response(key,[.5],.25);
+        payload.status.progress_report_info.period_to_progress_change_info=periods;
         await page.evaluate(async d=>{
             Date.now=()=>new Date(...d,12).getTime();
             await new Promise(resolve=>{
@@ -254,7 +255,17 @@ async function verifyMigration(browser) {
         },date);
         return (await snapshot()).data.status.progress_report_info.period_to_progress_change_info;
     }
+    payload.status.progress_report_info.period_to_progress_change_info={
+        today:topic,did_make_progress_today:false
+    };
     await reloadWith(unified,false);
+    await page.locator('#modulePageTabs图表').click();
+    await page.waitForFunction(()=>window.chartData?.today);
+    assert.deepEqual(await page.evaluate(()=>chartData.today.map(s=>s.data[0])),[10,null,null,null,null,0]);
+
+    const noProgress={today:{sorted_topics:[],progress_improvement_info_per_topic:{}},did_make_progress_today:false};
+    assert.deepEqual(Object.keys(await xhrUpdate(20,'det-compute',noProgress)).sort(),['cur_week','last_week']);
+    assert.deepEqual((await xhrUpdate(20,'limit-compute',{today:topic})).today,topic);
     assert.deepEqual(Object.keys(await xhrUpdate(21,'det-compute')).sort(),['cur_week','last_week']);
     assert.deepEqual(await xhrUpdate(23,'limit-compute'),{});
     assert.equal((await snapshot()).data.status.topic_to_final_progress['det-compute'],.25);
@@ -267,7 +278,11 @@ async function verifyMigration(browser) {
         await verifyMigration(browser);
         await run(browser,'baseline');
         await run(browser,'unified');
-        assert.equal(outputs.unified,outputs.baseline,'full report differs');
-        console.log('Full Markdown reports identical');
+        const todaySection = /^### 今天\n\n[\s\S]+?(?=^### 本周\n)/m;
+        const restoredToday = outputs.unified.match(todaySection)?.[0];
+        assert.ok(restoredToday?.split('\n').some(line=>line.startsWith('| ') && /\+\d+\.\d{2}/.test(line)),
+            'today report section must contain a positive chapter delta');
+        assert.equal(outputs.unified.replace(todaySection,''),outputs.baseline,'report differs outside the restored today section');
+        console.log('Today chapter deltas restored in Markdown, remaining report identical');
     } finally { await browser.close(); }
 })().catch(err=>{console.error(err);process.exitCode=1;});

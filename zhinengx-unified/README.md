@@ -1,6 +1,8 @@
 # 知能行合体助手 · 本地验收
 
-安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。基线为 `ab81e2b`，合体版底栏为 `8.4.1-dev.1.5`，导出模块为 `11.1.0-dev.1.13`。
+安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。合并前的功能基线为 `ab81e2b`。合并版采用独立的 `10.0.0` 版本线，当前底栏为 `10.0.0-dev.1.2`，首次公测为 `10.0.0-beta.1`，首次正式发布为 `10.0.0`。
+
+项目包含四个用户脚本。合并版在 `master` 开发，[独立美化](../zhinengx-beautifier/zhinengx_beautifier.user.js)和[独立导出](../zhinengx-exporter/zhinengx_exporter.user.js)继续在 `develop` 并行维护，[快照脚本](../dev_resources/snapshots/capture.user.js)沿用自己的版本线。
 
 ## 安装、升级和回退
 

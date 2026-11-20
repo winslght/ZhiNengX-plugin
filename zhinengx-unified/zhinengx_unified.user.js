@@ -105,7 +105,6 @@
     function startExporter() {
         const win = window;
 
-        const SCRIPT_VERSION = '11.1.0-dev.1.13';
         const CACHE_KEY = 'znx-exporter-session';
         const PAGE_LOAD = performance.timeOrigin;
         let progressSnapshot = null;
@@ -301,9 +300,14 @@
             const periods = {};
             for (const [key] of PROGRESS_PERIODS) {
                 const next = incoming?.[key];
-                if (incoming?.[noProgressFlags[key]] === false ||
-                    (Array.isArray(next?.sorted_topics) && next.sorted_topics.length === 0 &&
-                        next.progress_improvement_info_per_topic && !Object.keys(next.progress_improvement_info_per_topic).length)) {
+                const changes = next?.progress_improvement_info_per_topic;
+                const explicitlyEmpty = Array.isArray(next?.sorted_topics) && next.sorted_topics.length === 0 &&
+                    changes && !Object.keys(changes).length;
+                if (explicitlyEmpty || (incoming?.[noProgressFlags[key]] === false &&
+                    !Object.values(changes || {}).some(topic => PROGRESS_METRICS.some(metric => {
+                        const delta = getProgressDelta(topic?.[metric]);
+                        return delta !== null && delta !== 0;
+                    })))) {
                     continue;
                 }
 
@@ -612,14 +616,18 @@
             }));
         }
 
+        function getProgressDelta(change) {
+            const { old_progress: previous, new_progress: current } = change || {};
+            return Number.isFinite(previous) && Number.isFinite(current) ? (current - previous) * 100 : null;
+        }
+
         function getChapterChanges(period, excludeKeys) {
             const topics = period?.progress_improvement_info_per_topic || {};
             const keys = [...new Set([...(period?.sorted_topics || []), ...orderedTopics(Object.keys(topics), excludeKeys)])];
             return keys.filter(key => !excludeKeys.has(key)).flatMap(key => {
                 const deltas = PROGRESS_METRICS.map(metric => {
-                    const { old_progress: previous, new_progress: current } = topics[key]?.[metric] || {};
-                    if (!Number.isFinite(previous) || !Number.isFinite(current)) return null;
-                    return Number(((current - previous) * 100).toFixed(2));
+                    const delta = getProgressDelta(topics[key]?.[metric]);
+                    return delta === null ? null : Number(delta.toFixed(2));
                 });
                 return deltas.some(value => value !== null) ? [[getReportTopicName(key), ...deltas]] : [];
             });
@@ -1060,7 +1068,6 @@
                 exportBtn.className = historyTab.className.replace('Mui-selected', '').trim();
                 exportBtn.tabIndex = -1;
                 exportBtn.type = 'button';
-                exportBtn.title = SCRIPT_VERSION;
                 exportBtn.role = 'tab';
                 exportBtn.setAttribute('aria-selected', 'false');
                 exportBtn.id = 'modulePageTabs导出';
@@ -1146,7 +1153,6 @@
                 chartBtn.className = historyTab.className.replace('Mui-selected', '').trim();
                 chartBtn.tabIndex = -1;
                 chartBtn.type = 'button';
-                chartBtn.title = SCRIPT_VERSION;
                 chartBtn.role = 'tab';
                 chartBtn.setAttribute('aria-selected', 'false');
                 chartBtn.id = 'modulePageTabs图表';
@@ -1196,8 +1202,8 @@
     }
 
     function mountBeautifier() {
-        const SCRIPT_VERSION = '8.4.1-dev.1.5';
-        const DEV_SOURCE_MODIFIED_AT = '2026-11-20 19:06:49';
+        const SCRIPT_VERSION = '10.0.0-dev.1.2';
+        const DEV_SOURCE_MODIFIED_AT = '2026-11-20 20:04:51';
         console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
         let styleEl;
@@ -2970,7 +2976,7 @@
                 if (await copyText(text, subject)) showToast(`${subject}已成功复制到剪贴板`);
             };
 
-            const replaceMathJaxScripts = (clone, useRenderedNonTex = false) => {
+            const replaceMathJaxScripts = (clone) => {
                 const mathjaxScripts = Array.from(clone.querySelectorAll('script[type^="math/"], script[type^="Math/"]'));
                 mathjaxScripts.forEach(script => {
                     const rawFormula = (script.textContent || script.innerText || '').trim();
@@ -2979,7 +2985,7 @@
                     const frame = scriptId ? (clone.querySelector(`#${CSS.escape(scriptId + '-Frame')}`) ||
                         Array.from(clone.querySelectorAll('[id]')).find(element => element.id.startsWith(`${scriptId}-Frame`))) : null;
                     const prev = script.previousElementSibling;
-                    if (useRenderedNonTex && !/^math\/tex(?:\s*;|\s*$)/.test(scriptType)) {
+                    if (!/^math\/tex(?:\s*;|\s*$)/.test(scriptType)) {
                         const rendered = frame || prev;
                         if (rawFormula && !rendered?.matches('[data-mathml], math') &&
                             !rendered?.querySelector('[data-mathml], math')) {
@@ -3009,41 +3015,6 @@
                 .filter(Boolean)
                 .join('\n');
 
-            const processNodeMathAndText = (node, preserveDisplayMath = false) => {
-                if (!node) return '';
-                const clone = node.cloneNode(true);
-
-                // 1. 提取 KaTeX 公式
-                const katexEls = clone.querySelectorAll('.katex');
-                katexEls.forEach(el => {
-                    const texSource = el.querySelector('annotation[encoding="application/x-tex"]')?.textContent ||
-                                      el.querySelector('.katex-mathml')?.textContent;
-                    if (texSource) {
-                        const displayParent = el.closest('.katex-display');
-                        const isBlock = !!displayParent;
-                        const mathMd = isBlock ? `\n$$\n${texSource.trim()}\n$$\n` : ` $${texSource.trim()}$ `;
-                        const targetToReplace = displayParent || el;
-                        targetToReplace.replaceWith(document.createTextNode(mathMd));
-                    }
-                });
-
-                // 2. 提取 MathJax 公式
-                replaceMathJaxScripts(clone);
-
-                // 3. 清理残存辅助 script 与样式节点
-                clone.querySelectorAll('.MathJax_SVG, .MathJax_Preview, .MathJax, .MathJax_Display, .MJX_Assistive_MathML, script, style, button, .znx-ignored').forEach(el => el.remove());
-
-                // 4. 提取纯文本
-                const rawText = clone.innerText || clone.textContent || '';
-                if (!preserveDisplayMath) return normalizeExtractedText(rawText);
-
-                // 块公式单独成段，正文清理不触碰块内的 TeX。
-                return rawText.split(/(^[ \t]*\$\$[ \t]*\r?\n[\s\S]*?^[ \t]*\$\$[ \t]*(?=\r?\n|$))/gm)
-                    .map((part, index) => index % 2 ? part.trim() : normalizeExtractedText(part))
-                    .filter(Boolean)
-                    .join('\n\n');
-            };
-
             const extractPureProblemMarkdown = (problemContainerEl) => {
                 console.log('[ZhiNengX Copy] 🚀 开始正向靶向提取题目，目标容器:', problemContainerEl);
                 if (!problemContainerEl) {
@@ -3056,7 +3027,7 @@
                                problemContainerEl.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
                                problemContainerEl.querySelector('div[class*="ProblemItem"]');
 
-                const stemText = stemEl ? processNodeMathAndText(stemEl) : processNodeMathAndText(problemContainerEl);
+                const stemText = extractContentMarkdown(stemEl || problemContainerEl);
 
                 // 2. 正向靶向定位【选择题选项 DOM】按物理 Y 轴位置升序排列
                 const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
@@ -3076,7 +3047,7 @@
 
                 const optionTexts = optionEls.map((label, idx) => {
                     const letter = choiceLetters[idx] || '';
-                    let txt = processNodeMathAndText(label);
+                    let txt = extractContentMarkdown(label);
                     if (letter && !txt.startsWith(`${letter}.`) && !txt.startsWith(`${letter} `)) {
                         txt = `${letter}. ${txt}`;
                     }
@@ -3152,9 +3123,9 @@
                 }
             };
 
-            const extractSolutionMarkdown = (node) => {
+            const extractContentMarkdown = (node) => {
                 const clone = node.cloneNode(true);
-                replaceMathJaxScripts(clone, true);
+                replaceMathJaxScripts(clone);
                 clone.querySelectorAll('.katex, mjx-container, .MathJax_SVG[data-mathml], .MathJax[data-mathml], math').forEach(math => {
                     if (!clone.contains(math)) return;
                     const annotation = math.querySelector('annotation[encoding="application/x-tex"]');
@@ -3189,7 +3160,15 @@
                     block.prepend(document.createTextNode('\n'));
                     block.append(document.createTextNode('\n'));
                 });
-                return processNodeMathAndText(clone, true);
+                clone.querySelectorAll('.MathJax_SVG, .MathJax_Preview, .MathJax, .MathJax_Display, .MJX_Assistive_MathML, script, style, button, .znx-ignored, #znx-problem-tools-bar').forEach(el => el.remove());
+
+                const rawText = clone.innerText || clone.textContent || '';
+
+                // 块公式单独成段，正文清理不触碰块内的 TeX。
+                return rawText.split(/(^[ \t]*\$\$[ \t]*\r?\n[\s\S]*?^[ \t]*\$\$[ \t]*(?=\r?\n|$))/gm)
+                    .map((part, index) => index % 2 ? part.trim() : normalizeExtractedText(part))
+                    .filter(Boolean)
+                    .join('\n\n');
             };
 
             const getOriginalProblemDialogs = () => {
@@ -3244,8 +3223,8 @@
                             return;
                         }
                         try {
-                            const questionText = extractSolutionMarkdown(question);
-                            const solutionText = extractSolutionMarkdown(solution);
+                            const questionText = extractContentMarkdown(question);
+                            const solutionText = extractContentMarkdown(solution);
                             if (!questionText || !solutionText) {
                                 showToast('题目或解析内容为空，请等待加载完成', true);
                                 return;
@@ -3409,8 +3388,13 @@
                     if (copyObserver) copyObserver.observe(document.body, { childList: true, subtree: true });
                 }
 
+                function closeCapsuleOnOutsidePress(event) {
+                    if (!timerWrapper.contains(event.target)) collapseCapsule();
+                }
+
                 function expandCapsule(durationMs = 5000) {
                     isCapsuleExpanded = true;
+                    document.addEventListener('pointerdown', closeCapsuleOnOutsidePress, true);
                     const timerEl = document.getElementById('znx-doing-countdown-btn');
                     if (timerEl) {
                         timerEl.removeAttribute('data-znx-render-key');
@@ -3425,6 +3409,7 @@
 
                 function collapseCapsule() {
                     isCapsuleExpanded = false;
+                    document.removeEventListener('pointerdown', closeCapsuleOnOutsidePress, true);
                     if (capsuleTimer) clearTimeout(capsuleTimer);
                     const timerEl = document.getElementById('znx-doing-countdown-btn');
                     if (timerEl) {
@@ -3510,8 +3495,13 @@
                                         copyBtn.closest('div[class*="_3WnwfR"]') ||
                                         document.querySelector('.jumbotron') ||
                                         problemCard;
-                    const pureText = extractPureProblemMarkdown(currentCard);
-                    copyToClipboard(pureText);
+                    try {
+                        const pureText = extractPureProblemMarkdown(currentCard);
+                        if (pureText) copyToClipboard(pureText);
+                        else showToast('未提取到题目内容', true);
+                    } catch (error) {
+                        showToast('题目提取失败，请检查公式或题图是否完整', true);
+                    }
                 };
 
                 // 2. 🔥 27考研倒计时 做题极简胶囊按钮 Wrapper (自适应弹性 Wrapper)
