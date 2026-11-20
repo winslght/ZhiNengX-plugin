@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         知能行 UI 视觉美化与考研助手
+// @name         知能行考研数学-增强插件
 // @namespace    http://tampermonkey.net/
-// @version      8.4.0-beta.1
+// @version      10.0.0-beta.1
 // @description  知能行视觉美化、答题快捷键、题目与解析复制、诊断报告导出与数据图表
 // @author       winslght
 // @license      MIT
