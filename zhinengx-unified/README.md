@@ -1,12 +1,12 @@
 # 知能行考研数学-增强插件
 
-安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。合并前的功能基线为 `ab81e2b`。合并版采用独立的 `10.0.0` 版本线，当前公测为 `10.0.0-beta.1`，对应本地开发节点 `10.0.0-dev.1.3`。
+安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。合并前的功能基线为 `ab81e2b`。合并版采用独立的 `10.0.0` 版本线，当前公测为 `10.0.0-beta.2`。
 
 项目包含四个用户脚本。合并版在 `master` 开发，[独立美化](../zhinengx-beautifier/zhinengx_beautifier.user.js)和[独立导出](../zhinengx-exporter/zhinengx_exporter.user.js)继续在 `develop` 并行维护，[快照脚本](../dev_resources/snapshots/capture.user.js)沿用自己的版本线。
 
 ## 安装、升级和回退
 
-1. 在 Tampermonkey 中安装 [10.0.0-beta.1](https://github.com/winslght/ZhiNengX-plugin/releases/download/v10.0.0-beta.1/zhinengx_unified.user.js)。本地测试可运行 `node serve.cjs`，再打开 [本机安装入口](http://127.0.0.1:18767/zhinengx_unified.user.js)。
+1. 在 Tampermonkey 中安装 [10.0.0-beta.2](https://github.com/winslght/ZhiNengX-plugin/releases/download/v10.0.0-beta.2/zhinengx_unified.user.js)。本地测试可运行 `node serve.cjs`，再打开 [本机安装入口](http://127.0.0.1:18767/zhinengx_unified.user.js)。
 2. 新名称会让合并版以独立条目安装。启用合并版后，停用旧美化、旧导出和相关 DEV 存根，再刷新知能行。在同一浏览器和站点下可继续使用已有美化设置和卡片位置。
 3. 在当前科目可直接点击「导出报告」。若提示另一科明细不全，在同一标签切换科目并刷新补齐。
 4. 回退时停用合并版，重新启用原来的美化和导出脚本，再刷新网页。
@@ -14,7 +14,7 @@
 
 ## 本地调试与回归
 
-修改单文件后，重新打开本机安装入口，确认安装并刷新模块页。需要保存即刷新时，可在油猴另建 DEV 存根，沿用交付文件的两个 `@match`、`@run-at document-start` 和 `@grant none`，用 `@require file:///.../zhinengx-unified/zhinengx_unified.user.js` 指向本地绝对路径。开启扩展的「允许访问文件网址」，仅启用该存根进行调试。首屏时序验收使用直接安装。
+修改单文件后，重新打开本机安装入口，确认安装并刷新模块页。需要保存即刷新时，可在油猴另建 DEV 存根，沿用交付文件的两个 `@match`、`@run-at document-start` 和 `@grant none`，用 `@require file:///.../zhinengx-unified/zhinengx_unified.user.js` 指向本地绝对路径。开启扩展的「允许访问文件网址」，仅启用该存根进行调试。存根的 `@name` 以 `[DEV]` 开头时，`master` 的开发源码会显示底栏水印。首屏时序验收使用直接安装。
 
 `startExporter()` 在 HTTPS 页面启动时注册 fetch 和 XHR 监听。`onDomReady()` 安排两个模块各自的界面初始化。`mountBeautifier()` 保留美化功能自身的事件与设置。`copyText()` 统一提供原生剪贴板、隐藏文本框兼容复制、手动复制弹窗。
 
