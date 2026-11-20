@@ -11,7 +11,7 @@
 
 | 浅色模式 | 深色模式（Dark Reader） |
 | --- | --- |
-| [![浅色训练页：突破口毛玻璃卡片、Live2D 看板娘和考研倒计时](./ScreenShot_2026-11-18_180413_152.png)](./ScreenShot_2026-11-18_180413_152.png) | [![深色训练页：相同布局切换为深色毛玻璃，壁纸柔化](./ScreenShot_2026-11-18_181116_028.png)](./ScreenShot_2026-11-18_181116_028.png) |
+| [![浅色训练页：突破口毛玻璃卡片、Live2D 看板娘和考研倒计时](./dev_resources/screenshots/ScreenShot_2026-11-18_180413_152.png)](./dev_resources/screenshots/ScreenShot_2026-11-18_180413_152.png) | [![深色训练页：相同布局切换为深色毛玻璃，壁纸柔化](./dev_resources/screenshots/ScreenShot_2026-11-18_181116_028.png)](./dev_resources/screenshots/ScreenShot_2026-11-18_181116_028.png) |
 
 同一「突破口」训练页实拍，点击可看大图。美化助手提供毛玻璃卡片、壁纸、左侧看板娘和右侧倒计时，导出器在顶部提供「导出报告」和「数据图表」。
 

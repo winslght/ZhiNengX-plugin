@@ -18,7 +18,7 @@
 
     const win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
 
-    const SCRIPT_VERSION = '11.1.0-dev.1.11';
+    const SCRIPT_VERSION = '11.1.0-dev.1.13';
     const CACHE_KEY = 'znx-exporter-session';
     const PAGE_LOAD = performance.timeOrigin;
     let progressSnapshot = null;
@@ -200,6 +200,33 @@
         }
     }
 
+    function progressPeriodStart(timestamp, period) {
+        const date = new Date(timestamp);
+        date.setHours(0, 0, 0, 0);
+        if (period !== 'today') {
+            date.setDate(date.getDate() - (date.getDay() + 6) % 7 - (period === 'last_week' ? 7 : 0));
+        }
+        return date.getTime();
+    }
+
+    function mergeProgressPeriods(previous, incoming, previousAt, capturedAt) {
+        const noProgressFlags = { today: 'did_make_progress_today', last_week: 'did_make_progress_last_week' };
+        const periods = {};
+        for (const [key] of PROGRESS_PERIODS) {
+            const next = incoming?.[key];
+            if (incoming?.[noProgressFlags[key]] === false ||
+                (Array.isArray(next?.sorted_topics) && next.sorted_topics.length === 0 &&
+                    next.progress_improvement_info_per_topic && !Object.keys(next.progress_improvement_info_per_topic).length)) {
+                continue;
+            }
+
+            const samePeriod = progressPeriodStart(previousAt, key) === progressPeriodStart(capturedAt, key);
+            const merged = mergeAvailable(samePeriod ? previous?.[key] : undefined, next);
+            if (merged) periods[key] = merged;
+        }
+        return periods;
+    }
+
     function captureProgress(response) {
         const profile = response?.profile;
         const account = profile?.email || profile?.username || progressSnapshot?.account;
@@ -242,12 +269,14 @@
                 progress_report_info: {
                     progress_info_per_topic_all_module: mergeLevelProgress(getLevelsData(previous?.data?.status || {}), levels),
                     mock_exam_correct_rate_info: info.mock_exam_correct_rate_info,
-                    wrong_problem_reason_info: info.wrong_problem_reason_info,
-                    period_to_progress_change_info: info.period_to_progress_change_info
+                    wrong_problem_reason_info: info.wrong_problem_reason_info
                 }
             }
         });
         if (Array.isArray(status.topics_with_yellowDot)) data.status.topics_with_yellowDot = status.topics_with_yellowDot;
+        const previousPeriods = previous?.data.status.progress_report_info?.period_to_progress_change_info;
+        data.status.progress_report_info.period_to_progress_change_info = mergeProgressPeriods(
+            previousPeriods, info.period_to_progress_change_info, previous?.capturedAt, capturedAt);
         const unchanged = previous && buildPureMarkdownReport(previous.data) === buildPureMarkdownReport(data);
         const unchangedRefreshes = unchanged ?
             (previous.unchangedRefreshes || 0) + (previous.pageLoad !== PAGE_LOAD ? 1 : 0) : 0;
@@ -513,7 +542,7 @@
         return value === null ? '—' : `${value > 0 ? '+' : ''}${value.toFixed(2)}`;
     }
 
-    function buildPureMarkdownReport(json) {
+    function buildPureMarkdownReport(json, capturedAt, asOf) {
         if (!json || !json.status) return null;
 
         const status = json.status || {};
@@ -522,7 +551,8 @@
         const reportInfo = status.progress_report_info || {};
         const mockExam = reportInfo.mock_exam_correct_rate_info || {};
         const wrongInfo = reportInfo.wrong_problem_reason_info || {};
-        const changeInfo = reportInfo.period_to_progress_change_info || {};
+        const changeInfo = asOf === undefined ? reportInfo.period_to_progress_change_info || {} :
+            mergeProgressPeriods(reportInfo.period_to_progress_change_info, null, capturedAt, asOf);
         const detailed = status.topic_to_detailedProgress || {};
         const compSkillInfo = status.computational_skill_info_all_topic || {};
         const yellowDots = status.topics_with_yellowDot || [];
@@ -803,6 +833,17 @@
         return echarts.getInstanceByDom(container) || echarts.init(container);
     }
 
+    function renderMatrixProgressCell(percent, label) {
+        return `
+            <td style="padding: 15px 10px;">
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="border: 1px solid rgb(69, 101, 155); background: linear-gradient(to right, rgb(121, 179, 82) ${percent}%, white ${percent}%); height: 16px; width: 90%; border-radius: 2px;"></div>
+                    <div style="color: #4b5563; font-size: 13px; font-weight: bold; margin-top: 6px;">${label}</div>
+                </div>
+            </td>
+        `;
+    }
+
     function renderCharts() {
         if (!echartsLoaded || !progressSnapshot) return;
         const { status, profile = {} } = progressSnapshot.data;
@@ -839,14 +880,7 @@
             for (let i = 0; i < 5; i++) {
                 const percent = Number.isFinite(rates[i]) ? rates[i] * 100 : null;
                 if (percent > 0) {
-                    matrixHtml += `
-                        <td style="padding: 15px 10px;">
-                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                <div style="border: 1px solid rgb(69, 101, 155); background: linear-gradient(to right, rgb(121, 179, 82) ${percent}%, white ${percent}%); height: 16px; width: 90%; border-radius: 2px;"></div>
-                                <div style="color: #4b5563; font-size: 13px; font-weight: bold; margin-top: 6px;">${percent.toFixed(1)}%</div>
-                            </div>
-                        </td>
-                    `;
+                    matrixHtml += renderMatrixProgressCell(percent, percent.toFixed(1) + '%');
                 } else {
                     matrixHtml += `
                         <td style="padding: 15px 10px;">
@@ -856,7 +890,9 @@
                 }
             }
             if (showExamAbility) {
-                matrixHtml += `<td style="padding: 15px 10px;">${examAbility ?? '—'}</td>`;
+                matrixHtml += examAbility === null
+                    ? '<td style="padding: 15px 10px;">—</td>'
+                    : renderMatrixProgressCell(Number.parseFloat(examAbility), examAbility);
             }
             matrixHtml += `</tr>`;
         }
@@ -917,7 +953,9 @@
                 { name: '辅导题量', type: 'bar', yAxisIndex: 1, data: daily.map(day => day.tutor), itemStyle: { color: '#fbbf24' } }
             ]
         });
-        renderProgressChanges(status.progress_report_info?.period_to_progress_change_info, excludeKeys);
+        const changeInfo = mergeProgressPeriods(status.progress_report_info?.period_to_progress_change_info,
+            null, progressSnapshot.capturedAt, Date.now());
+        renderProgressChanges(changeInfo, excludeKeys);
     }
 
     // ==========================================
@@ -971,7 +1009,7 @@
                         return;
                     }
 
-                    const reportContent = buildPureMarkdownReport(snapshot.data);
+                    const reportContent = buildPureMarkdownReport(snapshot.data, snapshot.capturedAt, Date.now());
                     if (!reportContent) {
                         showCopyNotice('进度数据不完整，请刷新网页后再导出。', true);
                         return;

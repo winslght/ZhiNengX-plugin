@@ -14,8 +14,8 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.4.1-dev.1.2';
-    const DEV_SOURCE_MODIFIED_AT = '2026-11-20 09:00:25';
+    const SCRIPT_VERSION = '8.4.1-dev.1.4';
+    const DEV_SOURCE_MODIFIED_AT = '2026-11-20 18:41:37';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -1448,132 +1448,50 @@
         return null;
     }
 
-    function findPrimaryActionButton(questionContext = null) {
-        // 正向命中宿主页面的业务按钮：按钮 ID 比样式和屏幕位置更稳定。
-        const directActionSelectors = [
-            '#checkAnswerButton:not([disabled])',
-            '#continueButton:not([disabled])',
-            '#retryButton:not([disabled])',
-            'button[id*="retry" i]:not([disabled])',
-            '#submitButton:not([disabled])',
-            'button[id*="submit" i]:not([disabled])'
-        ];
-        for (const selector of directActionSelectors) {
-            const directButton = document.querySelector(selector);
-            if (directButton && directButton.getAttribute('aria-disabled') !== 'true' && isVisibleElement(directButton)) {
-                console.log('⚡ [ZhiNengX] 已正向命中主行动按键:', directButton.id || selector);
-                return directButton;
-            }
+    const QUESTION_FOOTER_SELECTOR = '.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"], div[class*="_1ktiDhx"]';
+    const QUESTION_ACTION_LABELS = new Set(['提交答案', '继续', '再试一次', '查看题解', '显示答案', '想看答案']);
+    const CHOICE_INPUT_SELECTOR = 'input[name="choice"][type="radio"], input[name="choice"][type="checkbox"]';
+
+    function findPrimaryActionButton(questionContext) {
+        const isAvailable = button => !button.matches(':disabled, [aria-disabled="true"], .disabled') &&
+            !button.closest('[aria-hidden="true"]') && isVisibleElement(button);
+        for (const id of ['checkAnswerButton', 'continueButton', 'retryButton', 'submitButton']) {
+            const button = [...document.querySelectorAll(`button#${id}, input#${id}, [role="button"]#${id}`)].find(isAvailable);
+            if (button) return button;
         }
 
-        const candidates = Array.from(document.querySelectorAll('button, .btn, .MuiButtonBase-root, [role="button"]'))
-            .filter(btn => {
-                if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') return false;
-                return isVisibleElement(btn);
-            });
+        const isQuestionAction = button => isAvailable(button) && QUESTION_ACTION_LABELS.has(button.textContent.trim());
+        const inQuestion = [...questionContext.querySelectorAll('button, [role="button"]')].find(isQuestionAction);
+        if (inQuestion) return inQuestion;
 
-        if (candidates.length === 0) return null;
-
-        // 优先在模态框/对话框/做题主卡片容器内查找
-        const modalContainer = document.querySelector('.MuiDialog-root, .modal-dialog, [role="dialog"]');
-        const cardContainer = questionContext || document.querySelector('.jumbotron, div[name="ProblemItemElement"], main, #app');
-        const activeContainer = modalContainer || cardContainer;
-
-        const scopedCandidates = activeContainer 
-            ? candidates.filter(btn => activeContainer.contains(btn))
-            : candidates;
-
-        const targetList = scopedCandidates.length > 0 ? scopedCandidates : candidates;
-
-        const scored = targetList.map(btn => {
-            let score = 0;
-            const className = (btn.className || '').toString();
-            const typeAttr = (btn.getAttribute('type') || '').toLowerCase();
-
-            // 正向样式与属性打分 (Positive Feature Matching)
-            if (className.includes('MuiButton-containedPrimary') || className.includes('btn-primary')) score += 100;
-            else if (className.includes('MuiButton-contained') || className.includes('btn-success')) score += 80;
-            else if (typeAttr === 'submit') score += 60;
-            else if (className.includes('primary') || className.includes('contained')) score += 40;
-
-            // 实心背景色检测
-            try {
-                const bg = window.getComputedStyle(btn).backgroundColor;
-                if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' && !bg.includes('255, 255, 255')) {
-                    score += 20;
-                }
-            } catch (e) {}
-
-            // 物理位置打分 (屏幕纵向靠下 + 横向靠右)
-            const rect = btn.getBoundingClientRect();
-            score += (rect.top * 0.01) + (rect.left * 0.005);
-
-            return { btn, score };
-        });
-
-        scored.sort((a, b) => b.score - a.score);
-        return scored.length > 0 ? scored[0].btn : null;
+        return [...document.querySelectorAll('button, [role="button"]')].find(button =>
+            button.closest(QUESTION_FOOTER_SELECTOR) && isQuestionAction(button)) || null;
     }
 
-    /**
-     * 按屏幕 DOM 物理纵向位置自然排序选择题选项
-     */
-    /**
-     * 按屏幕 DOM 物理纵向位置自然排序选择题选项 (卡片作用域限定 + 双轴坐标排序)
-     */
-    function getSortedChoiceOptions(questionContext = null) {
-        const modalContainer = document.querySelector('.MuiDialog-root, .modal-dialog, [role="dialog"]');
-        const cardContainer = questionContext || document.querySelector('div[name="ProblemItemElement"]') ||
-                              document.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
-                              document.querySelector('.jumbotron') ||
-                              document.querySelector('div[class*="jumbotron"]') ||
-                              document.querySelector('div[class*="_3WnwfR"]');
-        const activeScope = modalContainer || cardContainer || document;
-
-        // 1. 仅定位当前题目作用域内的可见选项，数字键按用户看到的物理顺序映射。
-        //    不能按 choiceButtonA-E 排序：这些 ID 表示选项身份，不表示当前布局顺序。
-        // 2. 检索 DOM 中全样式选择题选项节点 (兼容 label, MUI GridList, ButtonGroup, Radio)
-        let rawOptions = Array.from(activeScope.querySelectorAll(
-            'label[id^="choiceButton"], label[name="choiceButton"], label[class*="choiceButton"], div[class*="choice"] label, .MuiGridListTile-root, .MuiGridListTile-tile, div[class*="MuiGridListTile"], div[role="group"] button, button[class*="choice"], div[id*="choiceButton"], button[id*="choice"]'
-        ));
-
-        if (rawOptions.length === 0) {
-            const radios = Array.from(activeScope.querySelectorAll('input[type="radio"], input[type="checkbox"], input[name="choice"], button'));
-            radios.forEach(r => {
-                const container = r.closest('label') || r.closest('.MuiGridListTile-root') || r.parentElement;
-                if (container && !rawOptions.includes(container)) {
-                    rawOptions.push(container);
-                }
-            });
+    // 选项 ID 代表选项身份，数字键按用户看到的物理顺序映射。
+    function getSortedChoiceOptions(questionContext) {
+        const choiceSelector = [
+            'label[id^="choiceButton"]', 'label[name="choiceButton"]', 'label[class*="choiceButton"]',
+            'button[id^="choiceButton"]', 'button[name="choiceButton"]', 'button[class*="choiceButton"]',
+            'div[id^="choiceButton"]', '[role="radio"]', '[role="checkbox"]'
+        ].join(', ');
+        const options = new Set(questionContext.querySelectorAll(choiceSelector));
+        for (const input of questionContext.querySelectorAll(CHOICE_INPUT_SELECTOR)) {
+            options.add(input.closest(choiceSelector) || input.closest('label') || input.parentElement);
         }
 
-        // 3. 过滤可见性与假选项
         const visibleOptions = [];
-        const seenElements = new Set();
+        for (const el of options) {
+            if (!isVisibleElement(el) || el.closest('[aria-hidden="true"]') ||
+                options.has(el.parentElement?.closest(choiceSelector))) continue;
 
-        for (const el of rawOptions) {
-            if (!el || seenElements.has(el)) continue;
-
-            const txt = (el.textContent || el.innerText || '').trim();
-            // 剔除功能性辅助按钮 (如“我没有思路”、“显示有问题”)
-            if (txt.includes('我没有思路') || txt.includes('显示有问题')) continue;
-
-            if (!isVisibleElement(el)) continue;
-            const rect = el.getBoundingClientRect();
-
-            seenElements.add(el);
-            visibleOptions.push({ el, top: rect.top, left: rect.left });
+            const text = el.textContent.trim();
+            if (text.includes('我没有思路') || text.includes('显示有问题')) continue;
+            const { top, left } = el.getBoundingClientRect();
+            visibleOptions.push({ el, top, left });
         }
-
-        // 4. 按物理 Y 坐标 (top) 升序排列；若在同一行 (top 差值 <= 10px) 按 X 坐标 (left) 升序排列
-        visibleOptions.sort((a, b) => {
-            if (Math.abs(a.top - b.top) > 10) {
-                return a.top - b.top;
-            }
-            return a.left - b.left;
-        });
-
-        return visibleOptions.map(o => o.el);
+        visibleOptions.sort((a, b) => Math.abs(a.top - b.top) > 10 ? a.top - b.top : a.left - b.left);
+        return visibleOptions.map(option => option.el);
     }
 
     const KeyboardManager = {
@@ -1673,15 +1591,27 @@
                 return;
             }
 
-            const numVal = parseInt(e.key, 10);
-            if (!isNaN(numVal) && numVal >= 1 && numVal <= 5) {
+            // 空焦点下先把输入交给当前题卡的答题框，浏览器会原生写入本次按键。
+            const hasPageFocus = activeEl === document.body || activeEl === document.documentElement;
+            if (hasPageFocus && !e.defaultPrevented && !e.isComposing && e.key.length === 1 && e.key.trim()) {
+                const answer = questionContext.querySelector('input#answer:not(:disabled):not([readonly]), textarea#answer:not(:disabled):not([readonly])');
+                if (isVisibleElement(answer)) {
+                    answer.focus();
+                    if (document.activeElement === answer) return;
+                }
+            }
+
+            if (/^[1-5]$/.test(e.key)) {
+                const numVal = Number(e.key);
                 const sortedOptions = getSortedChoiceOptions(questionContext);
                 if (sortedOptions.length >= numVal) {
                     const targetOption = sortedOptions[numVal - 1];
                     if (targetOption && document.body.contains(targetOption)) {
-                        e.preventDefault();
                         const innerInput = targetOption.querySelector('input[type="radio"], input[type="checkbox"]');
                         const clickTarget = innerInput || targetOption;
+                        if (targetOption.matches(':disabled, [aria-disabled="true"], .disabled') ||
+                            clickTarget.matches(':disabled, [aria-disabled="true"], .disabled')) return;
+                        e.preventDefault();
                         clickTarget.click();
                         console.log(`⚡ [ZhiNengX] 数字键 ${numVal} 选中肉眼第 ${numVal} 行选项:`, (targetOption.innerText || targetOption.textContent || '').trim());
                         return;
@@ -1712,9 +1642,9 @@
     // 10. 底栏做对/做错状态感应器
     // ==========================================
     function setupJumbotronFeedbackObserver() {
-        const footerSelector = '.jumbotron, div[class*="jumbotron"], div[class*="_3o6JR"], div[class*="_1ktiDhx"]';
+        const footerSelector = QUESTION_FOOTER_SELECTOR;
         const markerSelector = '#FootcontentYes, #FootcontentNo, #FootcontentWrong';
-        const actionLabels = new Set(['提交答案', '继续', '再试一次', '查看题解', '显示答案', '想看答案']);
+        const actionLabels = QUESTION_ACTION_LABELS;
         let activeFooter = null;
 
         const findFooter = () => {
@@ -1872,8 +1802,9 @@
         };
 
         const fallbackCopy = (text, subject) => {
+            const textArea = document.createElement('textarea');
+            let successful = false;
             try {
-                const textArea = document.createElement('textarea');
                 textArea.value = text;
                 textArea.style.position = 'fixed';
                 textArea.style.left = '-9999px';
@@ -1881,16 +1812,15 @@
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
-                const successful = document.execCommand('copy');
-                document.body.removeChild(textArea);
-                if (successful) {
-                    showToast(`${subject}已成功复制到剪贴板`);
-                } else {
-                    showModalCopy(text, subject);
-                }
-            } catch (err) {
-                showModalCopy(text, subject);
+                successful = document.execCommand('copy');
+            } catch {
+                // The manual copy dialog remains available when the command throws.
+            } finally {
+                textArea.remove();
             }
+
+            if (successful) showToast(`${subject}已成功复制到剪贴板`);
+            else showModalCopy(text, subject);
         };
 
         const showModalCopy = (text, subject) => {
