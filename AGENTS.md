@@ -1,6 +1,6 @@
 # ZhiNengX Project Rules & Agent Guidelines
 
-Welcome to the **ZhiNengX** workspace! This project consists of browser enhancement plugins for the ZhiNengX考研数学 platform (*ZhiNengX Exporter* & *ZhiNengX Beautifier*).
+Welcome to the **ZhiNengX** workspace! This project maintains four userscripts for the ZhiNengX 考研数学 platform: Unified, Beautifier, Exporter, and Snapshot Capture.
 
 All AI agents working on this project MUST strictly follow the repository rules and development SOPs outlined below.
 
@@ -47,9 +47,10 @@ All git commits MUST strictly follow the **Bilingual Commit Format**:
 ## 🌿 2. Git Branching & Protection Redlines (分支模型与防护红线)
 
 1. **`main` Branch**: Production branch for stable releases. **NEVER commit directly to `main`**. All changes to `main` must arrive via `release/*` or `hotfix/*` branches.
-2. **`develop` Branch**: Main development branch. Day-to-day feature merges happen here.
+2. **`develop` Branch**: Development branch for the standalone Beautifier and Exporter.
 3. **`beta` Branch**: Public beta testing branch for pre-release validation.
-4. **Task Branches**: Always create isolated task branches from `develop`:
+4. **`master` Branch**: Parallel development branch for the unified userscript, with its own version line.
+5. **Task Branches**: Create isolated task branches from the relevant development branch:
    - Feature branches: `feat/<feature-name>`
    - Bug fix branches: `fix/<bug-name>`
    - Release branches: `release/vX.Y.Z`
@@ -60,14 +61,17 @@ All git commits MUST strictly follow the **Bilingual Commit Format**:
 ## 📌 3. Version Bumping Rules (版本号规则)
 
 - 撰写开发或发布更新日志时，按「修复」「优化」「新增」「已知问题」分类。逐条写明涉及的页面或功能、触发条件（如适用）和用户可见的变化。没有改动的分类可省略。「已知问题」每次都要交代，有则写明表现和影响范围，没有则写「暂无已知问题」，未验证的场景另行注明。
-- 本地 `develop` 每次修改美化脚本后，递增其 DEV 碎版本号，并在最后一次保存时同步更新 `DEV_SOURCE_MODIFIED_AT`，使底栏显示的版本和修改时间与实际源码一致。当前版本为 `8.4.1-dev.1.4`。这不改变发布用 Userscript `@version`。
-- **Do NOT bump Userscript `@version` headers on `develop` or task branches**.
+- 本地 `develop` 每次修改美化脚本后，递增其 DEV 碎版本号，并在最后一次保存时同步更新 `DEV_SOURCE_MODIFIED_AT`，使底栏显示的版本和修改时间与实际源码一致。合并版在 `master` 递增 `DEV_BUILD.version`，同步 `DEV_BUILD.modifiedAt`。合并版修复从 `master` 的任务分支开发，提交并验证后再合到 `master-beta`。公测封版时将 `DEV_BUILD` 置为 `null`，公测版本以脚本头的 `@version` 为准。
+- 合并版从 `10.0.0` 开始独立编号，首轮使用 `10.0.0-dev.1.1`、`10.0.0-beta.1`、`10.0.0`。快照脚本沿用自身版本线。
+- 每次递增 DEV 版本号，把版本号、脚本改动及相关验证合成一次符合第 1 节的双语 commit。该提交就是本轮迭代的保存节点。
+- 提交后创建本地附注标签 `v<完整 DEV 版本号>`，例如 `v10.0.0-dev.1.2`。核对标签指向包含该版本号的提交，并在交付时给出提交号和标签名。DEV 提交与标签默认留在本地，按用户要求推送。
+- 开发迭代仅更新本地 DEV 标识。
 - Only update `@version` headers in Userscript files and `CHANGELOG.md` when preparing a release on a `release/*` or `hotfix/*` branch.
 - 公测和本地开发使用高于当前正式版的基础版本号。正式版为 8.4.0 时，下一轮使用 8.4.1-beta.1 和 8.4.1-dev.1.1。独立本地存根同步使用 DEV 版本。
 - Version string format:
   - Production (`main`): `X.Y.Z`
   - Public Beta (`beta`): `X.Y.Z-beta.N`
-  - Development (`develop`): `X.Y.Z-dev.N`
+  - Local development (`develop` and `master`): `X.Y.Z-dev.N.M`
 
 ---
 

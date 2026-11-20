@@ -1215,9 +1215,11 @@
     }
 
     function mountBeautifier() {
-        const SCRIPT_VERSION = '10.0.0-dev.1.3';
-        const DEV_SOURCE_MODIFIED_AT = '2026-11-20 20:27:11';
-        console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
+        const DEV_BUILD = { version: '10.0.0-dev.1.4', modifiedAt: '2026-11-20 21:20:30' };
+        const installedScript = typeof GM_info === 'undefined' ? undefined : GM_info?.script;
+        const localDev = /^\[DEV\](?:\s|$)/i.test(installedScript?.name || '') ? DEV_BUILD : null;
+        const version = localDev?.version || installedScript?.version;
+        console.log(`[ZhiNengX Enhancer] 知能行考研数学-增强插件${version ? ' v' + version : ''} 已启动`);
 
         let styleEl;
 
@@ -2876,19 +2878,15 @@
         // ==========================================
         // 11. 本地 Dev 碎版本底栏追溯水印
         // ==========================================
-        function injectDevVersionBadge() {
-            const scriptName = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.name) ? GM_info.script.name : '';
-            const version = SCRIPT_VERSION;
-            const isDev = version.toLowerCase().includes('dev') || scriptName.includes('DEV') || scriptName.includes('开发') || location.hostname.includes('localhost');
-
-            if (!isDev || document.getElementById('znx-dev-watermark')) return;
+        function injectDevVersionBadge({ version, modifiedAt }) {
+            if (document.getElementById('znx-dev-watermark')) return;
 
             const badge = document.createElement('div');
             badge.id = 'znx-dev-watermark';
             badge.title = '知能行 0-Push 本地开发调试模式 - 点击可一键复制当前碎版本号';
             badge.style.cssText = 'position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:999999;background:rgba(15,23,42,0.85);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(56,189,248,0.4);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:#38bdf8;box-shadow:0 4px 14px rgba(0,0,0,0.25),0 0 10px rgba(56,189,248,0.15);cursor:pointer;user-select:none;transition:all 0.2s ease;display:flex;align-items:center;gap:6px;letter-spacing:0.5px;';
 
-            badge.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#38bdf8;box-shadow:0 0 6px #38bdf8;animation:znxPulse 1.5s infinite"></span><span>🛠️ DEV <span style="color:#f43f5e;font-weight:800">v${version}</span> | 本地直加载模式 | 修改于 ${DEV_SOURCE_MODIFIED_AT}</span>`;
+            badge.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#38bdf8;box-shadow:0 0 6px #38bdf8;animation:znxPulse 1.5s infinite"></span><span>🛠️ DEV <span style="color:#f43f5e;font-weight:800">v${version}</span> | 本地直加载模式 | 修改于 ${modifiedAt}</span>`;
 
             const style = document.createElement('style');
             style.innerHTML = `@keyframes znxPulse{0%{opacity:0.4;transform:scale(0.9)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0.4;transform:scale(0.9)}}#znx-dev-watermark:hover{background:rgba(15,23,42,0.95) !important;border-color:rgba(56,189,248,0.8) !important;transform:translateX(-50%) translateY(-2px) !important;box-shadow:0 6px 18px rgba(0,0,0,0.35),0 0 14px rgba(56,189,248,0.3) !important}`;
@@ -3781,7 +3779,7 @@
             setupJumbotronFeedbackObserver();
             setupCopyProblemHandler();
             setupTopBarTimerEnhancer();
-            injectDevVersionBadge();
+            if (localDev) injectDevVersionBadge(localDev);
         }
 
         init();

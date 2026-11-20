@@ -1,6 +1,6 @@
 # 知能行合体助手 · 本地验收
 
-安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。合并前的功能基线为 `ab81e2b`。合并版采用独立的 `10.0.0` 版本线，当前底栏为 `10.0.0-dev.1.3`，首次公测为 `10.0.0-beta.1`，首次正式发布为 `10.0.0`。
+安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。合并前的功能基线为 `ab81e2b`。合并版采用独立的 `10.0.0` 版本线，当前底栏为 `10.0.0-dev.1.4`，首次公测为 `10.0.0-beta.1`，首次正式发布为 `10.0.0`。
 
 项目包含四个用户脚本。合并版在 `master` 开发，[独立美化](../zhinengx-beautifier/zhinengx_beautifier.user.js)和[独立导出](../zhinengx-exporter/zhinengx_exporter.user.js)继续在 `develop` 并行维护，[快照脚本](../dev_resources/snapshots/capture.user.js)沿用自己的版本线。
 
@@ -13,7 +13,7 @@
 
 ## 本地调试与回归
 
-修改单文件后，重新打开本机安装入口，确认安装并刷新模块页。需要保存即刷新时，可在油猴另建 DEV 存根，沿用交付文件的两个 `@match`、`@run-at document-start` 和 `@grant none`，用 `@require file:///.../zhinengx-unified/zhinengx_unified.user.js` 指向本地绝对路径。开启扩展的「允许访问文件网址」，仅启用该存根进行调试。首屏时序验收使用直接安装。
+修改单文件后，重新打开本机安装入口，确认安装并刷新模块页。需要保存即刷新时，可在油猴另建 DEV 存根，沿用交付文件的两个 `@match`、`@run-at document-start` 和 `@grant none`，用 `@require file:///.../zhinengx-unified/zhinengx_unified.user.js` 指向本地绝对路径。开启扩展的「允许访问文件网址」，仅启用该存根进行调试。调试存根的 `@name` 以 `[DEV]` 开头，开发版底栏会显示源码版本和保存时间。首屏时序验收使用直接安装。
 
 `startExporter()` 在 HTTPS 页面启动时注册 fetch 和 XHR 监听。`onDomReady()` 安排两个模块各自的界面初始化。`mountBeautifier()` 保留美化功能自身的事件与设置。`copyText()` 统一提供原生剪贴板、隐藏文本框兼容复制、手动复制弹窗。
 

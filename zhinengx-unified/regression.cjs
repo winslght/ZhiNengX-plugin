@@ -16,6 +16,47 @@ const fixture = read('dev_resources/copy-solution-test.html');
 const origin = 'https://replay.invalid';
 const html = '<div id="root"><div class="MuiTabs-flexContainer"><button id="modulePageTabs历史">历史</button></div></div>';
 const outputs = {};
+
+async function verifyVersionBadge(browser) {
+    const devBuild = unified.match(/const DEV_BUILD = \{ version: '([^']+)', modifiedAt: '([^']+)' \};/);
+    const releaseSource = devBuild ? unified.replace(devBuild[0], 'const DEV_BUILD = null;') : unified;
+    const cases = [
+        { source: unified, script: undefined },
+        { source: unified, script: { name: '知能行考研数学-增强插件', version: '10.0.0-beta.2' } },
+        { source: releaseSource, script: { name: '[DEV] 知能行本地调试', version: '10.0.0-dev.1.1' } },
+    ];
+    if (devBuild) cases.push({
+        source: unified,
+        script: { name: '[DEV] 知能行合体助手（本地调试）', version: '8.4.1-dev.1.5' },
+        badge: [devBuild[1], devBuild[2]],
+    });
+
+    const page = await browser.newPage();
+    await page.route('**/*', route => route.request().url() === origin + '/' ?
+        route.fulfill({ contentType: 'text/html;charset=utf-8', body: html }) : route.abort());
+    try {
+        for (const { source, script, badge } of cases) {
+            await page.goto(origin);
+            await page.evaluate(script => {
+                if (script) window.GM_info = { script };
+                localStorage.setItem('znx_beautifier_settings', '{"showWaifu":false,"showWallpaper":false}');
+            }, script);
+            await page.addScriptTag({ content: source });
+            await page.locator('#modulePageTabs美化').waitFor({ timeout: 6000 });
+            const actual = await page.locator('#znx-dev-watermark').allTextContents();
+            if (badge) {
+                assert.equal(actual.length, 1);
+                assert.ok(badge.every(value => actual[0].includes(value)), 'DEV footer must use the source version and timestamp');
+            } else {
+                assert.deepEqual(actual, [], 'public or unmarked installation must never show the DEV footer');
+            }
+        }
+        console.log('DEV footer appears only with the DEV build and local debug header');
+    } finally {
+        await page.close();
+    }
+}
+
 async function run(browser, variant) {
     const combined = variant === 'unified';
     const context = await browser.newContext({ hasTouch: true });
@@ -354,6 +395,7 @@ async function verifyMigration(browser) {
     const browser=await chromium.launch({ channel:process.env.CHROME_CHANNEL||'chrome',headless:true });
     try {
         await verifyChartRetry(browser);
+        await verifyVersionBadge(browser);
         await verifyMigration(browser);
         await run(browser,'baseline');
         await run(browser,'unified');
