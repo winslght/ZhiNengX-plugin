@@ -14,8 +14,8 @@
 (function() {
     'use strict';
 
-    const SCRIPT_VERSION = '8.4.1-dev.1.1';
-    const DEV_SOURCE_MODIFIED_AT = '2026-11-20 02:06:26';
+    const SCRIPT_VERSION = '8.4.1-dev.1.2';
+    const DEV_SOURCE_MODIFIED_AT = '2026-11-20 09:00:25';
     console.log(`[ZhiNengX Enhancer] 知能行视觉美化与助手 v${SCRIPT_VERSION} 已启动`);
 
     let styleEl;
@@ -674,13 +674,9 @@
             const savedPos = localStorage.getItem(CARD_POS_KEY);
             if (savedPos) {
                 const pos = JSON.parse(savedPos);
-                if (typeof pos.top === 'number' && typeof pos.left === 'number') {
-                    const maxLeft = Math.max(10, window.innerWidth - 280);
-                    const maxTop = Math.max(10, window.innerHeight - 280);
-                    const safeLeft = Math.max(10, Math.min(maxLeft, pos.left));
-                    const safeTop = Math.max(10, Math.min(maxTop, pos.top));
-                    widget.style.top = `${safeTop}px`;
-                    widget.style.left = `${safeLeft}px`;
+                if (Number.isFinite(pos.top) && Number.isFinite(pos.left)) {
+                    widget.style.top = `${pos.top}px`;
+                    widget.style.left = `${pos.left}px`;
                     widget.style.right = 'auto';
                     widget.style.transform = 'none';
                     hasCustomPos = true;
@@ -713,74 +709,70 @@
             `;
         }
 
-        // 3. 增加窗口 Resize 视口边界动态 Clamp 纠偏
-        window.addEventListener('resize', () => {
-            if (widget && widget.offsetLeft > 0) {
-                const maxLeft = Math.max(10, window.innerWidth - widget.offsetWidth - 10);
-                const maxTop = Math.max(10, window.innerHeight - widget.offsetHeight - 10);
-                if (widget.offsetLeft > maxLeft) widget.style.left = `${maxLeft}px`;
-                if (widget.offsetTop > maxTop) widget.style.top = `${maxTop}px`;
-            }
+        widget.style.touchAction = 'none';
+        let drag = null;
+
+        function placeCard(left, top) {
+            const maxLeft = Math.max(10, window.innerWidth - widget.offsetWidth - 10);
+            const maxTop = Math.max(10, window.innerHeight - widget.offsetHeight - 10);
+            widget.style.left = `${Math.max(10, Math.min(maxLeft, left))}px`;
+            widget.style.top = `${Math.max(10, Math.min(maxTop, top))}px`;
+            widget.style.right = 'auto';
+            widget.style.transform = 'none';
+        }
+
+        function keepCardInViewport() {
+            if (!hasCustomPos || !widget.offsetWidth) return;
+            placeCard(widget.offsetLeft, widget.offsetTop);
+        }
+
+        window.addEventListener('resize', keepCardInViewport);
+
+        widget.addEventListener('pointerdown', event => {
+            if (drag || !event.isPrimary || event.button !== 0 || event.target.closest('button, a')) return;
+
+            const { left, top } = widget.getBoundingClientRect();
+            widget.setPointerCapture(event.pointerId);
+            drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left, top, moved: false };
         });
-        let isDragging = false;
-        let startX = 0, startY = 0;
-        let elemStartX = 0, elemStartY = 0;
-        let hasMoved = false;
 
-        widget.onmousedown = (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'A') return;
-            isDragging = true;
-            hasMoved = false;
-            startX = e.clientX;
-            startY = e.clientY;
-            elemStartX = widget.offsetLeft;
-            elemStartY = widget.offsetTop;
+        widget.addEventListener('pointermove', event => {
+            if (drag?.id !== event.pointerId) return;
+
+            const dx = event.clientX - drag.x;
+            const dy = event.clientY - drag.y;
+            if (!drag.moved && Math.abs(dx) <= 3 && Math.abs(dy) <= 3) return;
+
+            drag.moved = true;
+            hasCustomPos = true;
             widget.style.cursor = 'grabbing';
+            placeCard(drag.left + dx, drag.top + dy);
+        });
 
-            const onMouseMove = (moveEvent) => {
-                if (!isDragging) return;
-                const dx = moveEvent.clientX - startX;
-                const dy = moveEvent.clientY - startY;
-                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
+        function finishCardDrag(event) {
+            if (drag?.id !== event.pointerId) return;
 
-                let newLeft = elemStartX + dx;
-                let newTop = elemStartY + dy;
+            const { moved } = drag;
+            drag = null;
+            widget.style.cursor = 'grab';
+            if (moved) {
+                try {
+                    localStorage.setItem(CARD_POS_KEY, JSON.stringify({
+                        top: widget.offsetTop,
+                        left: widget.offsetLeft
+                    }));
+                } catch (err) {}
+            }
+        }
 
-                // 视口边界卡位碰撞防护
-                newLeft = Math.max(10, Math.min(window.innerWidth - widget.offsetWidth - 10, newLeft));
-                newTop = Math.max(10, Math.min(window.innerHeight - widget.offsetHeight - 10, newTop));
-
-                widget.style.left = `${newLeft}px`;
-                widget.style.top = `${newTop}px`;
-                widget.style.right = 'auto';
-                widget.style.transform = 'none';
-                hasCustomPos = true;
-            };
-
-            const onMouseUp = () => {
-                if (!isDragging) return;
-                isDragging = false;
-                widget.style.cursor = 'grab';
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-
-                if (hasMoved) {
-                    try {
-                        localStorage.setItem(CARD_POS_KEY, JSON.stringify({
-                            top: widget.offsetTop,
-                            left: widget.offsetLeft
-                        }));
-                    } catch (err) {}
-                }
-            };
-
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-        };
+        widget.addEventListener('pointerup', finishCardDrag);
+        widget.addEventListener('pointercancel', finishCardDrag);
+        widget.addEventListener('lostpointercapture', finishCardDrag);
 
         window.showFullCountdownCard = (durationMs = 5000) => {
             isTempExpanded = true;
             widget.style.display = 'block';
+            keepCardInViewport();
             requestAnimationFrame(() => {
                 widget.style.opacity = '1';
                 if (!hasCustomPos) {
@@ -903,6 +895,7 @@
         }
 
         renderWidget();
+        keepCardInViewport();
         setInterval(renderWidget, 1000);
     }
 
