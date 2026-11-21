@@ -214,20 +214,70 @@ async function run(browser, variant) {
         assert.equal(await cp.evaluate(()=>testState.clipboard), '问题 $x+1$');
         await cp.evaluate(() => {
             const stem = document.querySelector('.ProblemItem');
-            stem.innerHTML = '<span class="katex-display"><span class="katex"><span class="katex-mathml">x+1</span></span></span>' +
+            stem.innerHTML = '<div><img id="bookmarkStar" src="/star.png" alt="favStar"></div>' +
+                '<div class="_2oaHGiIP00g_4hrsNR2dgf">[2016年真题] 设函数' +
+                '<span class="katex-display"><span class="katex"><span class="katex-mathml">x+1</span></span></span>' +
                 '<img alt="题图" src="/fixture.png">' +
-                '<span class="MathJax_SVG"><math><msqrt><mi>x</mi></msqrt></math></span><script type="math/asciimath">sqrt(x)</script>';
+                '<span class="MathJax_SVG"><math><msqrt><mi>x</mi></msqrt></math></span><script type="math/asciimath">sqrt(x)</script></div>';
             const options = document.createElement('div');
             options.style.cssText = 'display:flex;flex-direction:column-reverse';
-            options.innerHTML = '<label id="choiceButtonB">乙</label><label id="choiceButtonA">甲</label>';
+            options.innerHTML = '<label id="choiceButtonB"><input type="radio" name="choice" value="B">' +
+                '<div class="_1k3mGSmTcEeUJoNkx42TGU">乙</div><img class="_3EMvmkiprk0UoW2U8dG3fS"></label>' +
+                '<label id="choiceButtonA"><input type="radio" name="choice" value="A">' +
+                '<div class="_1k3mGSmTcEeUJoNkx42TGU">甲</div><img class="_3EMvmkiprk0UoW2U8dG3fS"></label>';
             stem.after(options);
         });
+        const trainingDom = await cp.locator('.jumbotron').innerHTML();
         await cp.locator('#znx-copy-problem-btn').click();
         const training = await cp.evaluate(()=>testState.clipboard);
+        assert.match(training, /^\[2016年真题\] 设函数/);
+        assert.doesNotMatch(training, /favStar|\/star\.png/);
         assert.ok(training.includes('$$\nx+1\n$$'));
         assert.ok(training.includes('![题图](' + origin + '/fixture.png)'));
         assert.ok(training.includes('\\sqrt{x}') && !training.includes('sqrt(x)'));
         assert.match(training, /A\. 甲[\s\S]+B\. 乙/);
+        assert.equal(await cp.locator('.jumbotron').innerHTML(), trainingDom, 'copy must preserve the live option controls and formulas');
+        await cp.evaluate(() => {
+            document.querySelectorAll('label > img').forEach(image => { image.src = '/choice-status.png'; });
+            const image = document.createElement('img');
+            image.src = '/option-figure.png';
+            image.alt = '选项题图';
+            document.querySelector('#choiceButtonA ._1k3mGSmTcEeUJoNkx42TGU').append(image);
+        });
+        await cp.locator('#znx-copy-problem-btn').click();
+        const withFigure = await cp.evaluate(() => testState.clipboard);
+        assert.ok(withFigure.includes('![选项题图](' + origin + '/option-figure.png)'));
+        assert.doesNotMatch(withFigure, /choice-status\.png|favStar|\/star\.png/);
+        for (const unavailable of ['figure', 'content']) {
+            await cp.evaluate(kind => {
+                const content = document.querySelector('#choiceButtonA ._1k3mGSmTcEeUJoNkx42TGU');
+                if (kind === 'figure') content.querySelector('img').removeAttribute('src');
+                else content.className = 'pending-content';
+                testState.clipboard = 'unchanged';
+            }, unavailable);
+            await cp.locator('#znx-copy-problem-btn').click();
+            assert.equal(await cp.evaluate(() => testState.clipboard), 'unchanged', unavailable + ' must not produce an incomplete copy');
+            assert.match(await cp.locator('#znx-copy-toast').innerText(), /提取失败/);
+            await cp.evaluate(kind => {
+                if (kind === 'figure') document.querySelector('#choiceButtonA ._1k3mGSmTcEeUJoNkx42TGU img').src = '/option-figure.png';
+                else document.querySelector('#choiceButtonA .pending-content').className = '_1k3mGSmTcEeUJoNkx42TGU';
+            }, unavailable);
+        }
+        await cp.evaluate(() => {
+            document.querySelector('._2oaHGiIP00g_4hrsNR2dgf').innerHTML =
+                '比较下列各式 <span id="stem-math-Frame" class="MathJax_SVG" data-mathml="<math><mi>x</mi></math>"></span>。';
+            document.querySelector('#choiceButtonA ._1k3mGSmTcEeUJoNkx42TGU').innerHTML =
+                '第一项 <math><munder><mo>lim</mo><mrow><mi>t</mi><mo>→</mo><mn>0</mn></mrow></munder><mi>t</mi></math>';
+            document.querySelector('#choiceButtonB ._1k3mGSmTcEeUJoNkx42TGU').innerHTML =
+                '第二项 <span id="option-math-Frame" class="MathJax_SVG" data-mathml="<math><mi>y</mi></math>"></span>';
+            window.MathJax = { Hub: { getAllJax: () => [
+                { inputID: 'stem-math', inputJax: 'TeX', originalText: '\\frac{1}{x}' },
+                { inputID: 'option-math', inputJax: 'AsciiMath', originalText: 'sqrt(y)' },
+            ] } };
+        });
+        await cp.locator('#znx-copy-problem-btn').click();
+        assert.equal(await cp.evaluate(() => testState.clipboard),
+            '比较下列各式 $\\frac{1}{x}$ 。\n\nA. 第一项 $\\lim\\limits_{t\\to 0}t$\nB. 第二项 $y$');
         for (const formula of [
             '<span class="katex"><span class="katex-mathml">x+1</span></span>',
             '<script type="math/asciimath">sqrt(2)</script>'
@@ -241,7 +291,7 @@ async function run(browser, variant) {
             assert.equal(await cp.evaluate(()=>testState.clipboard),'unchanged');
             assert.match(await cp.locator('#znx-copy-toast').innerText(),/提取失败/);
         }
-        console.log('Training text-only KaTeX and strict solution rejection OK');
+        console.log('Training stem, real images, text-only KaTeX and strict solution rejection OK');
     }
     await cp.close();
 }

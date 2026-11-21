@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         知能行考研数学-增强插件
 // @namespace    http://tampermonkey.net/
-// @version      10.0.0-beta.2
+// @version      10.0.0-beta.3
 // @description  知能行视觉美化、答题快捷键、题目与解析复制、诊断报告导出与数据图表
 // @author       winslght
 // @license      MIT
@@ -2910,6 +2910,7 @@
         // ==========================================
         function setupCopyProblemHandler() {
             const BUTTON_ID = 'znx-copy-problem-btn';
+            const OPTION_CONTENT_SELECTOR = '._1k3mGSmTcEeUJoNkx42TGU';
             let isCapsuleExpanded = false;
             let capsuleTimer = null;
 
@@ -3026,6 +3027,27 @@
                 .filter(Boolean)
                 .join('\n');
 
+            const readMathJaxTex = () => {
+                const sources = new Map();
+                try {
+                    for (const jax of window.MathJax?.Hub?.getAllJax?.() || []) {
+                        if (jax?.inputJax !== 'TeX' || !jax.inputID) continue;
+                        const tex = jax.originalText?.trim();
+                        if (tex) sources.set(jax.inputID + '-Frame', tex);
+                    }
+                } catch {
+                    // MathJax may not be ready. The rendered MathML remains available.
+                }
+                return sources;
+            };
+
+            const getTrainingOptionContent = (label) => {
+                // 正文与选中/判题状态图标并列，只把正文交给内容转换器。
+                const content = label.querySelector(OPTION_CONTENT_SELECTOR);
+                if (!content) throw new Error('未找到选项正文');
+                return content;
+            };
+
             const extractPureProblemMarkdown = (problemContainerEl) => {
                 console.log('[ZhiNengX Copy] 🚀 开始正向靶向提取题目，目标容器:', problemContainerEl);
                 if (!problemContainerEl) {
@@ -3033,12 +3055,14 @@
                     return '';
                 }
 
-                // 1. 正向靶向定位【题干 DOM】
-                const stemEl = problemContainerEl.querySelector('div[name="ProblemItemElement"]') ||
+                // 题干正文与收藏等控件并列，优先在正文内提取公式和题图。
+                const stemEl = problemContainerEl.querySelector('._2oaHGiIP00g_4hrsNR2dgf') ||
+                               problemContainerEl.querySelector('div[name="ProblemItemElement"]') ||
                                problemContainerEl.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
                                problemContainerEl.querySelector('div[class*="ProblemItem"]');
 
-                const stemText = extractContentMarkdown(stemEl || problemContainerEl, { training: true });
+                const trainingOptions = { training: true, mathJaxTex: readMathJaxTex() };
+                const stemText = extractContentMarkdown(stemEl || problemContainerEl, trainingOptions);
 
                 // 2. 正向靶向定位【选择题选项 DOM】按物理 Y 轴位置升序排列
                 const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
@@ -3058,7 +3082,7 @@
 
                 const optionTexts = optionEls.map((label, idx) => {
                     const letter = choiceLetters[idx] || '';
-                    let txt = extractContentMarkdown(label, { training: true });
+                    let txt = extractContentMarkdown(getTrainingOptionContent(label), trainingOptions);
                     if (letter && !txt.startsWith(`${letter}.`) && !txt.startsWith(`${letter} `)) {
                         txt = `${letter}. ${txt}`;
                     }
@@ -3095,13 +3119,12 @@
                 const symbols = { '{': '\\{', '}': '\\}', '%': '\\%', '&': '\\&', '#': '\\#', '$': '\\$', '_': '\\_', '\\': '\\backslash ', '−': '-', '×': '\\times ', '÷': '\\div ', '≤': '\\leq ', '≥': '\\geq ', '≠': '\\neq ', '∞': '\\infty ', '∑': '\\sum ', '∏': '\\prod ', '∫': '\\int ', '∂': '\\partial ', '∈': '\\in ', '→': '\\to ', 'α': '\\alpha ', 'β': '\\beta ', 'θ': '\\theta ', 'π': '\\pi ', 'λ': '\\lambda ' };
                 const operators = { '⋅': '\\cdot ', '∣': '\\vert ', '′': '\\prime ', '″': '\\prime\\prime ' };
                 const identifier = node.textContent.trim();
+                if ((node.localName === 'mi' || node.localName === 'mo') &&
+                    /^(?:ln|log|exp|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|sinh|cosh|tanh|lim|liminf|limsup|min|max|inf|sup)$/.test(identifier)) {
+                    return `\\${identifier} `;
+                }
                 switch (node.localName) {
-                    case 'mi':
-                        if (/^(?:ln|log|exp|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|sinh|cosh|tanh|lim|max|min)$/.test(identifier)) {
-                            return `\\${identifier} `;
-                        }
-                        // 普通标识符沿用符号映射。
-                    case 'mn': case 'mo':
+                    case 'mi': case 'mn': case 'mo':
                         return Array.from(node.textContent).map(char => operators[char] || symbols[char] || char).join('');
                     case 'mtext':
                         return `\\text{${node.textContent.replace(/[\\{}%$&#_]/g, char => `\\${char}`)}}`;
@@ -3111,7 +3134,13 @@
                     case 'msub': return `{${mathmlToLatex(children[0])}}_{${mathmlToLatex(children[1])}}`;
                     case 'msubsup': return `{${mathmlToLatex(children[0])}}_{${mathmlToLatex(children[1])}}^{${mathmlToLatex(children[2])}}`;
                     case 'mover': return `\\overset{${mathmlToLatex(children[1])}}{${mathmlToLatex(children[0])}}`;
-                    case 'munder': return `\\underset{${mathmlToLatex(children[1])}}{${mathmlToLatex(children[0])}}`;
+                    case 'munder': {
+                        const base = mathmlToLatex(children[0]);
+                        const below = mathmlToLatex(children[1]);
+                        return /^\\(?:lim|liminf|limsup|min|max|inf|sup|sum|prod) *$/.test(base)
+                            ? `${base.trimEnd()}\\limits_{${below}}`
+                            : `\\underset{${below}}{${base}}`;
+                    }
                     case 'munderover': return `\\overset{${mathmlToLatex(children[2])}}{\\underset{${mathmlToLatex(children[1])}}{${mathmlToLatex(children[0])}}}`;
                     case 'msqrt': return `\\sqrt{${parts()}}`;
                     case 'mroot': return `\\sqrt[${mathmlToLatex(children[1])}]{${mathmlToLatex(children[0])}}`;
@@ -3134,13 +3163,13 @@
                 }
             };
 
-            const extractContentMarkdown = (node, { training = false } = {}) => {
+            const extractContentMarkdown = (node, { training = false, mathJaxTex } = {}) => {
                 const clone = node.cloneNode(true);
                 replaceMathJaxScripts(clone);
                 clone.querySelectorAll('.katex, mjx-container, .MathJax_SVG[data-mathml], .MathJax[data-mathml], math').forEach(math => {
                     if (!clone.contains(math)) return;
                     const annotation = math.querySelector('annotation[encoding="application/x-tex"]');
-                    const source = annotation?.textContent.trim();
+                    const source = annotation?.textContent.trim() || mathJaxTex?.get(math.id);
                     let mathml = math.matches('math') ? math : math.querySelector('math');
                     const serialized = math.getAttribute('data-mathml');
                     if (!source && !mathml && serialized) {
