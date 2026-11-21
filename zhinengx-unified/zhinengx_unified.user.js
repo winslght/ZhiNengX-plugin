@@ -1215,7 +1215,7 @@
     }
 
     function mountBeautifier() {
-        const DEV_BUILD = { version: '10.0.0-dev.1.4', modifiedAt: '2026-11-20 21:20:30' };
+        const DEV_BUILD = { version: '10.0.0-dev.1.5', modifiedAt: '2026-11-21 10:38:38' };
         const installedScript = typeof GM_info === 'undefined' ? undefined : GM_info?.script;
         const localDev = /^\[DEV\](?:\s|$)/i.test(installedScript?.name || '') ? DEV_BUILD : null;
         const version = localDev?.version || installedScript?.version;
@@ -3033,8 +3033,9 @@
                     return '';
                 }
 
-                // 1. 正向靶向定位【题干 DOM】
-                const stemEl = problemContainerEl.querySelector('div[name="ProblemItemElement"]') ||
+                // 题干正文与收藏等控件并列，优先在正文内提取公式和题图。
+                const stemEl = problemContainerEl.querySelector('._2oaHGiIP00g_4hrsNR2dgf') ||
+                               problemContainerEl.querySelector('div[name="ProblemItemElement"]') ||
                                problemContainerEl.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
                                problemContainerEl.querySelector('div[class*="ProblemItem"]');
 

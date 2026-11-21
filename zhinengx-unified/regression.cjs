@@ -214,9 +214,11 @@ async function run(browser, variant) {
         assert.equal(await cp.evaluate(()=>testState.clipboard), '问题 $x+1$');
         await cp.evaluate(() => {
             const stem = document.querySelector('.ProblemItem');
-            stem.innerHTML = '<span class="katex-display"><span class="katex"><span class="katex-mathml">x+1</span></span></span>' +
+            stem.innerHTML = '<div><img id="bookmarkStar" src="/star.png" alt="favStar"></div>' +
+                '<div class="_2oaHGiIP00g_4hrsNR2dgf">[2016年真题] 设函数' +
+                '<span class="katex-display"><span class="katex"><span class="katex-mathml">x+1</span></span></span>' +
                 '<img alt="题图" src="/fixture.png">' +
-                '<span class="MathJax_SVG"><math><msqrt><mi>x</mi></msqrt></math></span><script type="math/asciimath">sqrt(x)</script>';
+                '<span class="MathJax_SVG"><math><msqrt><mi>x</mi></msqrt></math></span><script type="math/asciimath">sqrt(x)</script></div>';
             const options = document.createElement('div');
             options.style.cssText = 'display:flex;flex-direction:column-reverse';
             options.innerHTML = '<label id="choiceButtonB">乙</label><label id="choiceButtonA">甲</label>';
@@ -224,6 +226,8 @@ async function run(browser, variant) {
         });
         await cp.locator('#znx-copy-problem-btn').click();
         const training = await cp.evaluate(()=>testState.clipboard);
+        assert.match(training, /^\[2016年真题\] 设函数/);
+        assert.doesNotMatch(training, /favStar|\/star\.png/);
         assert.ok(training.includes('$$\nx+1\n$$'));
         assert.ok(training.includes('![题图](' + origin + '/fixture.png)'));
         assert.ok(training.includes('\\sqrt{x}') && !training.includes('sqrt(x)'));
@@ -241,7 +245,7 @@ async function run(browser, variant) {
             assert.equal(await cp.evaluate(()=>testState.clipboard),'unchanged');
             assert.match(await cp.locator('#znx-copy-toast').innerText(),/提取失败/);
         }
-        console.log('Training text-only KaTeX and strict solution rejection OK');
+        console.log('Training stem, real images, text-only KaTeX and strict solution rejection OK');
     }
     await cp.close();
 }
