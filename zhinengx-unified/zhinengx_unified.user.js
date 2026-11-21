@@ -1215,7 +1215,7 @@
     }
 
     function mountBeautifier() {
-        const DEV_BUILD = { version: '10.0.0-dev.3.1', modifiedAt: '2026-11-21 11:40:55' };
+        const DEV_BUILD = { version: '10.0.0-dev.3.2', modifiedAt: '2026-11-21 12:16:19' };
         const installedScript = typeof GM_info === 'undefined' ? undefined : GM_info?.script;
         const localDev = /^\[DEV\](?:\s|$)/i.test(installedScript?.name || '') ? DEV_BUILD : null;
         const version = localDev?.version || installedScript?.version;
@@ -2910,6 +2910,7 @@
         // ==========================================
         function setupCopyProblemHandler() {
             const BUTTON_ID = 'znx-copy-problem-btn';
+            const OPTION_CONTENT_SELECTOR = '._1k3mGSmTcEeUJoNkx42TGU';
             let isCapsuleExpanded = false;
             let capsuleTimer = null;
 
@@ -3040,6 +3041,13 @@
                 return sources;
             };
 
+            const getTrainingOptionContent = (label) => {
+                // 正文与选中/判题状态图标并列，只把正文交给内容转换器。
+                const content = label.querySelector(OPTION_CONTENT_SELECTOR);
+                if (!content) throw new Error('未找到选项正文');
+                return content;
+            };
+
             const extractPureProblemMarkdown = (problemContainerEl) => {
                 console.log('[ZhiNengX Copy] 🚀 开始正向靶向提取题目，目标容器:', problemContainerEl);
                 if (!problemContainerEl) {
@@ -3074,7 +3082,7 @@
 
                 const optionTexts = optionEls.map((label, idx) => {
                     const letter = choiceLetters[idx] || '';
-                    let txt = extractContentMarkdown(label, trainingOptions);
+                    let txt = extractContentMarkdown(getTrainingOptionContent(label), trainingOptions);
                     if (letter && !txt.startsWith(`${letter}.`) && !txt.startsWith(`${letter} `)) {
                         txt = `${letter}. ${txt}`;
                     }
