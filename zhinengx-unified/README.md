@@ -1,6 +1,6 @@
 # 知能行合体助手 · 本地验收
 
-安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。合并前的功能基线为 `ab81e2b`。合并版采用独立的 `10.0.0` 版本线，当前底栏为 `10.0.0-dev.1.5`，首次公测为 `10.0.0-beta.1`，首次正式发布为 `10.0.0`。
+安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。合并前的功能基线为 `ab81e2b`。合并版采用独立的 `10.0.0` 版本线，当前底栏为 `10.0.0-dev.2.1`，首次公测为 `10.0.0-beta.1`，首次正式发布为 `10.0.0`。
 
 项目包含四个用户脚本。合并版在 `master` 开发，[独立美化](../zhinengx-beautifier/zhinengx_beautifier.user.js)和[独立导出](../zhinengx-exporter/zhinengx_exporter.user.js)继续在 `develop` 并行维护，[快照脚本](../dev_resources/snapshots/capture.user.js)沿用自己的版本线。
 
@@ -26,7 +26,7 @@ node regression.cjs
 
 在包含基线提交 `ab81e2b` 的完整 Git 检出中，从 `zhinengx-unified` 目录执行上述命令。测试输入为仓库内的 `fixtures/choice.html`、`fixtures/blank.html`、`fixtures/profile.json` 和 `dev_resources/copy-solution-test.html`。两版读取同一组合成题卡和进度数据。Chrome 使用临时配置，页面请求由测试拦截，退出码 0 表示整套通过。
 
-## 10.0.0-dev.1.5 本地验证
+## 10.0.0-dev.2.1 本地验证
 
 - **修复**　训练页「复制题目」优先提取题干正文，收藏星标不会混入 Markdown。保留真实题图、公式和选项顺序。
 - **已知问题**　快照回放中的复制文本为正常中文。原粘贴应用内的乱码仍待实测。

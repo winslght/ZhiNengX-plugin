@@ -1215,7 +1215,7 @@
     }
 
     function mountBeautifier() {
-        const DEV_BUILD = { version: '10.0.0-dev.1.5', modifiedAt: '2026-11-21 10:38:38' };
+        const DEV_BUILD = { version: '10.0.0-dev.2.1', modifiedAt: '2026-11-21 10:48:17' };
         const installedScript = typeof GM_info === 'undefined' ? undefined : GM_info?.script;
         const localDev = /^\[DEV\](?:\s|$)/i.test(installedScript?.name || '') ? DEV_BUILD : null;
         const version = localDev?.version || installedScript?.version;
