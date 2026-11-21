@@ -232,6 +232,21 @@ async function run(browser, variant) {
         assert.ok(training.includes('![题图](' + origin + '/fixture.png)'));
         assert.ok(training.includes('\\sqrt{x}') && !training.includes('sqrt(x)'));
         assert.match(training, /A\. 甲[\s\S]+B\. 乙/);
+        await cp.evaluate(() => {
+            document.querySelector('._2oaHGiIP00g_4hrsNR2dgf').innerHTML =
+                '比较下列各式 <span id="stem-math-Frame" class="MathJax_SVG" data-mathml="<math><mi>x</mi></math>"></span>。';
+            document.querySelector('#choiceButtonA').innerHTML =
+                '第一项 <math><munder><mo>lim</mo><mrow><mi>t</mi><mo>→</mo><mn>0</mn></mrow></munder><mi>t</mi></math>';
+            document.querySelector('#choiceButtonB').innerHTML =
+                '第二项 <span id="option-math-Frame" class="MathJax_SVG" data-mathml="<math><mi>y</mi></math>"></span>';
+            window.MathJax = { Hub: { getAllJax: () => [
+                { inputID: 'stem-math', inputJax: 'TeX', originalText: '\\frac{1}{x}' },
+                { inputID: 'option-math', inputJax: 'AsciiMath', originalText: 'sqrt(y)' },
+            ] } };
+        });
+        await cp.locator('#znx-copy-problem-btn').click();
+        assert.equal(await cp.evaluate(() => testState.clipboard),
+            '比较下列各式 $\\frac{1}{x}$ 。\n\nA. 第一项 $\\lim\\limits_{t\\to 0}t$\nB. 第二项 $y$');
         for (const formula of [
             '<span class="katex"><span class="katex-mathml">x+1</span></span>',
             '<script type="math/asciimath">sqrt(2)</script>'

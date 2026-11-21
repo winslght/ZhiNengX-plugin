@@ -1,6 +1,6 @@
 # 知能行合体助手 · 本地验收
 
-安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。合并前的功能基线为 `ab81e2b`。合并版采用独立的 `10.0.0` 版本线，当前底栏为 `10.0.0-dev.2.1`，首次公测为 `10.0.0-beta.1`，首次正式发布为 `10.0.0`。
+安装文件为 `zhinengx_unified.user.js`。一个文件提供原有的美化面板、做题操作、复制、倒计时、报告导出和数据图表。合并前的功能基线为 `ab81e2b`。合并版采用独立的 `10.0.0` 版本线，当前底栏为 `10.0.0-dev.3.1`，首次公测为 `10.0.0-beta.1`，首次正式发布为 `10.0.0`。
 
 项目包含四个用户脚本。合并版在 `master` 开发，[独立美化](../zhinengx-beautifier/zhinengx_beautifier.user.js)和[独立导出](../zhinengx-exporter/zhinengx_exporter.user.js)继续在 `develop` 并行维护，[快照脚本](../dev_resources/snapshots/capture.user.js)沿用自己的版本线。
 
@@ -25,6 +25,11 @@ node regression.cjs
 ```
 
 在包含基线提交 `ab81e2b` 的完整 Git 检出中，从 `zhinengx-unified` 目录执行上述命令。测试输入为仓库内的 `fixtures/choice.html`、`fixtures/blank.html`、`fixtures/profile.json` 和 `dev_resources/copy-solution-test.html`。两版读取同一组合成题卡和进度数据。Chrome 使用临时配置，页面请求由测试拦截，退出码 0 表示整套通过。
+
+## 10.0.0-dev.3.1 本地验证
+
+- **修复**　训练题复制在 MathJax 源码节点缺失时，可从同一公式的渲染实例读取原始 TeX。只有 MathML 的命名算子保留 LaTeX 算子及其上下文。
+- **已知问题**　真实快照中的中文及浏览器回放所得文本均正常。原目标应用里的中文乱码仍待实测。
 
 ## 10.0.0-dev.2.1 本地验证
 

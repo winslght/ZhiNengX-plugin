@@ -1215,7 +1215,7 @@
     }
 
     function mountBeautifier() {
-        const DEV_BUILD = { version: '10.0.0-dev.2.1', modifiedAt: '2026-11-21 10:48:17' };
+        const DEV_BUILD = { version: '10.0.0-dev.3.1', modifiedAt: '2026-11-21 11:40:55' };
         const installedScript = typeof GM_info === 'undefined' ? undefined : GM_info?.script;
         const localDev = /^\[DEV\](?:\s|$)/i.test(installedScript?.name || '') ? DEV_BUILD : null;
         const version = localDev?.version || installedScript?.version;
@@ -3026,6 +3026,20 @@
                 .filter(Boolean)
                 .join('\n');
 
+            const readMathJaxTex = () => {
+                const sources = new Map();
+                try {
+                    for (const jax of window.MathJax?.Hub?.getAllJax?.() || []) {
+                        if (jax?.inputJax !== 'TeX' || !jax.inputID) continue;
+                        const tex = jax.originalText?.trim();
+                        if (tex) sources.set(jax.inputID + '-Frame', tex);
+                    }
+                } catch {
+                    // MathJax may not be ready. The rendered MathML remains available.
+                }
+                return sources;
+            };
+
             const extractPureProblemMarkdown = (problemContainerEl) => {
                 console.log('[ZhiNengX Copy] 🚀 开始正向靶向提取题目，目标容器:', problemContainerEl);
                 if (!problemContainerEl) {
@@ -3039,7 +3053,8 @@
                                problemContainerEl.querySelector('div[class*="_3saCwwTEZwjVS61OHwIkcP"]') ||
                                problemContainerEl.querySelector('div[class*="ProblemItem"]');
 
-                const stemText = extractContentMarkdown(stemEl || problemContainerEl, { training: true });
+                const trainingOptions = { training: true, mathJaxTex: readMathJaxTex() };
+                const stemText = extractContentMarkdown(stemEl || problemContainerEl, trainingOptions);
 
                 // 2. 正向靶向定位【选择题选项 DOM】按物理 Y 轴位置升序排列
                 const choiceLetters = ['A', 'B', 'C', 'D', 'E'];
@@ -3059,7 +3074,7 @@
 
                 const optionTexts = optionEls.map((label, idx) => {
                     const letter = choiceLetters[idx] || '';
-                    let txt = extractContentMarkdown(label, { training: true });
+                    let txt = extractContentMarkdown(label, trainingOptions);
                     if (letter && !txt.startsWith(`${letter}.`) && !txt.startsWith(`${letter} `)) {
                         txt = `${letter}. ${txt}`;
                     }
@@ -3096,13 +3111,12 @@
                 const symbols = { '{': '\\{', '}': '\\}', '%': '\\%', '&': '\\&', '#': '\\#', '$': '\\$', '_': '\\_', '\\': '\\backslash ', '−': '-', '×': '\\times ', '÷': '\\div ', '≤': '\\leq ', '≥': '\\geq ', '≠': '\\neq ', '∞': '\\infty ', '∑': '\\sum ', '∏': '\\prod ', '∫': '\\int ', '∂': '\\partial ', '∈': '\\in ', '→': '\\to ', 'α': '\\alpha ', 'β': '\\beta ', 'θ': '\\theta ', 'π': '\\pi ', 'λ': '\\lambda ' };
                 const operators = { '⋅': '\\cdot ', '∣': '\\vert ', '′': '\\prime ', '″': '\\prime\\prime ' };
                 const identifier = node.textContent.trim();
+                if ((node.localName === 'mi' || node.localName === 'mo') &&
+                    /^(?:ln|log|exp|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|sinh|cosh|tanh|lim|liminf|limsup|min|max|inf|sup)$/.test(identifier)) {
+                    return `\\${identifier} `;
+                }
                 switch (node.localName) {
-                    case 'mi':
-                        if (/^(?:ln|log|exp|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|sinh|cosh|tanh|lim|max|min)$/.test(identifier)) {
-                            return `\\${identifier} `;
-                        }
-                        // 普通标识符沿用符号映射。
-                    case 'mn': case 'mo':
+                    case 'mi': case 'mn': case 'mo':
                         return Array.from(node.textContent).map(char => operators[char] || symbols[char] || char).join('');
                     case 'mtext':
                         return `\\text{${node.textContent.replace(/[\\{}%$&#_]/g, char => `\\${char}`)}}`;
@@ -3112,7 +3126,13 @@
                     case 'msub': return `{${mathmlToLatex(children[0])}}_{${mathmlToLatex(children[1])}}`;
                     case 'msubsup': return `{${mathmlToLatex(children[0])}}_{${mathmlToLatex(children[1])}}^{${mathmlToLatex(children[2])}}`;
                     case 'mover': return `\\overset{${mathmlToLatex(children[1])}}{${mathmlToLatex(children[0])}}`;
-                    case 'munder': return `\\underset{${mathmlToLatex(children[1])}}{${mathmlToLatex(children[0])}}`;
+                    case 'munder': {
+                        const base = mathmlToLatex(children[0]);
+                        const below = mathmlToLatex(children[1]);
+                        return /^\\(?:lim|liminf|limsup|min|max|inf|sup|sum|prod) *$/.test(base)
+                            ? `${base.trimEnd()}\\limits_{${below}}`
+                            : `\\underset{${below}}{${base}}`;
+                    }
                     case 'munderover': return `\\overset{${mathmlToLatex(children[2])}}{\\underset{${mathmlToLatex(children[1])}}{${mathmlToLatex(children[0])}}}`;
                     case 'msqrt': return `\\sqrt{${parts()}}`;
                     case 'mroot': return `\\sqrt[${mathmlToLatex(children[1])}]{${mathmlToLatex(children[0])}}`;
@@ -3135,13 +3155,13 @@
                 }
             };
 
-            const extractContentMarkdown = (node, { training = false } = {}) => {
+            const extractContentMarkdown = (node, { training = false, mathJaxTex } = {}) => {
                 const clone = node.cloneNode(true);
                 replaceMathJaxScripts(clone);
                 clone.querySelectorAll('.katex, mjx-container, .MathJax_SVG[data-mathml], .MathJax[data-mathml], math').forEach(math => {
                     if (!clone.contains(math)) return;
                     const annotation = math.querySelector('annotation[encoding="application/x-tex"]');
-                    const source = annotation?.textContent.trim();
+                    const source = annotation?.textContent.trim() || mathJaxTex?.get(math.id);
                     let mathml = math.matches('math') ? math : math.querySelector('math');
                     const serialized = math.getAttribute('data-mathml');
                     if (!source && !mathml && serialized) {
